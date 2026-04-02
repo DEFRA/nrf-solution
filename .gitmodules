@@ -1,0 +1,9 @@
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:DEFRA/nrf-frontend.git
+[submodule "backend"]
+	path = backend
+	url = git@github.com:DEFRA/nrf-backend.git
+[submodule "impact-assessor"]
+	path = impact-assessor
+	url = git@github.com:DEFRA/nrf-impact-assessor.git
