@@ -33,7 +33,7 @@ services:
       # Path-style SQS URLs (http://localstack:4566/000000000000/queue-name) — no DNS subdomains needed
       SQS_ENDPOINT_STRATEGY: path
     volumes:
-      - '${TMPDIR:-/tmp}/localstack:/var/lib/localstack'
+      - 'localstack-data:/var/lib/localstack'
       - ./compose/start-localstack.sh:/etc/localstack/init/ready.d/start-localstack.sh
     healthcheck:
       test: ['CMD', 'curl', '-f', 'localhost:4566/_localstack/health']
@@ -119,6 +119,9 @@ services:
     platform: linux/amd64
     ports:
       - '7337:7337'
+    links:
+      - 'localstack:localstack'
+      - 'redis:redis'
     depends_on:
       localstack:
         condition: service_healthy
@@ -151,7 +154,10 @@ services:
     volumes:
       - ./compose/Caddyfile:/etc/caddy/Caddyfile:ro
     depends_on:
-      - cdp-uploader
+      cdp-uploader:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - cdp-tenant
 
@@ -282,6 +288,15 @@ services:
         - action: rebuild
           path: ./frontend/package.json
           target: /home/node/package.json
+    healthcheck:
+      test:
+        - 'CMD'
+        - 'node'
+        - '-e'
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      start_period: 30s
+      retries: 6
     networks:
       - cdp-tenant
 
@@ -342,6 +357,7 @@ services:
       DB_LOCAL_PASSWORD: password
       DB_IAM_AUTHENTICATION: 'false'
       API_TESTING_ENABLED: 'true'
+      BACKEND_BASE_URL: http://backend:3001
     volumes:
       - ./impact-assessor/app:/home/nonroot/app
     develop:
@@ -385,6 +401,7 @@ services:
 volumes:
   postgres-data:
   mongodb-data:
+  localstack-data:
 
 networks:
   cdp-tenant:

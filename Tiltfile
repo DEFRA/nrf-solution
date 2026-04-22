@@ -24,7 +24,7 @@ local_resource(
 
 local_resource(
     'errors',
-    serve_cmd='docker compose logs -f --no-log-prefix 2>&1 | grep --line-buffered -i "error"',
+    serve_cmd='docker compose logs -f --tail=100 2>&1 | grep --line-buffered "ERROR"',
     auto_init=True,
     trigger_mode=TRIGGER_MODE_AUTO,
     labels=['debug'],

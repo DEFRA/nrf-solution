@@ -198,6 +198,26 @@ This is also available as a manual trigger in the Tilt dashboard under the `dev`
 
 ---
 
+## Resetting state
+
+Named Docker volumes persist across `tilt down` so databases and LocalStack retain
+data between sessions. To start completely fresh:
+
+```sh
+tilt down -v   # stops containers and removes all named volumes
+tilt up        # migrations and fixture data reload automatically
+```
+
+To remove a single volume instead:
+
+```sh
+docker volume rm nrf-solution_postgres-data
+docker volume rm nrf-solution_mongodb-data
+docker volume rm nrf-solution_localstack-data
+```
+
+---
+
 ## Standalone development
 
 Each service can be run independently using its own `compose.yml`:
