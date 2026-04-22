@@ -32,8 +32,7 @@ contain application code — it provides the glue to run everything together.
 ```sh
 git clone --recurse-submodules <this-repo-url>
 cd nrf-solution
-./create-symlinks.sh   # required for Docker Compose paths
-tilt up                # start all services
+tilt up
 ```
 
 If you cloned without `--recurse-submodules`, initialise the submodules first:
@@ -163,8 +162,9 @@ docker compose run --rm impact-assessor-migration
 
 ### `create-symlinks.sh`
 
-Creates symlinks so that the Docker Compose files in `journey-tests/` can find
-the sibling repositories. Run this once after cloning.
+Creates symlinks so that `journey-tests/compose.yml` can find the sibling
+repositories as `nrf-backend`, `nrf-frontend`, and `nrf-impact-assessor`.
+Only needed if you are running journey tests — not required for `tilt up`.
 
 ```sh
 ./create-symlinks.sh
