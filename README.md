@@ -10,12 +10,22 @@ together the individual service repos as git submodules so you can:
 Each submodule is an independent repo with its own CI/CD. This repo does not
 contain application code — it provides the glue to run everything together.
 
-| Submodule          | Repo                        | Description                     |
-| ------------------ | --------------------------- | ------------------------------- |
-| `frontend`         | `DEFRA/nrf-frontend`        | Hapi.js web frontend            |
-| `backend`          | `DEFRA/nrf-backend`         | Node.js API backend             |
+| Submodule          | Repo                        | Description                      |
+| ------------------ | --------------------------- | -------------------------------- |
+| `frontend`         | `DEFRA/nrf-frontend`        | Hapi.js web frontend             |
+| `backend`          | `DEFRA/nrf-backend`         | Node.js API backend              |
 | `impact-assessor`  | `DEFRA/nrf-impact-assessor` | Python/FastAPI spatial analysis  |
-| `journey-tests`    | `DEFRA/nrf-journey-tests`   | Cucumber + Playwright E2E tests |
+| `journey-tests`    | `DEFRA/nrf-journey-tests`   | Cucumber + Playwright E2E tests  |
+
+---
+
+## Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Tilt](https://tilt.dev) — see [install instructions](#install)
+- [nvm](https://github.com/nvm-sh/nvm) — for running `format.sh` locally (not needed to run the stack)
+
+---
 
 ## Getting started
 
@@ -26,15 +36,15 @@ cd nrf-solution
 tilt up                # start all services
 ```
 
+If you cloned without `--recurse-submodules`, initialise the submodules first:
+
+```sh
+git submodule update --init --recursive
+```
+
+---
+
 ## Tilt
-
-You may use [Tilt](https://tilt.dev) to assist with local development.
-
-Tilt orchestrates all the services in this repo for local development. It starts Docker Compose infrastructure (databases, Redis, localstack) and the application services (frontend, backend, impact-assessor), with live reload on code changes.
-
-A web UI at http://localhost:10350 shows the status of each service and its logs.
-
-The Tilt dashboard is also useful for running manual scripts such as `npm install` by clicking the relevant item in the side-menu.
 
 ### Install
 
@@ -51,29 +61,110 @@ tilt up
 ```
 
 This starts all services defined in the `Tiltfile`. Open http://localhost:10350
-to see the dashboard. The frontend will be available at http://localhost:3000.
+to see the Tilt dashboard.
 
 ### Stop
 
-Press `Ctrl+C` in the terminal running `tilt up`, then tear down the
-containers:
+Press `Ctrl+C` in the terminal running `tilt up`, then tear down the containers:
 
 ```sh
 tilt down
 ```
 
-The dashboard also has manual trigger buttons for `npm install`, `uv sync`,
-and code formatting if you need to run those without restarting.
+---
+
+## Services
+
+All services run inside Docker on a shared `cdp-tenant` network and communicate
+directly via Docker service names. The following ports are mapped to your host:
+
+| Service | Host port | Description |
+| ---------------------- | --------- | -------------------------------------------- |
+| `frontend` | 3010 | Web frontend — http://localhost:3010 |
+| `backend` | 3001 | API backend |
+| `impact-assessor` | 8085 | Spatial analysis API |
+| `defra-id-stub` | 3200 | OIDC auth stub (replaces DEFRA Identity) |
+| `cdp-uploader` | 7337 | File upload service |
+| `caddy` | 4001 | Reverse proxy (upload routing) |
+| `localstack` | 4566 | AWS emulation (S3, SQS, SNS) |
+| `postgres` | 5432 | PostgreSQL with PostGIS |
+| `redis` | 6379 | Redis |
+| `mongodb` | 27017 | MongoDB |
+
+The Tilt dashboard groups services by label:
+
+| Label | Services |
+| ------------- | ------------------------------------------------------------------ |
+| `main` | `backend`, `frontend`, `impact-assessor` |
+| `stubs` | `cdp-uploader`, `defra-id-stub` |
+| `infra` | `localstack`, `postgres`, `redis`, `mongodb`, `caddy` |
+| `migrations` | `liquibase`, `impact-assessor-migration` |
+| `dev` | `format` |
+| `debug` | `errors` (live stream of ERROR lines from all services) |
+
+---
+
+## Development workflow
+
+### Live reload
+
+Code changes are reflected in the running containers without a full rebuild:
+
+| Service | Watch path | Behaviour |
+| ---------------- | ------------------------- | -------------------------------- |
+| `backend` | `backend/src/` | nodemon restarts |
+| `frontend` | `frontend/src/` | nodemon restarts / webpack rebuilds |
+| `impact-assessor` | `impact-assessor/app/` | uvicorn restarts |
+
+Changes to `package.json` (Node services) or `pyproject.toml` (impact-assessor)
+trigger a full image rebuild.
+
+### Monitoring errors
+
+The `errors` resource in the Tilt dashboard streams ERROR lines from all services
+in one place — no need to switch between service logs. You can also filter logs
+inline using the search box in each service's log pane.
+
+---
+
+## Databases
+
+Two PostgreSQL databases share a single Postgres instance:
+
+| Database | Used by | Schema |
+| -------------- | ---------------------- | --------------- |
+| `nrf_backend` | backend | `public` |
+| `nrf_impact` | impact-assessor | `nrf_reference` |
+
+Connect with any PostgreSQL client (e.g. TablePlus) using:
+
+- **Host**: `localhost`
+- **Port**: `5432`
+- **User**: `postgres`
+- **Password**: `password`
+
+### Migrations
+
+Backend migrations are run by **Liquibase** against `nrf_backend` on every `tilt up`.
+
+Impact-assessor migrations are run by **Alembic** against `nrf_impact`, followed
+by **fixture data loading** (`load_data.py`), which populates the `nrf_reference`
+schema with sample spatial data for local development.
+
+To re-run impact-assessor migrations and reload fixture data manually:
+
+```sh
+docker compose run --rm impact-assessor-migration
+```
+
+---
 
 ## Scripts
 
 ### `create-symlinks.sh`
 
 Creates symlinks so that the Docker Compose files in `journey-tests/` can find
-the sibling repositories. The compose files expect `nrf-backend`, `nrf-frontend`,
-and `nrf-impact-assessor` as sibling directories, but in this repo they are
-submodules named `backend`, `frontend`, and `impact-assessor`. Run this once
-after cloning.
+the sibling repositories. Run this once after cloning.
 
 ```sh
 ./create-symlinks.sh
@@ -88,4 +179,34 @@ branch. Useful for seeing at a glance if any submodule needs updating.
 ./check-submodules.sh
 ```
 
-To update all submodules to the latest: `git submodule update --remote --merge`
+To update all submodules to the latest:
+
+```sh
+git submodule update --remote --merge
+```
+
+### `format.sh`
+
+Runs code formatters for all three services (frontend, backend, impact-assessor).
+Requires `nvm` and `uv` to be installed on the host.
+
+```sh
+./format.sh
+```
+
+This is also available as a manual trigger in the Tilt dashboard under the `dev` label.
+
+---
+
+## Standalone development
+
+Each service can be run independently using its own `compose.yml`:
+
+```sh
+cd backend && docker compose up
+cd frontend && docker compose up
+cd impact-assessor && docker compose up
+```
+
+These use their own isolated infrastructure (separate LocalStack, Postgres, Redis
+instances on different ports) and do not interfere with the root stack.

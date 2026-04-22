@@ -1,0 +1,392 @@
+################################################################################
+# Root compose — used by Tilt to run all three services together.
+#
+# Individual compose files in backend/, frontend/, and impact-assessor/ are
+# unchanged and continue to work for standalone development in each directory.
+#
+# Differences from the individual composes when running together:
+#   - Single shared LocalStack (port 4566) instead of two instances
+#   - Single shared PostgreSQL (port 5432) with both nrf_backend + nrf_impact DBs
+#   - Single shared Redis (port 6379)
+#   - Services communicate directly via Docker service names on cdp-tenant network
+################################################################################
+
+services:
+
+  ################################################################################
+  # SHARED INFRASTRUCTURE
+  ################################################################################
+
+  localstack:
+    image: localstack/localstack:3.2.0
+    ports:
+      - '4566:4566'
+      - '4510-4559:4510-4559'
+    env_file:
+      - 'backend/compose/aws.env'
+    environment:
+      DEBUG: ${DEBUG:-0}
+      LS_LOG: WARN
+      SERVICES: s3,sqs,sns,firehose
+      # Use the Docker service name so generated S3/SQS URLs are resolvable from other containers
+      LOCALSTACK_HOST: localstack
+      # Path-style SQS URLs (http://localstack:4566/000000000000/queue-name) — no DNS subdomains needed
+      SQS_ENDPOINT_STRATEGY: path
+    volumes:
+      - '${TMPDIR:-/tmp}/localstack:/var/lib/localstack'
+      - ./compose/start-localstack.sh:/etc/localstack/init/ready.d/start-localstack.sh
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'localhost:4566/_localstack/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10
+    networks:
+      - cdp-tenant
+
+  postgres:
+    image: postgis/postgis:16-3.4
+    platform: linux/amd64
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nrf_backend
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./compose/init-postgres.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      # Verify both databases are ready before any dependent service starts
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d nrf_backend && psql -U postgres -d nrf_impact -c "SELECT 1" -q -t']
+      interval: 5s
+      start_period: 10s
+      retries: 10
+      timeout: 5s
+    networks:
+      - cdp-tenant
+
+  redis:
+    image: redis:7.2.3-alpine3.18
+    ports:
+      - '6379:6379'
+    restart: always
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'PING']
+      interval: 5s
+      start_period: 2s
+      retries: 5
+    networks:
+      - cdp-tenant
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb-data:/data/db
+    restart: always
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
+      interval: 5s
+      start_period: 10s
+      retries: 5
+    networks:
+      - cdp-tenant
+
+  ################################################################################
+  # BACKEND SERVICES
+  ################################################################################
+
+  liquibase:
+    image: liquibase/liquibase:4.27-alpine
+    networks:
+      - cdp-tenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/changelog:/liquibase/changelog
+    command: >
+      --url=jdbc:postgresql://postgres:5432/nrf_backend
+      --username=postgres
+      --password=password
+      --changelog-file=changelog/db.changelog.xml
+      update
+
+  cdp-uploader:
+    image: defradigital/cdp-uploader:${CDP_UPLOADER_VERSION:-latest}
+    platform: linux/amd64
+    ports:
+      - '7337:7337'
+    depends_on:
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - 'backend/compose/aws.env'
+    environment:
+      PORT: 7337
+      NODE_ENV: development
+      REDIS_HOST: redis
+      USE_SINGLE_INSTANCE_CACHE: 'true'
+      MOCK_VIRUS_SCAN_ENABLED: 'true'
+      MOCK_VIRUS_RESULT_DELAY: 3
+      SQS_ENDPOINT: http://localstack:4566
+      S3_ENDPOINT: http://localstack:4566
+      CONSUMER_BUCKETS: ${CDP_UPLOADER_BUCKET:-boundaries}
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:7337/health']
+      interval: 5s
+      start_period: 10s
+      retries: 6
+    networks:
+      - cdp-tenant
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '4001:4001'
+    volumes:
+      - ./compose/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - cdp-uploader
+    networks:
+      - cdp-tenant
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+      args:
+        GIT_HASH: ${GIT_HASH:-unknown}
+    ports:
+      - '3001:3001'
+    depends_on:
+      localstack:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      liquibase:
+        condition: service_completed_successfully
+      cdp-uploader:
+        condition: service_healthy
+      impact-assessor:
+        condition: service_healthy
+    env_file:
+      - 'backend/compose/aws.env'
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      LOCALSTACK_ENDPOINT: http://localstack:4566
+      S3_ENDPOINT: http://localstack:4566
+      SNS_ENDPOINT: http://localstack:4566
+      SNS_TOPIC_ARN_QUOTE_ESTIMATE_REQUEST: arn:aws:sns:eu-west-2:000000000000:nrf_quote_estimate_request
+      IMPACT_ASSESSOR_URL: http://impact-assessor:8085
+      DB_HOST: postgres
+      CDP_UPLOADER_URL: http://cdp-uploader:7337
+    volumes:
+      - ./backend/src:/home/node/src
+      - ./backend/package.json:/home/node/package.json
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /home/node/src
+          ignore:
+            - '**/*.test.js'
+        - action: rebuild
+          path: ./backend/package.json
+          target: /home/node/package.json
+    healthcheck:
+      test:
+        - 'CMD'
+        - 'node'
+        - '-e'
+        - "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      start_period: 30s
+      retries: 6
+    networks:
+      - cdp-tenant
+
+  ################################################################################
+  # FRONTEND SERVICES
+  ################################################################################
+
+  defra-id-stub:
+    image: defradigital/cdp-defra-id-stub:latest
+    platform: linux/amd64
+    ports:
+      - '3200:3200'
+    environment:
+      PORT: 3200
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      USE_SINGLE_INSTANCE_CACHE: 'true'
+      NODE_ENV: development
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3200/health']
+      interval: 5s
+      start_period: 5s
+      retries: 3
+    networks:
+      - cdp-tenant
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    ports:
+      - '3010:3000'
+    depends_on:
+      defra-id-stub:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      USE_SINGLE_INSTANCE_CACHE: 'true'
+      ENABLE_DEFRA_ID: 'true'
+      # Server-side discovery fetch uses the Docker service name — the stub always returns localhost:3200
+      # in the discovery document so browser-facing OIDC redirects still work via the mapped port
+      DEFRA_ID_WELL_KNOWN_URL: http://defra-id-stub:3200/cdp-defra-id-stub/.well-known/openid-configuration
+      DEFRA_ID_CLIENT_ID: client-test
+      DEFRA_ID_CLIENT_SECRET: test_value
+      DEFRA_ID_SERVICE_ID: service-test
+      DEFRA_ID_REDIRECT_URL: http://localhost:3010/login/return
+      COOKIE_PASSWORD: nrf-frontend-secure-cookie-password-must-be-32-chars-minimum-abc123
+      # Server-side API calls go directly to backend on the shared Docker network
+      NRF_BACKEND_API_URL: http://backend:3001
+      # Server-side map tile proxy — must be reachable from within Docker
+      IMPACT_ASSESSOR_BASE_URL: http://impact-assessor:8085
+      # Browser-facing upload URL — must be reachable from the user's browser, not from within Docker
+      CDP_UPLOADER_URL: http://localhost:7337
+    volumes:
+      - ./frontend/src:/home/node/src
+      - ./frontend/package.json:/home/node/package.json
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /home/node/src
+          ignore:
+            - '**/*.test.js'
+        - action: rebuild
+          path: ./frontend/package.json
+          target: /home/node/package.json
+    networks:
+      - cdp-tenant
+
+  ################################################################################
+  # IMPACT ASSESSOR
+  ################################################################################
+
+  impact-assessor-migration:
+    build:
+      context: ./impact-assessor
+      target: development
+    volumes:
+      - ./impact-assessor/alembic:/home/nonroot/alembic
+      - ./impact-assessor/alembic.ini:/home/nonroot/alembic.ini
+      - ./impact-assessor/scripts:/home/nonroot/scripts
+      - ./impact-assessor/tests/data/fixtures:/home/nonroot/tests/data/fixtures
+    environment:
+      DB_HOST: postgres
+      DB_DATABASE: nrf_impact
+      DB_IAM_AUTHENTICATION: 'false'
+      DB_LOCAL_PASSWORD: password
+      PYTHONPATH: /home/nonroot
+    entrypoint: ['sh', '-c']
+    command:
+      - >-
+        python3 -m alembic upgrade head &&
+        python3 scripts/load_data.py --fixtures-dir tests/data/fixtures
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cdp-tenant
+
+  impact-assessor:
+    build:
+      context: ./impact-assessor
+      target: development
+    ports:
+      - '8085:8085'
+    depends_on:
+      localstack:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      impact-assessor-migration:
+        condition: service_completed_successfully
+    env_file:
+      - 'impact-assessor/compose/aws.env'
+    environment:
+      PORT: 8085
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_SQS_QUEUE_URL: http://localstack:4566/000000000000/nrf-impact-assessment-jobs
+      MONGO_URI: mongodb://mongodb:27017
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: nrf_impact
+      DB_LOCAL_PASSWORD: password
+      DB_IAM_AUTHENTICATION: 'false'
+      API_TESTING_ENABLED: 'true'
+    volumes:
+      - ./impact-assessor/app:/home/nonroot/app
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./impact-assessor/app
+          target: /home/nonroot/app
+          ignore:
+            - README.md
+            - '**/*.md'
+            - '**/test_*.py'
+            - tests/**/*
+            - .git/**/*
+            - .venv/**/*
+            - .pytest_cache/**/*
+            - .ruff_cache/**/*
+            - .vscode/**/*
+            - .github/**/*
+            - requirements-dev.txt
+            - pytest.ini
+            - .pre-commit-config.yaml
+            - sonar-project.properties
+            - LICENCE
+        - action: rebuild
+          path: ./impact-assessor/pyproject.toml
+          target: /home/nonroot/pyproject.toml
+    healthcheck:
+      test:
+        - 'CMD'
+        - 'python3'
+        - '-c'
+        - 'import urllib.request; urllib.request.urlopen("http://localhost:8085/health")'
+      interval: 5s
+      start_period: 30s
+      retries: 6
+    networks:
+      - cdp-tenant
+
+################################################################################
+
+volumes:
+  postgres-data:
+  mongodb-data:
+
+networks:
+  cdp-tenant:
+    name: cdp-tenant
+    driver: bridge
