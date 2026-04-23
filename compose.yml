@@ -181,6 +181,7 @@ services:
         GIT_HASH: ${GIT_HASH:-unknown}
     ports:
       - '3001:3001'
+      - '9229:9229'
     depends_on:
       squid:
         condition: service_healthy
@@ -264,6 +265,7 @@ services:
       target: development
     ports:
       - '3010:3000'
+      - '9230:9230'
     depends_on:
       squid:
         condition: service_healthy
