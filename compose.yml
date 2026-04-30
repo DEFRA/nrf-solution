@@ -211,13 +211,16 @@ services:
     volumes:
       - ./backend/src:/home/node/src
       - ./backend/package.json:/home/node/package.json
+      - ./backend/eslint.config.js:/home/node/eslint.config.js
+      - ./backend/vitest.config.js:/home/node/vitest.config.js
+      - ./overrides/vitest.backend.tilt.config.js:/home/node/vitest.tilt.config.js
+      - ./backend/babel.config.cjs:/home/node/babel.config.cjs
+      - ./backend/.vite:/home/node/.vite
     develop:
       watch:
         - action: sync
           path: ./backend/src
           target: /home/node/src
-          ignore:
-            - '**/*.test.js'
         - action: rebuild
           path: ./backend/package.json
           target: /home/node/package.json
@@ -298,13 +301,17 @@ services:
     volumes:
       - ./frontend/src:/home/node/src
       - ./frontend/package.json:/home/node/package.json
+      - ./frontend/eslint.config.js:/home/node/eslint.config.js
+      - ./frontend/vitest.config.js:/home/node/vitest.config.js
+      - ./overrides/vitest.frontend.tilt.config.js:/home/node/vitest.tilt.config.js
+      - ./frontend/babel.config.cjs:/home/node/babel.config.cjs
+      - ./frontend/stylelint.config.js:/home/node/stylelint.config.js
+      - ./frontend/.vite:/home/node/.vite
     develop:
       watch:
         - action: sync
           path: ./frontend/src
           target: /home/node/src
-          ignore:
-            - '**/*.test.js'
         - action: rebuild
           path: ./frontend/package.json
           target: /home/node/package.json
