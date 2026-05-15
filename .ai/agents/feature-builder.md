@@ -39,7 +39,7 @@ This is a meta-repo. The service repos are git submodules:
 - `backend/` — `nrf-backend`
 - `impact-assessor/` — `nrf-impact-assessor`
 - `journey-tests/` — `nrf-journey-tests`
-- `admin-frontend/` — `nrf-admin-frontend` (when added)
+- `admin-frontend/` — `nrf-admin-frontend`
 
 Each submodule is its own git repo. Branches and PRs are created per submodule.
 
@@ -79,20 +79,23 @@ Translate the implementation notes into a detailed, file-level plan per affected
 
 ### Stage 4 — Implement with tests
 
-Implement the plan, repo-by-repo:
+Implement the plan, repo-by-repo, **leading with acceptance tests where possible**:
 
-- Follow `.ai/rules/` for all code.
-- Add or update tests alongside implementation.
+- **Write the acceptance test first**, then implement until it passes:
+  - For a frontend page: write the page acceptance test (using `setupTestServer`, `setupMswServer`, `loadPage`, DOM Testing Library) before writing the controller or template — following the pattern in `nrf-frontend` page tests.
+  - For a backend API endpoint: write the integration test (real HTTP request via `server.inject`, assert on response status and body shape) before writing the controller and route — following the pattern in existing `get-controller.test.js` files.
+- Write unit tests for pure logic (mapping functions, helpers, filters) alongside implementation.
+- Follow `.ai/rules/` for all code and tests. Detailed testing patterns and conventions are in [nrf-library tests.md](../../node_modules/@defra/nrf-library/.ai/rules/tests.md).
 - Run the repo's test suite before declaring the repo done.
 - Report progress per repo. Stop for approval before the next stage.
 
 ### Stage 5 — Browser test
 
-The `test-in-browser` skill requires Claude Code's built-in Playwright `browser_*` tools, which are only available in the main Claude Code session — not inside agent sub-calls. You cannot run this stage yourself.
+The `test-in-browser` skill uses the Playwright MCP (`mcp__playwright__browser_*` tools). These are only available in the main Claude Code session — not inside agent sub-calls. You cannot run this stage yourself.
 
 1. Run `tilt up` in the meta-repo root to ensure all containers are running.
 2. Tell the user to invoke the `test-in-browser` skill from the main Claude Code session (not via a sub-agent), with the Jira ticket key and starting URL as args — e.g. `test-in-browser NRF2-702 http://localhost:3002/`. Confirm the correct port/URL with the user if unsure.
-2. Wait for the user to report results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
+3. Wait for the user to report results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
 
 ### Stage 6 — Code review
 
