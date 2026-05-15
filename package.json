@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@defra/nrf-library": "github:DEFRA/nrf-library#v1.0.0"
+    "@defra/nrf-library": "github:DEFRA/nrf-library#v1.1.0"
   }
 }
