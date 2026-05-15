@@ -327,6 +327,54 @@ services:
     networks:
       - cdp-tenant
 
+  admin-frontend:
+    build:
+      context: ./admin-frontend
+      target: development
+    ports:
+      - '3002:3000'
+      - '9231:9231'
+    depends_on:
+      squid:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      USE_SINGLE_INSTANCE_CACHE: 'true'
+      SESSION_COOKIE_PASSWORD: nrf-admin-frontend-secure-cookie-password-must-be-32-chars-minimum-abc123
+      SESSION_COOKIE_SECURE: 'false'
+      NRF_BACKEND_API_URL: http://backend:3001
+      HTTP_PROXY: http://squid:3128
+    volumes:
+      - ./admin-frontend/src:/home/node/src
+      - ./admin-frontend/package.json:/home/node/package.json
+      - ./admin-frontend/eslint.config.js:/home/node/eslint.config.js
+      - ./admin-frontend/vitest.config.js:/home/node/vitest.config.js
+      - ./admin-frontend/.vite:/home/node/.vite
+    develop:
+      watch:
+        - action: sync
+          path: ./admin-frontend/src
+          target: /home/node/src
+        - action: rebuild
+          path: ./admin-frontend/package.json
+          target: /home/node/package.json
+    healthcheck:
+      test:
+        - 'CMD'
+        - 'node'
+        - '-e'
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      start_period: 30s
+      retries: 6
+    networks:
+      - cdp-tenant
+
   ################################################################################
   # IMPACT ASSESSOR
   ################################################################################
