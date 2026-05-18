@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path') or d.get('tool_response',{}).get('filePath',''))\"); ROOT=\"/Users/jonwyatt/Sites/defra/nrf-solution\"; if [[ \"$FILE\" == \"$ROOT/backend/\"* ]]; then cd \"$ROOT/backend\" && source ~/.nvm/nvm.sh && nvm use --silent && npm run format --silent && npm run lint:fix --silent; elif [[ \"$FILE\" == \"$ROOT/frontend/\"* ]]; then cd \"$ROOT/frontend\" && source ~/.nvm/nvm.sh && nvm use --silent && npm run format --silent && npm run lint:js:fix --silent; elif [[ \"$FILE\" == \"$ROOT/admin-frontend/\"* ]]; then cd \"$ROOT/admin-frontend\" && source ~/.nvm/nvm.sh && nvm use --silent && npm run format --silent && npm run lint:js:fix --silent; fi",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

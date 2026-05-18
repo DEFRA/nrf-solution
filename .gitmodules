@@ -9,4 +9,7 @@
 	url = git@github.com:DEFRA/nrf-impact-assessor.git
 [submodule "journey-tests"]
 	path = journey-tests
-	url = https://github.com/DEFRA/nrf-journey-tests
+	url = git@github.com:DEFRA/nrf-journey-tests.git
+[submodule "admin-frontend"]
+	path = admin-frontend
+	url = git@github.com:DEFRA/nrf-admin-frontend.git

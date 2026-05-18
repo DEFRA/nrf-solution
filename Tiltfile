@@ -5,6 +5,7 @@ docker_compose('./compose.yml')
 # Labels for Docker Compose services
 dc_resource('backend',                  labels=['main'])
 dc_resource('frontend',                 labels=['main'])
+dc_resource('admin-frontend',           labels=['main'])
 dc_resource('impact-assessor',          labels=['main'])
 dc_resource('cdp-uploader',             labels=['stubs'])
 dc_resource('defra-id-stub',            labels=['stubs'])

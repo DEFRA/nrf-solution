@@ -3,3 +3,5 @@ nrf-backend
 nrf-frontend
 nrf-impact-assessor
 .DS_Store
+node_modules
+.playwright-mcp
