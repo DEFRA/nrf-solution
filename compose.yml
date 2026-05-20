@@ -208,6 +208,9 @@ services:
       DB_HOST: postgres
       CDP_UPLOADER_URL: http://cdp-uploader:7337
       HTTP_PROXY: http://squid:3128
+      # Service-to-service API keys (local dev only; real values come from CDP secrets)
+      BACKEND_API_KEY: local-dev-backend-key
+      IMPACT_ASSESSOR_API_KEY: local-dev-impact-assessor-key
     volumes:
       - ./backend/src:/home/node/src
       - ./backend/package.json:/home/node/package.json
@@ -298,6 +301,9 @@ services:
       # Browser-facing upload URL — must be reachable from the user's browser, not from within Docker
       CDP_UPLOADER_URL: http://localhost:7337
       HTTP_PROXY: http://squid:3128
+      # Service-to-service API keys (local dev only; real values come from CDP secrets)
+      BACKEND_API_KEY: local-dev-backend-key
+      IMPACT_ASSESSOR_API_KEY: local-dev-impact-assessor-key
     volumes:
       - ./frontend/src:/home/node/src
       - ./frontend/package.json:/home/node/package.json
@@ -436,6 +442,9 @@ services:
       API_TESTING_ENABLED: 'true'
       BACKEND_BASE_URL: http://backend:3001
       HTTP_PROXY: http://squid:3128
+      # Service-to-service API keys (local dev only; real values come from CDP secrets)
+      IMPACT_ASSESSOR_API_KEY: local-dev-impact-assessor-key
+      BACKEND_API_KEY: local-dev-backend-key
     volumes:
       - ./impact-assessor/app:/home/nonroot/app
     develop:
