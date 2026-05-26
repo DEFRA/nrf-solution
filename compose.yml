@@ -355,6 +355,8 @@ services:
       SESSION_COOKIE_SECURE: 'false'
       NRF_BACKEND_API_URL: http://backend:3001
       HTTP_PROXY: http://squid:3128
+      # Service-to-service API key (local dev only; real values come from CDP secrets)
+      BACKEND_API_KEY: local-dev-backend-key
     volumes:
       - ./admin-frontend/src:/home/node/src
       - ./admin-frontend/package.json:/home/node/package.json
