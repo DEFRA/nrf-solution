@@ -94,8 +94,10 @@ Implement the plan, repo-by-repo, **leading with acceptance tests where possible
 The `test-in-browser` skill uses the Playwright MCP (`mcp__playwright__browser_*` tools). These are only available in the main Claude Code session — not inside agent sub-calls. You cannot run this stage yourself.
 
 1. Run `tilt up` in the meta-repo root to ensure all containers are running.
-2. Tell the user to invoke the `test-in-browser` skill from the main Claude Code session (not via a sub-agent), with the Jira ticket key and starting URL as args — e.g. `test-in-browser NRF2-702 http://localhost:3002/`. Confirm the correct port/URL with the user if unsure.
-3. Wait for the user to report results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
+2. Identify which Tilt service names correspond to the submodules affected by this feature (e.g. `frontend`, `backend`, `impact-assessor`).
+3. Tell the user to invoke the `test-in-browser` skill from the main Claude Code session (not via a sub-agent), with the Jira ticket key and starting URL as args — e.g. `test-in-browser NRF2-702 http://localhost:3002/`. Confirm the correct port/URL with the user if unsure.
+4. While the user runs browser tests, tail the logs for each affected service to catch server-side errors that wouldn't be visible in the browser (e.g. unhandled exceptions, failed DB queries). After each scenario the user reports, run `tilt logs <service>` for each relevant service and check for errors.
+5. Wait for the user to report results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
 
 ### Stage 6 — Code review
 

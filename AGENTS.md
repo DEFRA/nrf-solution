@@ -37,6 +37,10 @@ Shared library: `@defra/nrf-library` (in `node_modules/`, npm-linked locally for
 - **Redis** — caching / session store.
 - **LocalStack** — emulates AWS S3, SQS, SNS for local dev.
 
+## Symlinks
+
+**Always create symlinks with relative paths** — never absolute. Absolute symlinks break for every other developer and in CI. Use `ln -s ../relative/path target` and verify with `ls -la`.
+
 ## Local dev
 
 - `tilt up` from repo root brings the whole stack up. Hot reload watches `backend/src/`, `frontend/src/`, `impact-assessor/app/`.
