@@ -6,3 +6,4 @@ nrf-impact-assessor
 node_modules
 .playwright-mcp
 .codegraph
+compose.override.yml

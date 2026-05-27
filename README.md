@@ -32,6 +32,16 @@ contain application code — it provides the glue to run everything together.
 ```sh
 git clone --recurse-submodules <this-repo-url>
 cd nrf-solution
+cp compose.override.template.yml compose.override.yml
+```
+
+Edit `compose.override.yml` and replace the placeholder `NOTIFY_API_KEY` with your
+real key from the [GOV.UK Notify dashboard](https://www.notifications.service.gov.uk).
+This file is gitignored so your secrets stay local.
+
+Then start the stack:
+
+```sh
 tilt up
 ```
 

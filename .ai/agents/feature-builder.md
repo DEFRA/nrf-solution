@@ -109,7 +109,7 @@ Only after the user confirms everything is complete:
 
 1. **Update the implementation notes file** (`docs/implementation-notes/<filename>.md`) to reflect what was actually built. Keep it concise — a good summary of what was implemented, any significant decisions made, and anything that differed from the original notes. No need for low-level implementation detail.
 
-2. **Open PRs** for each affected submodule using `gh pr create`. Each PR title should reference the Jira ticket key and a short description. The PR body should summarise the changes and link to the Jira ticket. Do not include a test plan — automated checks cover this.
+2. **Open PRs** for each affected submodule using `gh pr create`. Each PR title should reference the Jira ticket key and a short description. The PR body should summarise the changes and link to the Jira ticket. Do not include a test plan — features are tested against the acceptance criteria in the Jira ticket.
 
 3. **Post the PR URLs** in output.
 
