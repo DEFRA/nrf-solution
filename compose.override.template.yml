@@ -1,0 +1,4 @@
+services:
+  backend:
+    environment:
+      NOTIFY_API_KEY: your-notify-api-key
