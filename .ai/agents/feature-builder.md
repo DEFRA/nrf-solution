@@ -94,8 +94,10 @@ Implement the plan, repo-by-repo, **leading with acceptance tests where possible
 The `test-in-browser` skill uses the Playwright MCP (`mcp__playwright__browser_*` tools). These are only available in the main Claude Code session — not inside agent sub-calls. You cannot run this stage yourself.
 
 1. Run `tilt up` in the meta-repo root to ensure all containers are running.
-2. Tell the user to invoke the `test-in-browser` skill from the main Claude Code session (not via a sub-agent), with the Jira ticket key and starting URL as args — e.g. `test-in-browser NRF2-702 http://localhost:3002/`. Confirm the correct port/URL with the user if unsure.
-3. Wait for the user to report results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
+2. Identify which Tilt service names correspond to the submodules affected by this feature (e.g. `frontend`, `backend`, `impact-assessor`).
+3. Tell the user to invoke the `test-in-browser` skill from the main Claude Code session (not via a sub-agent), with the Jira ticket key and starting URL as args — e.g. `test-in-browser NRF2-702 http://localhost:3002/`. Confirm the correct port/URL with the user if unsure.
+4. While the user runs browser tests, tail the logs for each affected service to catch server-side errors that wouldn't be visible in the browser (e.g. unhandled exceptions, failed DB queries). After each scenario the user reports, run `tilt logs <service>` for each relevant service and check for errors.
+5. Wait for the user to report results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
 
 ### Stage 6 — Code review
 
@@ -107,7 +109,7 @@ Only after the user confirms everything is complete:
 
 1. **Update the implementation notes file** (`docs/implementation-notes/<filename>.md`) to reflect what was actually built. Keep it concise — a good summary of what was implemented, any significant decisions made, and anything that differed from the original notes. No need for low-level implementation detail.
 
-2. **Open PRs** for each affected submodule using `gh pr create`. Each PR title should reference the Jira ticket key and a short description. The PR body should summarise the changes and link to the Jira ticket. Do not include a test plan — automated checks cover this.
+2. **Open PRs** for each affected submodule using `gh pr create`. Each PR title should reference the Jira ticket key and a short description. The PR body should summarise the changes and link to the Jira ticket. Do not include a test plan — features are tested against the acceptance criteria in the Jira ticket.
 
 3. **Post the PR URLs** in output.
 
