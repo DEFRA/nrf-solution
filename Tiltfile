@@ -1,6 +1,9 @@
 load('ext://uibutton', 'cmd_button', 'text_input')
 
-docker_compose('./compose.yml')
+compose_files = ['./compose.yml']
+if os.path.exists('./compose.override.yml'):
+    compose_files.append('./compose.override.yml')
+docker_compose(compose_files)
 
 # Labels for Docker Compose services
 dc_resource('backend',                  labels=['main'])
