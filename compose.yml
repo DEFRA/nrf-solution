@@ -265,6 +265,36 @@ services:
     networks:
       - cdp-tenant
 
+  # Mock Entra ID (Azure AD) OIDC provider for the staff-facing admin-frontend.
+  # Distinct from defra-id-stub, which mocks the citizen-facing DEFRA ID provider.
+  # NODE_ENV=production so it uses ECS logging (the image has no pino-pretty).
+  cdp-portal-stubs:
+    image: defradigital/cdp-portal-stubs:latest
+    platform: linux/amd64
+    ports:
+      - '3939:3939'
+    environment:
+      PORT: 3939
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongodb:27017/
+      MONGO_DATABASE: cdp-portal-stubs
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      cdp-tenant:
+        # The discovery document echoes back the request's Host header as the endpoint
+        # base, so the browser reaches authorize/logout via the mapped host port while
+        # admin-frontend's server-side token/jwks fetch resolves the same hostname
+        # inside Docker through this alias.
+        aliases:
+          - cdp.127.0.0.1.sslip.io
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:3939/6f504113-6b64-43f2-ade9-242e05780007/v2.0/.well-known/openid-configuration || exit 1']
+      interval: 5s
+      start_period: 20s
+      retries: 6
+
   frontend:
     build:
       context: ./frontend
@@ -345,6 +375,8 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+      cdp-portal-stubs:
+        condition: service_healthy
     environment:
       PORT: 3000
       NODE_ENV: development
@@ -355,6 +387,12 @@ services:
       SESSION_COOKIE_SECURE: 'false'
       NRF_BACKEND_API_URL: http://backend:3001
       HTTP_PROXY: http://squid:3128
+      # Don't proxy the mock OIDC provider — it's only reachable on the local Docker network
+      NO_PROXY: cdp.127.0.0.1.sslip.io,localhost,127.0.0.1
+      # Mock Entra ID auth locally: use the OIDC stub + mock Cognito token, no real Azure/AWS.
+      AZURE_CREDENTIALS_ENABLE_MOCKING: 'true'
+      APP_BASE_URL: http://localhost:3002
+      OIDC_WELL_KNOWN_CONFIGURATION_URL: http://cdp.127.0.0.1.sslip.io:3939/6f504113-6b64-43f2-ade9-242e05780007/v2.0/.well-known/openid-configuration
       # Service-to-service API key (local dev only; real values come from CDP secrets)
       BACKEND_API_KEY: local-dev-backend-key
     volumes:
