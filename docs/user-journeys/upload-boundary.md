@@ -11,3 +11,4 @@ https://nrf-frontend.test.cdp-int.defra.cloud
 4. Boundary file upload status
    1. Wait until file has been scanned and page redirects automatically
 5. Boundary Map
+   1. Submit

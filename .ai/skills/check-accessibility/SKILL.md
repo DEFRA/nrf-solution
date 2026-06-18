@@ -8,8 +8,7 @@ tools: Bash, Read, mcp__playwright__browser_navigate, mcp__playwright__browser_n
 
 ## Parameters
 
-`args` is a path to a **journeys markdown file**, or a URL to a page to test.
-
+`args` is a path to a **journeys markdown file** (by default look in docs/user-journeys folder), or a single URL to a page to test.
 
 Each numbered step within a journey is a separate page.
 
