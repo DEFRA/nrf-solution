@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "additionalDirectories": ["../nrf-prototypes"],
+    "allow": [
+      "WebFetch(domain:design-system.service.gov.uk)",
+      "Bash(npx vitest:*)",
+      "Read(../nrf-prototypes/**)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {

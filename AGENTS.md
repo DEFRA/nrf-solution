@@ -19,8 +19,6 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 | `journey-tests/` | `nrf-journey-tests` | Cucumber + Playwright | Cross-service E2E |
 | `admin-frontend/` | `nrf-admin-frontend` | Hapi.js + Nunjucks | Internal admin UI |
 
-Shared library: `@defra/nrf-library` (in `node_modules/`, npm-linked locally for development).
-
 ## Service comms
 
 - All services run in Docker on the `cdp-tenant` network and reach each other by Docker service name (e.g. `http://backend:3001`).
@@ -49,10 +47,48 @@ Shared library: `@defra/nrf-library` (in `node_modules/`, npm-linked locally for
 - `check-submodules.sh` reports if any submodule is behind its remote `main`.
 - `format.sh` runs formatters for all three code services.
 
+## Frontend architecture (`frontend/`)
+
+Entry point: `src/index.js` → `src/server/server.js` creates the Hapi server. Routes are registered via `src/server/router.js`. Each route is a Hapi plugin in its own directory under `src/server/`.
+
+**Configuration:** `convict` (`src/config/config.js`) with environment variable overrides. Access via `config.get('key.path')`.
+
+### Views (Nunjucks)
+
+- **Layout:** `src/server/common/templates/layouts/page.njk` extends `govuk/template.njk`
+- **Page templates:** Located alongside their route module (e.g. `src/server/home/index.njk`), extend `layouts/page.njk`
+- **Custom components:** `src/server/common/components/{name}/` with `macro.njk`, `template.njk`, and optional SCSS
+- **Nunjucks path resolution:** Views are resolved relative to `src/server/` — so `h.view('home/index')` maps to `src/server/home/index.njk`
+- **Filters/globals:** `src/config/nunjucks/filters/` and `src/config/nunjucks/globals/`
+
+### Client-side assets
+
+- **JS:** `src/client/javascripts/application.js` — bundled by Webpack
+- **SCSS:** `src/client/stylesheets/application.scss` — imports GOV.UK Frontend styles
+- **Built output:** `.public/` (gitignored)
+
+## Backend architecture (`backend/`)
+
+Entry point: `src/index.js` → `src/common/helpers/start-server.js` → `src/server.js` (`createServer()`).
+
+Plugins registered in order: `requestLogger` → `requestTracing` → `secureContext` → `pulse` → `router`.
+
+**Configuration:** `convict` (`src/config.js`) with environment-based values and strict validation.
+
+**Routes:** Defined in `src/routes/`, registered via `src/plugins/router.js`. Each file exports an array of route configs.
+
+**Proxy:** All outbound HTTP uses a forward proxy. `src/common/helpers/proxy/setup-proxy.js` configures a global `undici` ProxyAgent so `fetch()` is automatically proxy-aware.
+
+**Testing:** Vitest (`vitest.config.js`). `mockReset: true` is set globally — do not add `vi.clearAllMocks()` or `vi.resetAllMocks()` to individual test files. Set mock return values in `beforeEach`.
+
+**Error handling:** Use `@hapi/boom` for HTTP errors (`Boom.notFound()`, etc.).
+
+**Module system:** ES modules (`"type": "module"`). All imports use `.js` extensions.
+
 ## Tools available to agents
 
-- **Coding rules**: [.ai/rules/index.md](./.ai/rules/index.md) (symlink → `node_modules/@defra/nrf-library/.ai/rules/`).
-- **Jira/Confluence scripts**: `node_modules/@defra/nrf-library/.ai/skills/tools/{jira,confluence}/`. Require `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` — see [atlassian-credentials.md](./node_modules/@defra/nrf-library/docs/ai/atlassian-credentials.md).
-- **Code-reviewer agent**: [code-reviewer.md](./node_modules/@defra/nrf-library/.ai/agents/code-reviewer.md) — run across changed code after implementation.
-- **Browser-test skill**: [browser-test/SKILL.md](./node_modules/@defra/nrf-library/.ai/skills/browser-test/SKILL.md) — verify a feature against AC in a real browser.
+- **Coding rules**: [.ai/rules/index.md](./.ai/rules/index.md).
+- **Jira/Confluence scripts**: `.ai/skills/tools/{jira,confluence}/`. Require `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` — see [atlassian-credentials.md](./docs/ai/atlassian-credentials.md).
+- **Code-reviewer agent**: [code-reviewer.md](./.ai/agents/code-reviewer.md) — run across changed code after implementation.
+- **Browser-test skill**: [test-in-browser/SKILL.md](./.ai/skills/test-in-browser/SKILL.md) — verify a feature against AC in a real browser.
 - **Feature-builder agent**: [feature-builder.md](./.ai/agents/feature-builder.md) — staged cross-repo feature implementation from a Jira ticket + impl notes.
