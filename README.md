@@ -23,9 +23,5 @@ contain application code — it provides the glue to run everything together.
 
 [Running & workflow](./docs/running-workflow.md)
 
+[AI agent tools](./docs/ai/index.md)
 
-## AI agent tools
-
-- [Setting Atlassian credentials](../nrf-solution/docs/ai/atlassian-credentials.md)
-- [Code reviewer agent & skill](../nrf-solution/docs/ai/code-reviewer.md)
-- [Test in browser skill](../nrf-solution/docs/ai/test-in-browser.md)

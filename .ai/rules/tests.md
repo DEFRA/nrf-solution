@@ -49,6 +49,7 @@ paths:
 - Test titles should be in readable English and avoid implementation details.
 - Do not define fixtures, helper functions, or large data objects inline in test files. Extract them to `src/test-utils/` (helpers) or `src/test-utils/fixtures/` (data). This keeps test files focused on assertions and makes fixtures reusable across tests.
 - Re-use fixture data across test files rather than duplicating it — this makes it easier to maintain data contracts, especially without TypeScript.
+- Test assertion blocks should begin with 'it' rather than 'test'
 
 ## Config values in tests
 
