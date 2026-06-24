@@ -77,7 +77,7 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 
 ### HTTP status codes
 
-- Always use `statusCodes.<name>` from `src/server/common/constants/status-codes.js` rather than literal numbers (e.g. `statusCodes.noContent` not `204`)
+- Always use `statusCodes.<name>` from `src/server/common/constants/status-codes.js` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
 
 ## Hapi route & controller conventions
 
@@ -106,6 +106,10 @@ Do not use arrow function syntax for `handler` (`handler: async (request, h) => 
 ### Responses
 
 Always return `h.response(payload)` rather than returning a raw object — Hapi will not set status codes or headers on a raw return value. Return `Boom.*()` errors directly (they do not need to be wrapped in `h.response()`).
+
+## Quote helpers (`src/server/quote/helpers/`)
+
+Each helper lives in its own subfolder as `<name>/index.js` alongside `<name>/index.test.js` — consistent with `quote-session-cache/`, `quote-schema/`, etc. Do not place helper files directly in `helpers/`.
 
 ## Session (Yar)
 
