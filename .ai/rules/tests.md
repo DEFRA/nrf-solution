@@ -17,7 +17,7 @@ paths:
 
 ## Mocking
 
-- minimise mocking: only mock at the boundary of the system under test (eg external HTTP calls, browser APIs). Do not mock internal library functions like `retryAsyncOperation` — use fake timers (`vi.useFakeTimers()`) instead to test time-dependent behaviour without real delays
+- minimise mocking: only mock at the boundary of the system under test (eg external HTTP calls, browser APIs). Do not mock internal helpers or session utilities in controller tests — let them run real and push mocking to the actual external boundary (HTTP via MSW, AWS SDKs, etc). When a controller test would require mocking an internal helper, that's a signal the test should be an acceptance test using a real server instead. Do not mock internal library functions like `retryAsyncOperation` — use fake timers (`vi.useFakeTimers()`) instead to test time-dependent behaviour without real delays
 - for mocking responses from service calls out to other APIs, prefer Mock Service Worker rather than mocking fetch or HTTP clients like Wreck ([example](../../src/server/quote/check-your-answers/controller-post.test.js))
 - no need to reset or clear mocks within test files as `mockReset` is set globally for vitest
 - the test suite spins up a real redis container so tests **don't** have to mock functions that wrap it eg session cache
