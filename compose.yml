@@ -488,6 +488,32 @@ services:
     networks:
       - cdp-tenant
 
+  ################################################################################
+  # PERFORMANCE TESTS
+  ################################################################################
+
+  performance-tests:
+    build:
+      context: ./performance-tests
+    entrypoint: ['tail', '-f', '/dev/null']
+    depends_on:
+      frontend:
+        condition: service_healthy
+    env_file:
+      - 'backend/compose/aws.env'
+    environment:
+      ENVIRONMENT: local
+      SERVICE_ENDPOINT: frontend
+      SERVICE_PORT: 3000
+      SERVICE_URL_SCHEME: http
+    volumes:
+      - ./performance-tests/reports:/opt/perftest/reports
+      - ./performance-tests/logs:/opt/perftest/logs
+    extra_hosts:
+      - 'localhost:host-gateway'
+    networks:
+      - cdp-tenant
+
 ################################################################################
 
 volumes:
