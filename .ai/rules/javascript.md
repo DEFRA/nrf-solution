@@ -8,7 +8,7 @@ paths:
 
 ## Functions
 
-- Use short, single-purpose functions. Any over 75 lines will be failed by SonarQube, but aim to make them shorter.
+- Use short, single-purpose functions. Any over 75 lines will be failed by SonarQube, but aim to make them shorter. When a handler or function grows beyond ~20 lines, look for a named helper to extract — especially for logic that can be tested independently (rate limiting, cache reads, transformations). Keep controllers thin: they should orchestrate calls to helpers, not contain the logic themselves.
 - If there are multiple function params, use an object param instead
 - For functions that accept params that include structured objects, add JSDoc annotations for the entire signature (all params, not just the structured ones) — this applies to all functions, including module-private helpers, not just exported ones. Functions where every param is a primitive don't need JSDoc as the types can be inferred.
 - All functions should be named, not anonymous, to improve readability in stack traces

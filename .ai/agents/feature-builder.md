@@ -86,6 +86,7 @@ Implement the plan, repo-by-repo, **leading with acceptance tests where possible
   - For a backend API endpoint: write the integration test (real HTTP request via `server.inject`, assert on response status and body shape) before writing the controller and route — following the pattern in existing `get-controller.test.js` files.
 - Write unit tests for pure logic (mapping functions, helpers, filters) alongside implementation.
 - Follow `.ai/rules/` for all code and tests. Detailed testing patterns and conventions are in [nrf-library tests.md](../../node_modules/@defra/nrf-library/.ai/rules/tests.md).
+  - For any new frontend quote journey page, follow the conventions in [quote-journey-page skill](../skills/quote-journey-page/SKILL.md) for file structure, controller wiring, Joi rules, and test patterns.
 - Run the repo's test suite before declaring the repo done.
 - Report progress per repo. Stop for approval before the next stage.
 

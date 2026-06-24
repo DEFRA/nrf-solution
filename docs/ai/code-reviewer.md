@@ -2,6 +2,8 @@
 
 Reviews changed files against project coding standards defined in `.ai/rules/`.
 
+Agent definition: [`.ai/agents/code-reviewer.md`](../../.ai/agents/code-reviewer.md)
+
 ## Via the agent (recommended)
 
 The `code-reviewer` agent runs as a subagent with persistent memory, accumulating knowledge of recurring patterns across reviews.
