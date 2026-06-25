@@ -64,7 +64,7 @@ A results table with one row per failed check, grouped by journey and page (and 
 To trigger form validation, submit the form without selecting an option or entering a value. Then assess the page accessibility after it reloads.
 - Errors are exposed twice: in a error summary at the top of the page (as a list of links to the offending fields) and inline next to each field via an error message. Field IDs in the summary links `href` match the field's `id` exactly.
 - The inline error message for a form fieldset is associated with it (aria-describedby on the fieldset)
-- Focus is managed: keyboard focus moves to the error summary on validation failure; focus returns to the trigger when a modal closes; focus is never trapped.
+- Focus is managed: keyboard focus moves to the error summary when a form page reloads with a validation error
 
 ### Tables
 
@@ -89,4 +89,16 @@ To trigger form validation, submit the form without selecting an option or enter
 - If the map supports drawing, the user should be able to draw / edit / delete a boundary using the keyboard
 - If a page does an async update to content then either the change should be announced in an ARIA region, or focus should be sent to that panel subheading so the user can continue from there
 - On page load, the functionality available on the different map panels should be clear to the user via the heading structure
+
+#### Keyboard technique for the draw-boundary map
+
+Use `mcp__playwright__browser_evaluate` (not `mcp__playwright__browser_click`) for all map button interactions — Playwright click times out on map buttons because they don't trigger navigation. Use `mcp__playwright__browser_press_key` for arrow keys and Enter once focus is on the map.
+
+1. **Wait for map to load** — after navigating to the page, wait ~2 s before interacting (`new Promise(r => setTimeout(r, 2000))`).
+2. **Search** — `evaluate` to call `.click()` on `[aria-label="Open search"]`, then `mcp__playwright__browser_type` into `input[placeholder="Search"]`, wait 1.5 s for results, then `press_key` ArrowDown + Enter. Confirm the URL centre coordinates have changed.
+3. **Wait for pan** — wait another 1.5 s after selecting a search result.
+4. **Enter draw mode** — `evaluate` to `.focus()` the `[data-draw-action="draw"]` button, then `press_key` Enter. Confirm `#draw-boundary-map-draw-cancel` is present in the DOM before proceeding.
+5. **Draw a triangle** — place three points using `press_key` Enter, panning between them with `evaluate`-dispatched ArrowRight / ArrowDown keyboard events (dispatch on `document.activeElement`). After the third point, the Done button should be enabled.
+6. **Click Done** — `evaluate` to check Done is not disabled, then `evaluate` to `.focus()` the Done button, then `press_key` Enter.
+7. **Save and continue** — Tab once (`press_key` Tab), confirm `document.activeElement` is the "Save and continue" button, then `press_key` Enter. Confirm the URL changed to the next page.
 
