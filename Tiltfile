@@ -20,6 +20,7 @@ dc_resource('mongodb',                  labels=['infra'])
 dc_resource('caddy',                    labels=['infra'])
 dc_resource('liquibase',                labels=['migrations'])
 dc_resource('impact-assessor-migration',labels=['migrations'])
+dc_resource('performance-tests',        labels=['perf'])
 
 # ── Stop / Start buttons for failure simulation ─────────────────────────────
 # Attaches inline buttons to each service card — no extra sidebar entries.
@@ -38,6 +39,24 @@ for svc in ['backend', 'frontend', 'impact-assessor', 'postgres', 'redis', 'loca
         text='Start',
         icon_name='play_arrow',
     )
+
+# ── Performance test trigger ────────────────────────────────────────────────
+cmd_button(
+    'performance-tests:run',
+    argv=[
+        'bash', '-c',
+        'docker compose exec -T -e THREAD_COUNT=$THREAD_COUNT -e RAMPUP_SECONDS=$RAMPUP_SECONDS -e DURATION_SECONDS=$DURATION_SECONDS -e TEST_SCENARIO=$TEST_SCENARIO performance-tests ./entrypoint.sh',
+    ],
+    resource='performance-tests',
+    text='Run perf tests',
+    icon_name='speed',
+    inputs=[
+        text_input('THREAD_COUNT',     default='35',   label='Threads per journey'),
+        text_input('RAMPUP_SECONDS',   default='30',   label='Ramp-up (s)'),
+        text_input('DURATION_SECONDS', default='300',  label='Duration (s)'),
+        text_input('TEST_SCENARIO',    default='test', label='Scenario'),
+    ],
+)
 
 # ── SQS / SNS helpers on the localstack card ────────────────────────────────
 # Output appears in the localstack log panel.

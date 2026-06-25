@@ -13,3 +13,6 @@
 [submodule "admin-frontend"]
 	path = admin-frontend
 	url = git@github.com:DEFRA/nrf-admin-frontend.git
+[submodule "performance-tests"]
+	path = performance-tests
+	url = git@github.com:DEFRA/nrf-performance-tests.git

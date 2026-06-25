@@ -25,3 +25,5 @@ contain application code — it provides the glue to run everything together.
 
 [AI agent tools](./docs/ai/index.md)
 
+[Performance testing](./docs/perf-testing.md)
+
