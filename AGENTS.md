@@ -6,6 +6,7 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 
 - Before making code changes, read [.ai/rules/index.md](./.ai/rules/index.md) for coding standards.
 - Run `nvm use` before any npm/node commands (Node >=24, `.nvmrc` checked in).
+- **Never read `.env*` or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
 
 ## Repo layout
 
