@@ -1,4 +1,4 @@
-load('ext://uibutton', 'cmd_button', 'text_input')
+load('ext://uibutton', 'cmd_button', 'text_input', 'choice_input')
 
 compose_files = ['./compose.yml']
 if os.path.exists('./compose.override.yml'):
@@ -55,6 +55,44 @@ cmd_button(
         text_input('RAMPUP_SECONDS',   default='30',   label='Ramp-up (s)'),
         text_input('DURATION_SECONDS', default='300',  label='Duration (s)'),
         text_input('TEST_SCENARIO',    default='test', label='Scenario'),
+    ],
+)
+
+# ── Journey tests (host-run) ────────────────────────────────────────────────
+# Runs the Playwright/Cucumber suite on the HOST (not in a container) against the
+# Tilt frontend at localhost:3010. The browser must run on the host so it hits
+# the same localhost origins a real user does — including the cdp-uploader form
+# action on localhost:7337 — so the upload journey works with no extra wiring.
+# Manual trigger; toggle E2E_HEADFUL=true to watch the browser drive the journey.
+local_resource(
+    'journey-tests',
+    cmd='./run-journey-tests.sh',
+    auto_init=False,
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=['e2e'],
+    resource_deps=['frontend'],
+)
+
+# Build the feature dropdown from the actual .feature files at Tiltfile-eval
+# time, so the list stays in sync as features are added or removed.
+_feature_files = sorted([
+    os.path.basename(p)
+    for p in listdir('journey-tests/test/features')
+    if p.endswith('.feature')
+])
+_feature_choices = ['Run all features'] + _feature_files
+
+cmd_button(
+    'journey-tests:run',
+    argv=['bash', '-c', 'E2E_HEADFUL="$E2E_HEADFUL" BROWSER="$BROWSER" TAGS="$TAGS" FEATURE="$FEATURE" ./run-journey-tests.sh'],
+    resource='journey-tests',
+    text='Run journey tests',
+    icon_name='travel_explore',
+    inputs=[
+        choice_input('FEATURE', choices=_feature_choices, label=''),
+        text_input('E2E_HEADFUL', default='false',    label='Headful — watch the browser (true/false)'),
+        text_input('BROWSER',     default='chromium', label='Browser (chromium/firefox/webkit)'),
+        text_input('TAGS',        default='',         label='Cucumber tag filter (optional)'),
     ],
 )
 
