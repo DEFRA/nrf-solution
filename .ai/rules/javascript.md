@@ -18,6 +18,11 @@ paths:
 
 - Favour functional approach over instantiable classes
 
+## Native methods
+
+- Prefer built-in native methods over manual or library reimplementations when one exists. For example use `Object.hasOwn(obj, key)` over `Object.prototype.hasOwnProperty.call(...)`, `structuredClone(x)` over `JSON.parse(JSON.stringify(x))`, and `array.at(-1)` over `array[array.length - 1]`. Native methods are clearer, faster, and less error-prone.
+- Never name an import, variable, or function the same as a native built-in, as it shadows the native one and is flagged by SonarQube rule S2424 ("Remove this override of ..."). Common offenders: `escape`/`unescape`, `name`, `event`, `top`, `status`, `length`, `closed`. Alias library imports to a clearer name instead — e.g. `import escapeHtml from 'lodash/escape.js'` rather than `import escape from 'lodash/escape.js'`.
+
 ## Server-side code
 
 ### Config
