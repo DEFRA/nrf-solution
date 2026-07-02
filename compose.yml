@@ -304,6 +304,7 @@ services:
       # Service-to-service API keys (local dev only; real values come from CDP secrets)
       BACKEND_API_KEY: local-dev-backend-key
       IMPACT_ASSESSOR_API_KEY: local-dev-impact-assessor-key
+      FRONTEND_API_KEY: local-dev-frontend-key
     volumes:
       - ./frontend/src:/home/node/src
       - ./frontend/package.json:/home/node/package.json
@@ -354,9 +355,13 @@ services:
       SESSION_COOKIE_PASSWORD: nrf-admin-frontend-secure-cookie-password-must-be-32-chars-minimum-abc123
       SESSION_COOKIE_SECURE: 'false'
       NRF_BACKEND_API_URL: http://backend:3001
+      NRF_FRONTEND_API_URL: http://frontend:3000
       HTTP_PROXY: http://squid:3128
-      # Service-to-service API key (local dev only; real values come from CDP secrets)
+      # Service-to-service API keys (local dev only; real values come from CDP secrets)
       BACKEND_API_KEY: local-dev-backend-key
+      FRONTEND_API_KEY: local-dev-frontend-key
+      # Auth bypass for local dev — skips OIDC entirely
+      DISABLE_AUTH: true
     volumes:
       - ./admin-frontend/src:/home/node/src
       - ./admin-frontend/package.json:/home/node/package.json
