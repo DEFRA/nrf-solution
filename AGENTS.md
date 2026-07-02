@@ -36,6 +36,10 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 - **Redis** — caching / session store.
 - **LocalStack** — emulates AWS S3, SQS, SNS for local dev.
 
+## Submodule pointers
+
+When raising a PR on `nrf-solution`, **do not commit submodule pointer updates alongside feature changes**. Submodule pointers (the SHA recorded for each submodule) are updated separately once the submodule PRs are merged into their `main` branches. Mixing pointer bumps into a feature PR creates confusing diffs and makes it hard to review the actual changes.
+
 ## Symlinks
 
 **Always create symlinks with relative paths** — never absolute. Absolute symlinks break for every other developer and in CI. Use `ln -s ../relative/path target` and verify with `ls -la`.
