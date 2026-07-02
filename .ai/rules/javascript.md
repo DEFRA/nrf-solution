@@ -82,7 +82,8 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 
 ### HTTP status codes
 
-- Always use `statusCodes.<name>` from `src/server/common/constants/status-codes.js` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
+- Always use `statusCodes.<name>` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
+- Import `statusCodes` from `@defra/cdp-validation-kit` if it is available as a dependency: `import { statusCodes } from '@defra/cdp-validation-kit'`. If not available, use the local `src/server/common/constants/status-codes.js` copy. Do not duplicate status code values inline.
 
 ## Hapi route & controller conventions
 
