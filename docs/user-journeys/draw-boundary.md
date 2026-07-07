@@ -3,10 +3,13 @@
 https://nrf-frontend.test.cdp-int.defra.cloud
 
 1. Start page
-2. Boundary type - 
+2. Planning application type
+   1. Submit with no option selected
+   2. Select Full planning permission
+3. Boundary type
    1. Submit with no option selected
    2. Select Draw on a map
-3. Map page
+4. Map page
    1. Use the search to find "Wroxham"
    2. Change map style to "Satellite"
    3. Press Draw then draw a triangle near the centre of the map
@@ -14,26 +17,26 @@ https://nrf-frontend.test.cdp-int.defra.cloud
    5. Delete the shape
    6. Draw another triangle
    7. Continue to the next page
-4. Type of development
+5. Type of development
     1. Submit with no option selected
    2. Select both options
-5. Residential units
+6. Residential units
     1. Submit with no option selected
    2. Submit with valid number
-6. Maximum number of people
+7. Maximum number of people
     1. Submit with no option selected
     2. Submit with valid number
-7. Enter email address
+8. Enter email address
     1. Submit with no option selected
     2. Submit with valid email
-8. Check your answers
+9. Check your answers
    1. Change the red line boundary
-9. Map page
+10. Map page
     1. Edit the boundary to add a point
-10. Type of development
-11. Residential units
-12. Maximum number of people
-13. Enter email address
-14. Check your answers
+11. Type of development
+12. Residential units
+13. Maximum number of people
+14. Enter email address
+15. Check your answers
     1. Submit
-15. Confirmation page
+16. Confirmation page
