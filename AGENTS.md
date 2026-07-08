@@ -40,6 +40,19 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 
 When raising a PR on `nrf-solution`, **do not commit submodule pointer updates alongside feature changes**. Submodule pointers (the SHA recorded for each submodule) are updated separately once the submodule PRs are merged into their `main` branches. Mixing pointer bumps into a feature PR creates confusing diffs and makes it hard to review the actual changes.
 
+## Cross-repo PR dependencies
+
+When PRs across repos depend on each other, add to **each** PR description:
+
+```
+Depends-On: <URL of the other PR>
+```
+
+Add a `Depends-On` line for **every** repo the PR depends on. Common cases:
+- A frontend PR that changes the quote journey → depends on the backend PR (schema/API change) and the journey-tests PR (new steps)
+- A backend PR that adds a new field → depends on the frontend PR (which sends it) and the journey-tests PR (which exercises it)
+- A journey-tests PR → depends on both the frontend and backend PRs it exercises
+
 ## Symlinks
 
 **Always create symlinks with relative paths** — never absolute. Absolute symlinks break for every other developer and in CI. Use `ln -s ../relative/path target` and verify with `ls -la`.
