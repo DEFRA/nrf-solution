@@ -6,12 +6,24 @@ https://nrf-frontend.test.cdp-int.defra.cloud
 2. Planning application type
    1. Submit with no option selected
    2. Select Full planning permission
-3. Boundary type
-    1. Submit with no option selected
-    2. Select Upload a file
-4. Upload a red line boundary file
+3. Are you developing housing units?
+   1. Submit with no option selected
+   2. Select Yes
+4. How many residential units in this development?
+   1. Submit with no option selected
+   2. Submit with valid number
+5. Boundary type
+   1. Submit with no option selected
+   2. Select Upload a file
+6. Upload a red line boundary file
    1. Choose file (journey-tests/test/fixtures/BnW_small_under_1_hectare.geojson)
-5. Boundary file upload status
+7. Boundary file upload status
    1. Wait until file has been scanned and page redirects automatically
-6. Boundary Map
+8. Boundary Map
    1. Submit
+9. Enter email address
+   1. Submit with no option selected
+   2. Submit with valid email
+10. Check your answers
+    1. Submit
+11. Confirmation page

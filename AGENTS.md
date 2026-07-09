@@ -42,16 +42,21 @@ When raising a PR on `nrf-solution`, **do not commit submodule pointer updates a
 
 ## Cross-repo PR dependencies
 
-When PRs across repos depend on each other, add to **each** PR description:
+When PRs across repos depend on each other, every PR in the group must reference **all** the others — not just upstream dependencies. This means if frontend, backend, and journey-tests all change together, each of the three PRs gets two `Depends-On` lines pointing at the other two.
+
+Add to **each** PR description:
 
 ```
-Depends-On: <URL of the other PR>
+Depends-On: <URL of PR 1>
+Depends-On: <URL of PR 2>
 ```
 
-Add a `Depends-On` line for **every** repo the PR depends on. Common cases:
-- A frontend PR that changes the quote journey → depends on the backend PR (schema/API change) and the journey-tests PR (new steps)
-- A backend PR that adds a new field → depends on the frontend PR (which sends it) and the journey-tests PR (which exercises it)
-- A journey-tests PR → depends on both the frontend and backend PRs it exercises
+**Rule: if merging this PR alone (without the others) would break anything, list all the others.**
+
+Common cases:
+- A frontend PR that changes the quote journey → `Depends-On` the backend PR and the journey-tests PR
+- A backend PR that changes the API schema → `Depends-On` the frontend PR and the journey-tests PR
+- A journey-tests PR → `Depends-On` the frontend PR and the backend PR
 
 ## Symlinks
 
