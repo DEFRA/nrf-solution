@@ -58,6 +58,10 @@ Common cases:
 - A backend PR that changes the API schema → `Depends-On` the frontend PR and the journey-tests PR
 - A journey-tests PR → `Depends-On` the frontend PR and the backend PR
 
+## PR descriptions
+
+Don't include a "Test plan" section in PR descriptions — features are verified against Jira acceptance criteria, not a PR checklist.
+
 ## Symlinks
 
 **Always create symlinks with relative paths** — never absolute. Absolute symlinks break for every other developer and in CI. Use `ln -s ../relative/path target` and verify with `ls -la`.
