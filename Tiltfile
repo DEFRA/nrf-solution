@@ -64,9 +64,19 @@ cmd_button(
 # the same localhost origins a real user does — including the cdp-uploader form
 # action on localhost:7337 — so the upload journey works with no extra wiring.
 # Manual trigger; toggle E2E_HEADFUL=true to watch the browser drive the journey.
+#
+# NOTIFY_API_KEY is read from compose.override.yml (the backend's own copy of
+# the secret) rather than journey-tests/.env.local, so the key only needs to
+# be set in one place for devs running the suite through Tilt.
+_notify_api_key = ''
+if os.path.exists('./compose.override.yml'):
+    _notify_api_key = read_yaml('./compose.override.yml') \
+        .get('services', {}).get('backend', {}).get('environment', {}).get('NOTIFY_API_KEY', '')
+
 local_resource(
     'journey-tests',
     cmd='./run-journey-tests.sh',
+    env={'NOTIFY_API_KEY': _notify_api_key},
     auto_init=False,
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['e2e'],
@@ -84,15 +94,14 @@ _feature_choices = ['Run all features'] + _feature_files
 
 cmd_button(
     'journey-tests:run',
-    argv=['bash', '-c', 'E2E_HEADFUL="$E2E_HEADFUL" BROWSER="$BROWSER" TAGS="$TAGS" FEATURE="$FEATURE" ./run-journey-tests.sh'],
+    # Always headed, in Chrome — E2E_HEADFUL=true makes run-journey-tests.sh
+    # set BROWSER_CHANNEL=chrome, so BROWSER doesn't need setting separately.
+    argv=['bash', '-c', 'NOTIFY_API_KEY=%s E2E_HEADFUL=true FEATURE="$FEATURE" ./run-journey-tests.sh' % _notify_api_key],
     resource='journey-tests',
     text='Run journey tests',
     icon_name='travel_explore',
     inputs=[
         choice_input('FEATURE', choices=_feature_choices, label=''),
-        text_input('E2E_HEADFUL', default='false',    label='Headful — watch the browser (true/false)'),
-        text_input('BROWSER',     default='chromium', label='Browser (chromium/firefox/webkit)'),
-        text_input('TAGS',        default='',         label='Cucumber tag filter (optional)'),
     ],
 )
 
