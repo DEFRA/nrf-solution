@@ -14,6 +14,11 @@ paths:
 - All functions should be named, not anonymous, to improve readability in stack traces
 - Prefer named exports (`export const`, `export function`) over default exports. Default exports are acceptable for page-level single-purpose files where the file name already conveys the identity (e.g. `get-view-model.js`, `form-validation.js`) — but always name the function even then: `export default function getViewModel() { ... }` not `export default function () { ... }`
 
+## Comments
+
+- Don't add comments that explain what the change does or restate what the code already makes clear (e.g. "returns a machine-readable code, not display text" above a function that obviously returns a code). Only comment non-obvious *why* — a constraint, a workaround, an ordering requirement.
+- Don't reference file paths in comments (e.g. "see frontend/src/server/common/constants/foo.js") — paths move and rot, and the comment goes stale silently. Refer to the module/concept by name instead, or let imports do the pointing.
+
 ## Functional / classes
 
 - Favour functional approach over instantiable classes
