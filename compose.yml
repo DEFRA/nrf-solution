@@ -207,6 +207,11 @@ services:
       IMPACT_ASSESSOR_URL: http://impact-assessor:8085
       DB_HOST: postgres
       CDP_UPLOADER_URL: http://cdp-uploader:7337
+      # Backend owns the CDP Uploader storage config (bucket + path prefix).
+      # Bucket is interpolated so it stays in sync with the uploader's
+      # CONSUMER_BUCKETS above when overridden via the host env.
+      CDP_UPLOADER_BUCKET: ${CDP_UPLOADER_BUCKET:-boundaries}
+      CDP_UPLOADER_S3_PATH: ${CDP_UPLOADER_S3_PATH:-boundaries/}
       HTTP_PROXY: http://squid:3128
       # Service-to-service API keys (local dev only; real values come from CDP secrets)
       BACKEND_API_KEY: local-dev-backend-key
