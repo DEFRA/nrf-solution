@@ -53,6 +53,8 @@ Depends-On: <URL of PR 2>
 
 **Rule: if merging this PR alone (without the others) would break anything, list all the others.**
 
+Use the **full PR URL** (`https://github.com/DEFRA/<repo>/pull/<n>`), not the `owner/repo#n` shorthand — the depends-on CI action rejects the shorthand with `ValueError: Invalid URL`.
+
 Put the `Depends-On` lines **last** in the PR description — any prose after them can break the dependency parsing.
 
 Common cases:
