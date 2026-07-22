@@ -101,8 +101,8 @@ This ensures browser back/refresh doesn't re-submit the form.
 
 ### Route paths
 
-- Never hard-code a page path (e.g. `'/quote/email'`) in a controller or template. Each page's `routes.js` exports `routePath` — import it (`import { routePath as emailPath } from '../email/routes.js'`) and redirect to that
-- Templates must receive paths via the view model (e.g. `href="{{ boundaryTypePath }}"`), not as literal hrefs — the view model builds them from the same `routePath` imports, so a route change can't silently break links
+- Never hard-code a page path (e.g. `'/quote/email'`) in a controller. Each page's `routes.js` exports `routePath` — import it (`import { routePath as emailPath } from '../email/routes.js'`) and redirect to that
+- View models expose these imported paths to templates — see the Links rule in [html.md](./html.md) for the template side
 
 ### Handler method style
 
