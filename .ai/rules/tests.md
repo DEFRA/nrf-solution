@@ -51,6 +51,9 @@ paths:
 - Do not define fixtures, helper functions, or large data objects inline in test files. Extract them to `src/test-utils/` (helpers) or `src/test-utils/fixtures/` (data). This keeps test files focused on assertions and makes fixtures reusable across tests.
 - Re-use fixture data across test files rather than duplicating it — this makes it easier to maintain data contracts, especially without TypeScript.
 - Test assertion blocks should begin with 'it' rather than 'test'
+- Write parameterised tests up front to satisfy SonarQube. Two rules bite in CI if you don't:
+  - **S5976** — when 3+ tests differ only in their input/expected values (same setup and assertions), use a single `it.each([...])` instead of separate `it(...)` blocks. Sonar fails the quality gate on the 3rd near-duplicate test.
+  - **S1192** — a string literal repeated 3+ times (including in test data or expected values) must be extracted to a `const`. This also applies to non-test source.
 
 ## Config values in tests
 
