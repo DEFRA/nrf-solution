@@ -53,6 +53,8 @@ Depends-On: <URL of PR 2>
 
 **Rule: if merging this PR alone (without the others) would break anything, list all the others.**
 
+Put the `Depends-On` lines **last** in the PR description — any prose after them can break the dependency parsing.
+
 Common cases:
 - A frontend PR that changes the quote journey → `Depends-On` the backend PR and the journey-tests PR
 - A backend PR that changes the API schema → `Depends-On` the frontend PR and the journey-tests PR

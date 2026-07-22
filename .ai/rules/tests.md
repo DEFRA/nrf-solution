@@ -18,7 +18,8 @@ paths:
 ## Mocking
 
 - minimise mocking: only mock at the boundary of the system under test (eg external HTTP calls, browser APIs). Do not mock internal helpers or session utilities in controller tests — let them run real and push mocking to the actual external boundary (HTTP via MSW, AWS SDKs, etc). When a controller test would require mocking an internal helper, that's a signal the test should be an acceptance test using a real server instead. Do not mock internal library functions like `retryAsyncOperation` — use fake timers (`vi.useFakeTimers()`) instead to test time-dependent behaviour without real delays
-- for mocking responses from service calls out to other APIs, prefer Mock Service Worker rather than mocking fetch or HTTP clients like Wreck ([example](../../src/server/quote/check-your-answers/controller-post.test.js))
+- for mocking responses from service calls out to other APIs, prefer Mock Service Worker rather than mocking fetch or HTTP clients like Wreck ([example](../../src/server/quote/check-your-answers/controller-post.test.js)). This applies to any test whose code path makes a backend call — not just form POSTs. If you're reaching for `vi.mock('.../services/...')`, stub the HTTP endpoint with MSW instead.
+- don't copy the mocking style of an existing neighbouring test if it predates these rules (e.g. mocks service modules or hand-rolls session setup) — follow the rules, not the legacy pattern
 - no need to reset or clear mocks within test files as `mockReset` is set globally for vitest
 - the test suite spins up a real redis container so tests **don't** have to mock functions that wrap it eg session cache
 
@@ -33,7 +34,7 @@ paths:
 
 ## Using sessions in tests
 
-- When a test needs a stable session ID (e.g. for rate limiting or any behaviour keyed on session), use `withValidQuoteSession` to prime a real server-side session and obtain a cookie. Pass that cookie to all subsequent `server.inject` calls so Yar reuses the same session ID across requests.
+- When a test needs a stable session ID (e.g. for rate limiting or any behaviour keyed on session), use `withValidQuoteSession` to prime a real server-side session and obtain a cookie. Pass that cookie to all subsequent `server.inject` calls so Yar reuses the same session ID across requests. Never hand-roll session priming via a `/__test-setup-*` helper route or by mocking session reads — drive the real routes to build session state.
 
 ## Module-level singletons
 
