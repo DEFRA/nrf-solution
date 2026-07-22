@@ -9,6 +9,11 @@ All dates displayed to users must use the GOV.UK date format: day month-name yea
 - Defining the filter: add a `govukDate` filter to the Nunjucks environment in the server setup (or reuse one already defined in the project) that converts the value using `Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })` or equivalent
 - If the value is null, undefined, or an invalid date, the filter must return a hyphen `–` rather than throwing or rendering a fallback epoch date
 
+## Links
+
+- Anchors in page content must carry the `govuk-link` class — a bare `<a href="...">` misses GOV.UK link styling (colour, focus state, visited state)
+- Link hrefs to other pages in the service come from the view model (populated from `routePath` imports), never hard-coded paths — see the Route paths rule in [javascript.md](./javascript.md)
+
 ## GOV.UK design system components reference
 
 Use macros to render GOV.UK design system components, rather than raw HTML, so that we pick up changes to the component HTML structure automatically.
