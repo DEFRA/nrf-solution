@@ -1,9 +1,3 @@
----
-paths:
-  - '**/*.js'
-  - '!**/*.test.js'
----
-
 # Javascript coding guidelines
 
 ## Functions

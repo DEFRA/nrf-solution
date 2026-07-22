@@ -1,8 +1,3 @@
----
-paths:
-  - '**/*.test.js'
----
-
 # Tests
 
 ## Types of test

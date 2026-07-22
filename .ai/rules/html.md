@@ -1,8 +1,3 @@
----
-paths:
-  - '**/*.njk'
----
-
 # HTML coding guidelines
 
 ## Date formatting
