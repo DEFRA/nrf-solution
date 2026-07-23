@@ -1,9 +1,3 @@
----
-paths:
-  - '**/*.js'
-  - '!**/*.test.js'
----
-
 # Javascript coding guidelines
 
 ## Functions
@@ -88,6 +82,8 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 ### HTTP status codes
 
 - Always use `statusCodes.<name>` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
+- This applies in test files too: assert `expect(response.statusCode).toBe(statusCodes.redirectAfterPost)` not `.toBe(303)`, and pass constants (not literals) when stubbing response statuses in MSW handlers or fixtures
+- If a needed code is missing from the constants object (e.g. `found: 302`), add it there rather than falling back to a literal
 - Import `statusCodes` from `@defra/cdp-validation-kit` if it is available as a dependency: `import { statusCodes } from '@defra/cdp-validation-kit'`. If not available, use the local `src/server/common/constants/status-codes.js` copy. Do not duplicate status code values inline.
 
 ## Hapi route & controller conventions
@@ -99,8 +95,14 @@ Frontend form POST handlers must follow PRG:
 - On validation failure: save errors and submitted values to the session flash, then `h.redirect(request.path).code(statusCodes.redirectAfterPost).takeover()` — never re-render the view directly from a `failAction`
 - On success: save data to session then `h.redirect(nextPage).code(statusCodes.redirectAfterPost)`
 - Use `statusCodes.redirectAfterPost` (303), not a literal number
+- **Every** redirect returned from a POST handler needs `.code(statusCodes.redirectAfterPost)` — including early-return guards and fallback branches (e.g. missing-session redirects), not just the main success path. A bare `h.redirect()` from a POST defaults to 302
 
 This ensures browser back/refresh doesn't re-submit the form.
+
+### Route paths
+
+- Never hard-code a page path (e.g. `'/quote/email'`) in a controller. Each page's `routes.js` exports `routePath` — import it (`import { routePath as emailPath } from '../email/routes.js'`) and redirect to that
+- View models expose these imported paths to templates — see the Links rule in [html.md](./html.md) for the template side
 
 ### Handler method style
 
