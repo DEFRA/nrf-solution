@@ -138,3 +138,7 @@ Server-side code should be used where possible; client-side code should be kept 
 ### Use CSS for style
 
 If possible, avoid applying style attributes directly to an element using javascript; instead add a CSS class and store the style properties in a CSS file.
+
+### Error handling
+
+- Never silently swallow a caught error (e.g. an empty `catch {}` block or `.catch(() => null)`) — always call `logger.error(error, message)` (the browser logger, imported from the client-side `logger` module) so failures are visible instead of disappearing. This applies even when the UI has a sensible fallback for the failure — the fallback and the log are not mutually exclusive.
