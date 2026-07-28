@@ -1,4 +1,21 @@
 services:
   backend:
     environment:
-      NOTIFY_API_KEY: your-notify-api-key
+      NOTIFY_API_KEY: key
+      # Host-mapped frontend port, so emailed quote links resolve from the host
+      # (e.g. journey tests following the magic link).
+      FRONTEND_BASE_URL: http://localhost:3010
+    # Bind-mount the local nrf-library checkout over the container's installed
+    # copy, mirroring the `npm link` set up on the host — lets local edits to
+    # nrf-library show up in the container without a rebuild or release tag.
+    volumes:
+      - ../nrf-library:/home/node/node_modules/@defra/nrf-library
+  frontend:
+    environment:
+      GTM_ID: gtm_id
+      # Ordnance Survey Vector Tile API key
+      # Get a key from https://osdatahub.os.uk/
+      # When set, the map page uses OS Vector Tile API base tiles instead of demo tiles
+      OS_API_KEY: key
+    volumes:
+      - ../nrf-library:/home/node/node_modules/@defra/nrf-library
