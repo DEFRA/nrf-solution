@@ -172,7 +172,13 @@ branch. Useful for seeing at a glance if any submodule needs updating.
 ./check-submodules.sh
 ```
 
-To update all submodules to the latest:
+To switch all submodules to main branch and pull latest:
+
+```sh
+./update-submodules.sh
+```
+
+To update all submodules to the latest, on their current branches:
 
 ```sh
 git submodule update --remote --merge
