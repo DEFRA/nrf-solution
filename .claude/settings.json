@@ -1,7 +1,7 @@
 {
   "permissions": {
     "additionalDirectories": ["../nrf-prototypes"],
-    "deny": ["Read(**/.env*)"],
+    "deny": ["Read(**/.env*)", "Read(compose.override.yml)"],
     "allow": [
       "WebFetch(domain:design-system.service.gov.uk)",
       "Bash(npx vitest:*)",
