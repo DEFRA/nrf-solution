@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>Test site in central London - no EDP intersection</name>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>
+-0.127,51.504,0 -0.127,51.5048,0 -0.129,51.5048,0 -0.129,51.504,0 -0.127,51.504,0
+</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark></Document></kml>
