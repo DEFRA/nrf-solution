@@ -84,10 +84,16 @@ local_resource(
 )
 
 # Build the feature dropdown from the actual .feature files at Tiltfile-eval
-# time, so the list stays in sync as features are added or removed.
+# time, so the list stays in sync as features are added or removed. Recurses
+# into subfolders (e.g. draw/, upload/) and keeps the subfolder in the choice
+# value — several subfolders share filenames (e.g. quote-full-journey.feature
+# exists under both draw/ and upload/), so the basename alone isn't unique.
+# listdir(recursive=True) returns absolute paths, so split on the known
+# relative root rather than slicing a fixed length off the front.
+_features_root = 'journey-tests/test/features'
 _feature_files = sorted([
-    os.path.basename(p)
-    for p in listdir('journey-tests/test/features')
+    p.split(_features_root + '/', 1)[1]
+    for p in listdir(_features_root, recursive=True)
     if p.endswith('.feature')
 ])
 _feature_choices = ['Run all features'] + _feature_files
