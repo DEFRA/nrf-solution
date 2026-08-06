@@ -207,7 +207,7 @@ local_resource(
 )
 
 local_resource(
-    'load-fixtures',
+    'load-IA-data',
     # impact-assessor-migration has alembic/, scripts/ and tests/data/fixtures/ mounted;
     # spin up a one-shot container. Migrates before loading, mirroring the compose
     # service — new fixtures usually arrive alongside the revision that reshapes them,
@@ -225,7 +225,7 @@ local_resource(
     ignore=['**/.DS_Store', '**/__pycache__/**'],
     auto_init=False,
     trigger_mode=TRIGGER_MODE_AUTO,
-    labels=['dev'],
+    labels=['migrations'],
     resource_deps=['impact-assessor-migration'],
 )
 
