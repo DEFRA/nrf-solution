@@ -406,6 +406,8 @@ services:
       - ./impact-assessor/alembic.ini:/home/nonroot/alembic.ini
       - ./impact-assessor/scripts:/home/nonroot/scripts
       - ./impact-assessor/tests/data/fixtures:/home/nonroot/tests/data/fixtures
+    label_file:
+      - ./impact-assessor/tests/data/fixtures/compose.labels
     environment:
       DB_HOST: postgres
       DB_DATABASE: nrf_impact
@@ -438,6 +440,7 @@ services:
         condition: service_healthy
       impact-assessor-migration:
         condition: service_completed_successfully
+        restart: true
     env_file:
       - 'impact-assessor/compose/aws.env'
     environment:

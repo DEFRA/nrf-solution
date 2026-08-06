@@ -207,12 +207,25 @@ local_resource(
 )
 
 local_resource(
-    'load-fixtures',
-    # impact-assessor-migration has scripts/ and tests/data/fixtures/ mounted; spin up a one-shot container
-    cmd='docker compose run --rm --no-deps --entrypoint python3 impact-assessor-migration scripts/load_data.py --fixtures-dir tests/data/fixtures/',
+    'load-IA-data',
+    # impact-assessor-migration has alembic/, scripts/ and tests/data/fixtures/ mounted;
+    # spin up a one-shot container. Migrates before loading, mirroring the compose
+    # service — new fixtures usually arrive alongside the revision that reshapes them,
+    # and loading into an un-migrated schema fails confusingly.
+    cmd='docker compose run --rm --no-deps --entrypoint sh impact-assessor-migration -c ' +
+        '"python3 -m alembic upgrade head && ' +
+        'python3 scripts/load_data.py --fixtures-dir tests/data/fixtures/"',
+    # Fixtures are bind-mounted, so editing one changes the container filesystem without
+    # rebuilding an image. Without these deps Tilt sees nothing, impact-assessor-migration
+    # stays completed, every resource reads green and the DB silently holds stale data.
+    deps=[
+        'impact-assessor/tests/data/fixtures',
+        'impact-assessor/alembic/versions',
+    ],
+    ignore=['**/.DS_Store', '**/__pycache__/**'],
     auto_init=False,
-    trigger_mode=TRIGGER_MODE_MANUAL,
-    labels=['dev'],
+    trigger_mode=TRIGGER_MODE_AUTO,
+    labels=['migrations'],
     resource_deps=['impact-assessor-migration'],
 )
 
