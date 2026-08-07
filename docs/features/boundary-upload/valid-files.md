@@ -32,6 +32,18 @@ coordinate systems.
 | [outside_edp.kml](test-files/valid/outside_edp.kml) | KML |
 | [outside_edp.zip](test-files/valid/outside_edp.zip) | Shapefile (zip) |
 
+## Valid boundary in an excluded area
+
+A valid boundary that falls inside an excluded area. These use WGS 84
+coordinates.
+
+| Test file | Format |
+|---|---|
+| [excluded_area.geojson](test-files/valid/excluded_area.geojson) | GeoJSON |
+| [excluded_area.json](test-files/valid/excluded_area.json) | JSON |
+| [excluded_area.kml](test-files/valid/excluded_area.kml) | KML |
+| [excluded_area.zip](test-files/valid/excluded_area.zip) | Shapefile (zip) |
+
 ## Size-limit edge case
 
 | Test file | What it checks |
