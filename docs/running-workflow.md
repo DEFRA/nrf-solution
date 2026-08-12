@@ -214,9 +214,24 @@ date, and changes nothing:
 node docs/db-schema/generate.js --check
 ```
 
-CI runs this on every PR that moves the `backend` or `impact-assessor` pointers,
-and nightly against the submodules' `main` branches — the nightly run catches a
-migration that has merged upstream but not yet been pointed at.
+CI runs this on every PR that moves the `backend` or `impact-assessor` pointers.
+
+**It documents the schema at the submodule commits this repo records**, not at
+the submodules' `main` branches. Those pointers are what this repo declares the
+services to be, and what a fresh checkout gets — so the document changes when a
+pointer is bumped, not when a migration merges upstream.
+
+That matters if your submodule checkouts are ahead of the recorded pointers,
+which is common. Generating from there produces a document for a schema that is
+not yet pinned, and CI will reject it. The generator warns when it detects this:
+
+```
+Warning: these submodules are checked out ahead of the commit this repo records:
+  - backend (working tree at 1a0f13e3d09c)
+```
+
+Either `git submodule update --init` to match the pointers, or bump the pointers
+first — then regenerate.
 
 ---
 

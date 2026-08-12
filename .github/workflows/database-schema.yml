@@ -2,15 +2,18 @@ name: Database schema docs
 
 # Keeps docs/database-schema.md in step with the migration sources.
 #
-# A note on placement: the generator needs *every* repo's migrations, and this
-# is the only repo that has them all, so the check has to live here. The
-# consequence is that a migration merged into nrf-backend does not trigger it —
-# nothing in this repo changed yet. Two triggers cover that gap:
+# The generator needs *every* repo's migrations and this is the only repo that
+# has them all, so the check lives here. It documents the schema at the
+# submodule commits this repo **records**, not at the submodules' main branches:
+# the recorded pointers are what this repo declares the services to be, and they
+# are what a checkout gets. The document therefore changes when a pointer is
+# bumped, which is exactly when this workflow runs.
 #
-#   - pull_request / push: catches it when the submodule pointer is bumped,
-#     which is the moment this repo's documented schema actually changes.
-#   - schedule: checks the submodules' current main branches, so a migration
-#     that has merged but not yet been pointed at is still reported.
+# There is deliberately no scheduled run against submodule `main` tips. Pointers
+# here lag their submodules by many releases in normal operation, so a nightly
+# comparison against main would fail every night for a schema that is not yet
+# pinned — noise, not signal. A migration merged upstream is caught when its
+# pointer bump lands, which is the moment the documented schema actually changes.
 
 on:
   pull_request:
@@ -22,9 +25,6 @@ on:
       - '.github/workflows/database-schema.yml'
   push:
     branches: [main]
-  schedule:
-    # 07:00 UTC daily, against submodule main tips rather than pinned commits.
-    - cron: '0 7 * * *'
   workflow_dispatch:
 
 permissions:
@@ -43,18 +43,12 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # On the scheduled run, look at what has actually merged rather than at
-      # the pinned commits — that is the case the pointer bump has not covered.
-      - name: Move submodules to their main branches
-        if: github.event_name == 'schedule'
-        run: git submodule foreach 'git fetch origin main --depth=1 && git checkout FETCH_HEAD'
-
       - name: Check the schema document is up to date
         id: check
         run: node docs/db-schema/generate.js --check
 
-      # A failure on the scheduled run means a migration merged upstream and the
-      # document has not caught up. Show the diff so the fix is a copy-paste.
+      # A failure means a submodule pointer moved and the document has not
+      # caught up. Show the diff so the fix is a copy-paste.
       - name: Show what changed
         if: failure() && steps.check.outcome == 'failure'
         run: |
