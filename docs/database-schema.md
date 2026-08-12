@@ -2,7 +2,7 @@
 
 # Database schema
 
-Every SQL table in the NRF service, across all repos, with entity-relationship diagrams. 16 tables in 2 databases.
+Every SQL table in the NRF service, across all repos, with entity-relationship diagrams. 19 tables in 2 databases.
 
 **This file is generated.** Run `node docs/db-schema/generate.js` after any migration that adds, drops or alters a table or column. Editing it by hand will be overwritten, and CI checks that it matches the migration sources.
 
@@ -11,7 +11,7 @@ Every SQL table in the NRF service, across all repos, with entity-relationship d
 | Database | Schema | Owned by | Defined by | Domain tables |
 | --- | --- | --- | --- | --- |
 | `nrf_backend` | `public` | `backend` | Liquibase (`backend/changelog`) | 4 |
-| `nrf_impact` | `public` | `impact-assessor` | Alembic (`impact-assessor/alembic/versions`), Liquibase (`impact-assessor/changelog`) | 12 |
+| `nrf_impact` | `public` | `impact-assessor` | Alembic (`impact-assessor/alembic/versions`), Liquibase (`impact-assessor/changelog`) | 15 |
 
 `frontend`, `journey-tests`, `admin-frontend`, `performance-tests` own no SQL tables — no migration source of any kind was found in them.
 
@@ -165,9 +165,9 @@ _Liquibase changeset `18` in `db.changelog-2.2.xml`._
 
 ## `nrf_impact`
 
-Owned by `impact-assessor`. 12 domain tables in schema `public`, defined by **Alembic** (`impact-assessor/alembic/versions`) and **Liquibase** (`impact-assessor/changelog`).
+Owned by `impact-assessor`. 15 domain tables in schema `public`, defined by **Alembic** (`impact-assessor/alembic/versions`) and **Liquibase** (`impact-assessor/changelog`).
 
-> **These two definitions disagree.** table `spatial_layer` has a model but is not created by any migration
+> This database is defined twice — once per tool — and the two agree: the same 15 tables with the same columns. `scripts/check_migration_parity.py` enforces that every Alembic revision has a matching Liquibase changeset.
 
 ### Diagram
 
@@ -190,6 +190,12 @@ erDiagram
         timestamptz created_at "default now()"
     }
 
+    data_active_version {
+        varchar table_name PK
+        integer active_version
+        timestamptz updated_at "default now()"
+    }
+
     data_load_history {
         uuid id PK "app default uuid4"
         uuid run_id FK
@@ -199,6 +205,16 @@ erDiagram
         varchar data_version "nullable"
         varchar status
         timestamptz loaded_at "default now()"
+        varchar status_detail "nullable"
+        integer row_version "nullable"
+    }
+
+    data_rollback_event {
+        uuid id PK "app default uuid4"
+        varchar table_name
+        integer from_version
+        integer to_version
+        timestamptz rolled_back_at "default now()"
     }
 
     data_sync_run {
@@ -224,7 +240,7 @@ erDiagram
     }
 ```
 
-8 tables share one identical column set. It is drawn once, on `edp_boundary_layer`:
+9 tables share one identical column set. It is drawn once, on `edp_boundary_layer`:
 
 ```mermaid
 erDiagram
@@ -238,7 +254,7 @@ erDiagram
     }
 ```
 
-The same shape is used by `edp_edges`, `gcn_ponds`, `gcn_risk_zones`, `lpa_boundaries`, `nn_catchments`, `subcatchments`, `wwtw_catchments`. These tables carry no foreign keys — they are independent reference layers, joined spatially at query time.
+The same shape is used by `edp_edges`, `edp_excluded_areas`, `gcn_ponds`, `gcn_risk_zones`, `lpa_boundaries`, `nn_catchments`, `subcatchments`, `wwtw_catchments`. These tables carry no foreign keys — they are independent reference layers, joined spatially at query time.
 
 ### Tables
 
@@ -261,6 +277,16 @@ Dedicated model for coefficient polygons (5.4M records).
 | `p_resi_coeff` | `double precision` | yes | — |  |
 | `created_at` | `timestamptz` | no | `now()` |  |
 
+#### `data_active_version`
+
+Points at the version of each reference table that reads should use.
+
+| Column | Type | Null | Default | Notes |
+| --- | --- | --- | --- | --- |
+| `table_name` | `varchar` | no | — | **PK** |
+| `active_version` | `integer` | no | — |  |
+| `updated_at` | `timestamptz` | no | `now()` |  |
+
 #### `data_load_history`
 
 Per-table audit row for a reload run.
@@ -275,6 +301,20 @@ Per-table audit row for a reload run.
 | `data_version` | `varchar` | yes | — |  |
 | `status` | `varchar` | no | — |  |
 | `loaded_at` | `timestamptz` | no | `now()` | indexed |
+| `status_detail` | `varchar` | yes | — |  |
+| `row_version` | `integer` | yes | — |  |
+
+#### `data_rollback_event`
+
+Audit row for one table's active-version rollback.
+
+| Column | Type | Null | Default | Notes |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | no | — | **PK**; application default `uuid4` — applied in Python, **not** by the database |
+| `table_name` | `varchar` | no | — |  |
+| `from_version` | `integer` | no | — |  |
+| `to_version` | `integer` | no | — |  |
+| `rolled_back_at` | `timestamptz` | no | `now()` |  |
 
 #### `data_sync_run`
 
@@ -306,6 +346,19 @@ Dedicated model for EDP boundary polygons.
 #### `edp_edges`
 
 Environmental designation polygon edges used in GCN assessment.
+
+| Column | Type | Null | Default | Notes |
+| --- | --- | --- | --- | --- |
+| `id` | `uuid` | no | — | **PK**; application default `uuid4` — applied in Python, **not** by the database |
+| `version` | `integer` | no | — | application default `1` — applied in Python, **not** by the database; indexed |
+| `geometry` | `geometry(GEOMETRY,27700)` | no | — | indexed |
+| `name` | `varchar` | yes | — | indexed |
+| `attributes` | `jsonb` | yes | — |  |
+| `created_at` | `timestamptz` | no | `now()` |  |
+
+#### `edp_excluded_areas`
+
+Buffered SSSI exclusion-area polygons (nutrient EDP).
 
 | Column | Type | Null | Default | Notes |
 | --- | --- | --- | --- | --- |
@@ -423,11 +476,17 @@ WwTW (wastewater treatment works) catchment polygons.
 | `ix_data_load_history_table_loaded_at` | `data_load_history` (`table_name`, `loaded_at`) | btree index |  |
 | `uq_data_sync_run_single_running` | `data_sync_run` (`status`) | UNIQUE btree index, partial | `WHERE status = 'running'` |
 | `ix_public_edp_boundary_layer_geometry` | `edp_boundary_layer` (`geometry`) | GIST index |  |
+| `ix_public_edp_boundary_layer_geometry` | `edp_boundary_layer` (`geometry`) | GIST index |  |
 | `ix_public_edp_boundary_layer_name` | `edp_boundary_layer` (`name`) | btree index |  |
+| `ix_public_edp_boundary_layer_name` | `edp_boundary_layer` (`name`) | btree index |  |
+| `ix_public_edp_boundary_layer_version` | `edp_boundary_layer` (`version`) | btree index |  |
 | `ix_public_edp_boundary_layer_version` | `edp_boundary_layer` (`version`) | btree index |  |
 | `ix_public_edp_edges_geometry` | `edp_edges` (`geometry`) | GIST index |  |
 | `ix_public_edp_edges_name` | `edp_edges` (`name`) | btree index |  |
 | `ix_public_edp_edges_version` | `edp_edges` (`version`) | btree index |  |
+| `ix_public_edp_excluded_areas_geometry` | `edp_excluded_areas` (`geometry`) | GIST index |  |
+| `ix_public_edp_excluded_areas_name` | `edp_excluded_areas` (`name`) | btree index |  |
+| `ix_public_edp_excluded_areas_version` | `edp_excluded_areas` (`version`) | btree index |  |
 | `ix_public_gcn_ponds_geometry` | `gcn_ponds` (`geometry`) | GIST index |  |
 | `ix_public_gcn_ponds_name` | `gcn_ponds` (`name`) | btree index |  |
 | `ix_public_gcn_ponds_version` | `gcn_ponds` (`version`) | btree index |  |
@@ -449,7 +508,7 @@ WwTW (wastewater treatment works) catchment polygons.
 | `ix_public_wwtw_catchments_name` | `wwtw_catchments` (`name`) | btree index |  |
 | `ix_public_wwtw_catchments_version` | `wwtw_catchments` (`version`) | btree index |  |
 
-> **Application-side defaults.** 23 columns take their default from the application, not the database — SQLAlchemy `default=` is applied in Python when the model is instantiated. A raw `INSERT` that omits them will fail. They are marked in the tables above.
+> **Application-side defaults.** 26 columns take their default from the application, not the database — SQLAlchemy `default=` is applied in Python when the model is instantiated. A raw `INSERT` that omits them will fail. They are marked in the tables above.
 
 ---
 
@@ -485,7 +544,7 @@ Three things the generator is careful about, each of which produced a wrong answ
 
 Each run verifies the sources against each other and fails if they disagree:
 
-- `nrf_impact`: Alembic vs Liquibase — **1 differences**
+- `nrf_impact`: Alembic vs Liquibase — agree
 - `nrf_impact`: migrations vs `impact-assessor/app/models/db.py` — agree
 
 ### Other diagrams that disagree with this schema
@@ -494,7 +553,3 @@ Hand-maintained ER diagrams found elsewhere in the tree that no longer match the
 
 - `backend/docs/quote-database-diagram.md`
   - `quotes` lists dropped columns: waste_water_treatment_works_id, waste_water_treatment_works_name
-
-> **Unresolved differences**
->
-> - `nrf_impact`: alembic (impact-assessor/alembic/versions) and liquibase (impact-assessor/changelog) disagree — table `spatial_layer` has a model but is not created by any migration
