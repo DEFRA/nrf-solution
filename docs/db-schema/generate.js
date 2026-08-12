@@ -469,12 +469,51 @@ function render({ databases, unknown, notes, sources, stale = [] }) {
 /** Mermaid node ids must be identifier-safe. */
 const ident = (s) => s.replace(/[^A-Za-z0-9_]/g, '_')
 
+/**
+ * Submodules whose checkout differs from the commit this repo records.
+ *
+ * The document is a function of the recorded pointers — that is what the repo
+ * declares the services to be, and it is what CI checks out. A working tree
+ * sitting ahead of a pointer therefore generates a document CI will reject, for
+ * a schema that is not yet pinned. That is silent and confusing without this
+ * warning: the generated file simply looks wrong to everyone else.
+ *
+ * `git submodule status` prefixes such entries with `+`.
+ */
+function driftedSubmodules() {
+  try {
+    const out = execFileSync('git', ['submodule', 'status'], { cwd: REPO, encoding: 'utf8' })
+    return out
+      .split('\n')
+      .filter((l) => l.startsWith('+'))
+      .map((l) => {
+        const [sha, name] = l.slice(1).trim().split(/\s+/)
+        return { name, sha: sha.slice(0, 12) }
+      })
+      .filter((s) => s.name)
+  } catch {
+    return []
+  }
+}
+
 // ---------------------------------------------------------------- main
 
 function main() {
   const args = process.argv.slice(2)
   const check = args.includes('--check')
   const stamp = args.includes('--stamp')
+
+  // Warn before doing anything: a drifted submodule silently changes the output.
+  const drifted = driftedSubmodules()
+  if (drifted.length) {
+    console.error(
+      'Warning: these submodules are checked out ahead of the commit this repo records:\n' +
+        drifted.map((s) => `  - ${s.name} (working tree at ${s.sha})`).join('\n') +
+        '\n\nThe document is generated from the recorded pointers, which is what CI checks\n' +
+        'out — so generating from here produces a file CI will reject. Either run\n' +
+        '`git submodule update --init` to match the pointers, or bump the pointers first.\n'
+    )
+  }
 
   const data = collect()
 
