@@ -126,7 +126,11 @@ Two PostgreSQL databases share a single Postgres instance:
 | Database | Used by | Schema |
 | -------------- | ---------------------- | --------------- |
 | `nrf_backend` | backend | `public` |
-| `nrf_impact` | impact-assessor | `nrf_reference` |
+| `nrf_impact` | impact-assessor | `public` |
+
+Every table in both databases is documented in
+[database-schema.md](./database-schema.md), with ER diagrams. That file is
+generated — see [Documenting the schema](#documenting-the-schema) below.
 
 Connect with any PostgreSQL client (e.g. TablePlus) using:
 
@@ -140,7 +144,7 @@ Connect with any PostgreSQL client (e.g. TablePlus) using:
 Backend migrations are run by **Liquibase** against `nrf_backend` on every `tilt up`.
 
 Impact-assessor migrations are run by **Alembic** against `nrf_impact`, followed
-by **fixture data loading** (`load_data.py`), which populates the `nrf_reference`
+by **fixture data loading** (`load_data.py`), which populates the `public`
 schema with sample spatial data for local development.
 
 To re-run impact-assessor migrations and reload fixture data manually:
@@ -148,6 +152,71 @@ To re-run impact-assessor migrations and reload fixture data manually:
 ```sh
 docker compose run --rm impact-assessor-migration
 ```
+
+Impact-assessor also keeps a **parallel Liquibase changelog** in
+`impact-assessor/changelog/`, applied on the deployed platform rather than
+locally. `impact-assessor/scripts/check_migration_parity.py` enforces that every
+Alembic revision has a matching Liquibase changeset — if you add an Alembic
+revision, add the changeset too.
+
+### Documenting the schema
+
+[docs/database-schema.md](./database-schema.md) — every SQL table across all
+repos, with ER diagrams — is **generated from the migration sources**. Do not
+edit it by hand; it will be overwritten.
+
+```sh
+nvm use                              # Node >=24
+node docs/db-schema/generate.js
+```
+
+No install step, no dependencies, and **no running database** — it reads the
+Liquibase and Alembic sources directly, so it works with the stack down.
+
+**When to run it.** After any migration that adds, drops or alters a table or
+column — in `backend/changelog/`, `impact-assessor/alembic/versions/` or
+`impact-assessor/changelog/`. Commit the regenerated file with the migration.
+
+**What it prints.** On success, the table and database counts. It also warns
+about anything it found that needs a human:
+
+```
+Wrote docs/database-schema.md — 19 tables across 2 databases, from 3 migration sources.
+  ! stale diagram: backend/docs/quote-database-diagram.md — `quotes` lists dropped columns: ...
+```
+
+| Message | Meaning |
+| --- | --- |
+| `! stale diagram: <file>` | another hand-maintained ER diagram no longer matches the schema |
+| `! <db>: ... disagree` | two definitions of one database differ, or migrations differ from the SQLAlchemy models |
+| `? unrecognised source` | a migration tool was found that the generator cannot read |
+
+**If it refuses to run.** Exit code 2 means it hit a change it does not
+understand, and it names the changeset:
+
+```
+Cannot generate: the migration sources contain changes this script does not understand.
+
+  - backend/changelog: unhandled change type <addPrimaryKey> (db.changelog-2.7.xml changeset 23)
+
+Teach docs/db-schema/lib/ to read them rather than publishing an incomplete schema.
+```
+
+This is deliberate — publishing a plausible-looking but incomplete schema is the
+failure the generator exists to prevent. Teach `docs/db-schema/lib/` to read the
+new construct rather than working around it. See
+[docs/db-schema/README.md](./db-schema/README.md).
+
+**Checking without writing.** `--check` exits 1 if the committed file is out of
+date, and changes nothing:
+
+```sh
+node docs/db-schema/generate.js --check
+```
+
+CI runs this on every PR that moves the `backend` or `impact-assessor` pointers,
+and nightly against the submodules' `main` branches — the nightly run catches a
+migration that has merged upstream but not yet been pointed at.
 
 ---
 

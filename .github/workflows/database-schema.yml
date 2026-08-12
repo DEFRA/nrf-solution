@@ -1,0 +1,65 @@
+name: Database schema docs
+
+# Keeps docs/database-schema.md in step with the migration sources.
+#
+# A note on placement: the generator needs *every* repo's migrations, and this
+# is the only repo that has them all, so the check has to live here. The
+# consequence is that a migration merged into nrf-backend does not trigger it —
+# nothing in this repo changed yet. Two triggers cover that gap:
+#
+#   - pull_request / push: catches it when the submodule pointer is bumped,
+#     which is the moment this repo's documented schema actually changes.
+#   - schedule: checks the submodules' current main branches, so a migration
+#     that has merged but not yet been pointed at is still reported.
+
+on:
+  pull_request:
+    paths:
+      - 'backend'
+      - 'impact-assessor'
+      - 'docs/db-schema/**'
+      - 'docs/database-schema.md'
+      - '.github/workflows/database-schema.yml'
+  push:
+    branches: [main]
+  schedule:
+    # 07:00 UTC daily, against submodule main tips rather than pinned commits.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # On the scheduled run, look at what has actually merged rather than at
+      # the pinned commits — that is the case the pointer bump has not covered.
+      - name: Move submodules to their main branches
+        if: github.event_name == 'schedule'
+        run: git submodule foreach 'git fetch origin main --depth=1 && git checkout FETCH_HEAD'
+
+      - name: Check the schema document is up to date
+        id: check
+        run: node docs/db-schema/generate.js --check
+
+      # A failure on the scheduled run means a migration merged upstream and the
+      # document has not caught up. Show the diff so the fix is a copy-paste.
+      - name: Show what changed
+        if: failure() && steps.check.outcome == 'failure'
+        run: |
+          node docs/db-schema/generate.js
+          echo '::group::Diff'
+          git --no-pager diff -- docs/database-schema.md || true
+          echo '::endgroup::'
+          echo 'Run `node docs/db-schema/generate.js` and commit the result.'

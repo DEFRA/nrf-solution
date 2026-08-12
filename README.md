@@ -23,6 +23,8 @@ contain application code — it provides the glue to run everything together.
 
 [Running & workflow](./docs/running-workflow.md)
 
+[Database schema](./docs/database-schema.md)
+
 [Contributing](./docs/contributing.md)
 
 [AI agent tools](./docs/ai/index.md)

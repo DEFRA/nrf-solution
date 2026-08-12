@@ -29,9 +29,10 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 
 ## Data stores
 
-- **Postgres** — two DBs on one instance:
-  - `nrf_backend` (schema `public`) — backend; migrations via **Liquibase**, run on `tilt up`.
-  - `nrf_impact` (schema `nrf_reference`) — impact-assessor; migrations via **Alembic** + `load_data.py` fixtures, run on `tilt up`.
+- **Postgres** — two DBs on one instance, both schema `public`:
+  - `nrf_backend` — backend; migrations via **Liquibase** (`backend/changelog/`), run on `tilt up`.
+  - `nrf_impact` — impact-assessor; migrations via **Alembic** (`impact-assessor/alembic/versions/`) + `load_data.py` fixtures, run on `tilt up`. A parallel **Liquibase** changelog (`impact-assessor/changelog/`) is applied on the deployed platform; `check_migration_parity.py` enforces that the two match.
+  - Every table is documented in [docs/database-schema.md](./docs/database-schema.md). **That file is generated — never hand-edit it.** After any migration that adds, drops or alters a table or column, run `node docs/db-schema/generate.js` and commit the result. See [docs/running-workflow.md](./docs/running-workflow.md#documenting-the-schema).
 - **MongoDB** — used by frontend/backend (sessions, app state).
 - **Redis** — caching / session store.
 - **LocalStack** — emulates AWS S3, SQS, SNS for local dev.
