@@ -221,7 +221,6 @@ services:
       - ./backend/package.json:/home/node/package.json
       - ./backend/eslint.config.js:/home/node/eslint.config.js
       - ./backend/vitest.config.js:/home/node/vitest.config.js
-      - ./overrides/vitest.backend.tilt.config.js:/home/node/vitest.tilt.config.js
       - ./backend/babel.config.cjs:/home/node/babel.config.cjs
       - ./backend/.vite:/home/node/.vite
     develop:
@@ -315,7 +314,6 @@ services:
       - ./frontend/package.json:/home/node/package.json
       - ./frontend/eslint.config.js:/home/node/eslint.config.js
       - ./frontend/vitest.config.js:/home/node/vitest.config.js
-      - ./overrides/vitest.frontend.tilt.config.js:/home/node/vitest.tilt.config.js
       - ./frontend/babel.config.cjs:/home/node/babel.config.cjs
       - ./frontend/stylelint.config.js:/home/node/stylelint.config.js
       - ./frontend/.vite:/home/node/.vite

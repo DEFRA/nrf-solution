@@ -176,28 +176,6 @@ local_resource(
 )
 
 local_resource(
-    'test-backend',
-    # Uses vitest.tilt.config.js: skips Docker-dependent global-setup, points at the
-    # already-running Tilt postgres (5432), localstack (4566) and cdp-uploader (7337).
-    cmd='docker compose exec -T backend npm test -- --config vitest.tilt.config.js',
-    auto_init=False,
-    trigger_mode=TRIGGER_MODE_MANUAL,
-    labels=['dev'],
-    resource_deps=['backend'],
-)
-
-local_resource(
-    'test-frontend',
-    # Uses vitest.tilt.config.js: skips the Redis global-setup (Redis is already
-    # reachable on the Docker network as redis:6379) and clears proxy env vars.
-    cmd='docker compose exec -T frontend npm test -- --config vitest.tilt.config.js',
-    auto_init=False,
-    trigger_mode=TRIGGER_MODE_MANUAL,
-    labels=['dev'],
-    resource_deps=['frontend'],
-)
-
-local_resource(
     'test-impact-assessor',
     cmd='docker compose exec -T impact-assessor uv run pytest tests/ app/ -v',
     auto_init=False,
