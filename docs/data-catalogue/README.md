@@ -54,17 +54,32 @@ pulled from SharePoint. It checks:
 | Check | Catches |
 | --- | --- |
 | Tables in `backend/changelog/` vs the Data Dictionary | a migration added a table nobody catalogued |
-| Tables in `impact-assessor/app/models/db.py` vs the Data Dictionary | a new reference layer |
+| Tables in `impact-assessor/alembic/versions/` vs the Data Dictionary | a new reference layer |
 | `quotes` columns, replaying every add and drop in changeset order | the exact G14 failure |
 | Pinned SHAs vs current `git submodule status` | references silently pointing at moved lines |
 
-Two parsing subtleties it handles, both of which produced false results first time:
+### It does not read the schema itself
+
+Reading the migrations lives in [`docs/db-schema/lib/`](../db-schema/README.md),
+shared with the generator that writes [`database-schema.md`](../database-schema.md).
+This script imports `readLiquibase` and `readAlembic` from there rather than
+keeping its own reader — two readers would drift apart, and the subtleties are
+exactly where drift hides:
 
 - **Liquibase `<rollback>` blocks hold the inverse operation.** An `addColumn`
   changeset contains a `dropColumn` rollback, so parsing rollbacks as real
-  operations cancels out every column ever added. They are stripped before parsing.
-- **`quotes.reference` is created by raw `<sql>`** and cannot be parsed from XML.
-  The script reports it as unverifiable rather than as a missing column.
+  operations cancels out every column ever added.
+- **Alembic's `downgrade()` is the same trap**, and revisions must be ordered by
+  `down_revision` rather than by filename.
+- **Schema changes also arrive as raw SQL** — `quotes.reference` is a generated
+  column that exists only in a raw `<sql>` block.
+
+Sharing the reader made this script more accurate than when it parsed the XML
+itself. It used to report `quotes.reference` as unverifiable, because raw `<sql>`
+cannot be matched with a regex over XML; that column is now parsed like any
+other and needs no caveat. Impact-assessor tables also used to be read from
+`app/models/db.py` — the ORM models rather than the migrations — so the
+catalogue was being checked against the wrong thing.
 
 System tables are deliberately out of scope: `databasechangelog`,
 `databasechangeloglock`, `spatial_ref_sys`, `alembic_version`.
