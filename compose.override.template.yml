@@ -17,5 +17,22 @@ services:
       # Get a key from https://osdatahub.os.uk/
       # When set, the map page uses OS Vector Tile API base tiles instead of demo tiles
       OS_API_KEY: key
+      ENABLE_DEFRA_ID: true
+      # OIDC Well-Known URL - DEFRA Customer Identity custom domain
+      DEFRA_ID_WELL_KNOWN_URL: https://your-account.cpdev.cui.defra.gov.uk/idphub/b2c/b2c_1a_cui_cpdev_signupsignin/.well-known/openid-configuration
+      # OAuth Client Credentials
+      DEFRA_ID_CLIENT_ID:
+      # Client secret expires 04/02/2027
+      DEFRA_ID_CLIENT_SECRET:
+      # Service ID
+      DEFRA_ID_SERVICE_ID:
+      # Scope format must be openid,offline_access,<Defra ID clientId>
+      # Adding the client ID at the end means an access token will be returned
+      # Which can be used to authenticate with nrf-backend API
+      DEFRA_ID_SCOPES: openid,offline_access,<paste defra ID client ID here>
+      # OAuth Callback URL
+      DEFRA_ID_REDIRECT_URL: http://localhost:3010/login/return
+      # Enable automatic token refresh
+      DEFRA_ID_REFRESH_TOKENS: true
     volumes:
       - ../nrf-library:/home/node/node_modules/@defra/nrf-library
