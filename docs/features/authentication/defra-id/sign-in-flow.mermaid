@@ -6,6 +6,11 @@ sequenceDiagram
     participant OIDC as OIDC Discovery<br/>(get-oidc-config.js)
     participant DefraID as Defra ID Provider<br/>(External OIDC)
 
+    %% Signed-out GET for a protected route (redirect-to-sign-in.js onPreHandler)
+    Browser->>Ctrl: GET /profile (signed out)
+    Ctrl->>Yar: set redirectTo = /profile
+    Ctrl-->>Browser: 302 to /login
+
     %% Login page
     Browser->>Ctrl: GET /login
     Ctrl-->>Browser: Render auth/login.njk

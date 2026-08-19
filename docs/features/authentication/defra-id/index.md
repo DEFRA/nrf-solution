@@ -16,8 +16,9 @@ Bell's automatic redirect). Sessions are server-side; the browser only holds an 
 | `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
 | `frontend/src/server/plugins/defra-identity.js`     | Registers `defra-id` (Bell) + `defra-session` (custom yar scheme); token validity + refresh logic; `createUserSession()` |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
-| `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.wellKnownUrl`                                                                   |
+| `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.wellKnownUrl`, memoised in-process (fetched once per deploy, not per sign-in)   |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
+| `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/login`, remembering the requested path         |
 | `frontend/src/server/common/helpers/session-cache/` | Yar server-side cache (Redis prod / memory local)                                                                        |
 | `frontend/src/config/config.js`                     | `defraId.*` and `session.*` config                                                                                       |
 
@@ -33,6 +34,24 @@ There is **no server-wide default strategy**. Each route opts in explicitly:
 `auth: 'defra-session'` (protected) or `auth: false` (public). If Bell/OIDC registration fails
 at boot, `server.app.authEnabled` stays `false`, only `/login` is registered, and routes fall
 back to `auth: false` (see `profile/index.js`).
+
+The `defra-session` scheme reports unauthenticated **without** an error, so Hapi passes
+signed-out requests through to the handler lifecycle with empty credentials
+(`request.auth.credentials` is unset) rather than rejecting them. The `redirectToSignIn`
+`onPreHandler` extension (and controller guards such as the profile page's) rely on that to
+redirect to sign-in.
+
+## Returning to the requested page after sign-in
+
+When a signed-out user makes a GET request to a protected route (e.g. `/profile`), the
+`redirectToSignIn` `onPreHandler` extension (registered by the DEFRA Identity plugin) stores the
+requested path in the Yar session as `redirectTo` and redirects the user to `/login`. After a
+successful sign-in, the OAuth callback (`/login/return`) redirects to that stored path, falling
+back to the start page when none was captured. The value is validated as a relative path
+(`getSafeRedirect`) both before it is stored and before the final redirect, to prevent open
+redirects; `getSafeRedirect` itself returns the start page for anything unsafe. Only GET requests
+are captured, and the `/auth/*` routes are excluded so a signed-out request for e.g.
+`/auth/sign-out` is never bounced back to that URL after login.
 
 ## Routes
 
