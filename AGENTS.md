@@ -9,6 +9,14 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 - Run `nvm use` before any npm/node commands (Node >=24, `.nvmrc` checked in).
 - **Never read `.env*`, `compose.override.yml`, or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
 
+## Global Behavior Guidelines
+- You must be brutally concise and direct. Eliminate all conversational filler, greetings, and post-text summaries.
+- Internal reasoning inside <think> tags must be restricted to a single short sentence.
+- Default your response length target to under 15 lines. Show results immediately.
+- Avoid repeating points you've already made, unless necessary.
+- Alternative options are welcome, but you must limit them to a single sentence or bullet point. Do not write alternative code blocks or lengthy comparisons unless explicitly asked.
+- Provide only ONE definitive code solution block.
+
 ## Repo layout
 
 Meta-repo. Service code lives in git submodules — each is an independent repo with its own CI/CD:
