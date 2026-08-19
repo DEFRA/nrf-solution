@@ -25,7 +25,7 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 
 - All services run in Docker on the `cdp-tenant` network and reach each other by Docker service name (e.g. `http://backend:3001`).
 - Outbound internet calls go through Squid (`HTTP_PROXY=http://squid:3128`) to mirror DEFRA CDP. HTTP clients must be proxy-aware: undici `ProxyAgent` (Node) or `httpx` (Python). A new external domain requires **both** `compose/squid.conf` AND a PR to `cdp-tenant-config` for each environment.
-- Auth locally is stubbed by `defra-id-stub` (replaces DEFRA Identity / OIDC).
+- Auth locally defaults to the real Defra ID (cpdev) tenant, with secrets supplied via `compose.override.yml`. The `defra-id-stub` service is available as an opt-in offline alternative (point the `DEFRA_ID_*` env at it in `compose.override.yml`).
 - File uploads go via `cdp-uploader`.
 
 ## Data stores

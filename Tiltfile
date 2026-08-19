@@ -11,7 +11,10 @@ dc_resource('frontend',                 labels=['main'])
 dc_resource('admin-frontend',           labels=['main'])
 dc_resource('impact-assessor',          labels=['main'])
 dc_resource('cdp-uploader',             labels=['stubs'])
-dc_resource('defra-id-stub',            labels=['stubs'])
+# Opt-in: auth defaults to the real Defra ID tenant, so the stub is not started
+# automatically. Start it from the Tilt UI (and point DEFRA_ID_* at it in
+# compose.override.yml) to use offline stubbed auth.
+dc_resource('defra-id-stub',            labels=['stubs'], auto_init=False)
 dc_resource('squid',                    labels=['infra'])
 dc_resource('localstack',               labels=['infra'])
 dc_resource('postgres',                 labels=['infra'])
