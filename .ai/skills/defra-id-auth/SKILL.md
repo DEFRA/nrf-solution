@@ -1,11 +1,13 @@
 ---
 name: defra-id-auth
 description: >
-  Defra ID / OAuth 2.0 / OIDC authentication in nrf-frontend. Read before modifying anything
-  under frontend/src/server/auth/, frontend/src/server/plugins/defra-identity.js, session
-  handling, or token refresh. Covers the manual Authorization Code flow (Bell registered but
-  driven by hand), the defra-id vs defra-session strategies, route protection, the server-side
-  session/token/cookie model, and automatic refresh-token renewal.
+  Defra ID / OAuth 2.0 / OIDC authentication in nrf-frontend.
+  TRIGGER when working on (reading, reviewing, editing, debugging, or testing) anything under
+  frontend/src/server/auth/, frontend/src/server/plugins/defra-identity.js, session handling,
+  or token refresh — load this before starting, reviews included, not only edits.
+  Covers the manual Authorization Code flow (Bell registered but driven by hand), the defra-id
+  vs defra-session strategies, route protection, the server-side session/token/cookie model,
+  and automatic refresh-token renewal.
 ---
 
 ## Overview
