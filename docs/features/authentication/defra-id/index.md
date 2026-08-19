@@ -4,9 +4,9 @@
 > `frontend/src/server/plugins/defra-identity.js`, or session handling. It reflects the real code.
 
 Defra ID auth is OAuth 2.0 / OpenID Connect (Authorization Code flow) built **manually** on
-top of `@hapi/bell` and `@hapi/yar`. Bell is registered as a strategy but the sign-in redirect
-and code-for-token exchange are hand-rolled in the controller (to inject `serviceId` and avoid
-Bell's automatic redirect). Sessions are server-side; the browser only holds an opaque session id.
+top of `@hapi/yar`. The sign-in redirect and code-for-token exchange are hand-rolled in the
+controller (to inject `serviceId` and control the redirect flow). Sessions are server-side; the
+browser only holds an opaque session id.
 
 ## Key files
 
@@ -14,9 +14,9 @@ Bell's automatic redirect). Sessions are server-side; the browser only holds an 
 |-----------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------ |
 | `frontend/src/server/auth/controller.js`            | All 5 route handlers: login page, sign-in redirect, callback, sign-out, sign-out callback                                |
 | `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
-| `frontend/src/server/plugins/defra-identity.js`     | Registers `defra-id` (Bell) + `defra-session` (custom yar scheme); token validity + refresh logic; `createUserSession()` |
+| `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; `createUserSession()`                  |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
-| `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.wellKnownUrl`, memoised in-process (fetched once per deploy, not per sign-in)   |
+| `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.baseUrl` + `defraId.wellKnownPath`, memoised in-process (fetched once per process on first use, not per sign-in) |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
 | `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/login`, remembering the requested path         |
 | `frontend/src/server/common/helpers/session-cache/` | Yar server-side cache (Redis prod / memory local)                                                                        |
@@ -26,14 +26,16 @@ Bell's automatic redirect). Sessions are server-side; the browser only holds an 
 
 Registered in `defra-identity.js`:
 
-- **`defra-id`** — Bell OAuth strategy (registered, but the flow is driven manually).
 - **`defra-session`** — custom `yar-session` scheme: reads `sessionId` from Yar, loads the
-  session from cache, refreshes the token if expired, else returns `unauthenticated`.
+  session from cache, refreshes the token if expired, else returns `unauthenticated`. This is
+  the only auth strategy; the sign-in handshake is hand-rolled in the controller (no Bell).
 
 There is **no server-wide default strategy**. Each route opts in explicitly:
-`auth: 'defra-session'` (protected) or `auth: false` (public). If Bell/OIDC registration fails
-at boot, `server.app.authEnabled` stays `false`, only `/login` is registered, and routes fall
-back to `auth: false` (see `profile/index.js`).
+`auth: 'defra-session'` (protected) or `auth: false` (public). If the DEFRA Identity plugin
+fails to register at boot, `server.app.authEnabled` stays `false`, only `/login` is registered,
+and routes fall back to `auth: false` (see `profile/index.js`). The OIDC discovery document is
+**not** fetched at boot — it's fetched lazily on the first sign-in/out (then memoised) — so a
+transient Defra outage at startup no longer disables auth.
 
 The `defra-session` scheme reports unauthenticated **without** an error, so Hapi passes
 signed-out requests through to the handler lifecycle with empty credentials
@@ -98,7 +100,6 @@ id token is small enough to fit comfortably).
   `idToken` is the raw OIDC ID token, kept so it can be sent as the `id_token_hint` when signing out.
 - **Yar cookie:** server-side backed (`maxCookieSize: 0`), `httpOnly`, `SameSite=Lax`. Stores only
   `sessionId`, plus transient `oauth_state` and `redirectTo`. Default 4h TTL (`session.*` config).
-- **Bell cookie:** `bell-defra-id`, temporary OAuth transaction cookie.
 - **Token refresh:** on every `defra-session` request the access token is decoded and time-checked
   (60s skew). If expired and `defraId.refreshTokens` is on, a `refresh_token` grant is made and the
   new tokens are persisted transparently. If refresh is off or fails, the session is dropped and the

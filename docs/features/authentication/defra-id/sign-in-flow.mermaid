@@ -15,9 +15,9 @@ sequenceDiagram
     Browser->>Ctrl: GET /login
     Ctrl-->>Browser: Render auth/login.njk
 
-    %% Start OAuth (manual, bypasses Bell redirect)
+    %% Start OAuth (hand-rolled authorize redirect)
     Browser->>Ctrl: GET /auth/sign-in
-    Ctrl->>OIDC: Fetch discovery doc (wellKnownUrl)
+    Ctrl->>OIDC: Fetch discovery doc (baseUrl + wellKnownPath, memoised)
     OIDC-->>Ctrl: authorization_endpoint, token_endpoint
     Ctrl->>Ctrl: Generate CSRF state (crypto)
     Ctrl->>Yar: set oauth_state
