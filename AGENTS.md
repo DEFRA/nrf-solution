@@ -5,6 +5,7 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 ## Always
 
 - Before making code changes, read [.ai/rules/index.md](./.ai/rules/index.md) for coding standards.
+- Before working on an area (reading, reviewing, editing, or debugging), scan the available skills and load any whose trigger matches — skills only auto-load when a user types `/name`, so it's on you to pick them up. This applies to reviews too, not just edits.
 - Run `nvm use` before any npm/node commands (Node >=24, `.nvmrc` checked in).
 - **Never read `.env*`, `compose.override.yml`, or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
 
