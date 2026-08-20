@@ -5,18 +5,17 @@ description: >
   TRIGGER when working on (reading, reviewing, editing, debugging, or testing) anything under
   frontend/src/server/auth/, frontend/src/server/plugins/defra-identity.js, session handling,
   or token refresh — load this before starting, reviews included, not only edits.
-  Covers the manual Authorization Code flow (Bell registered but driven by hand), the defra-id
-  vs defra-session strategies, route protection, the server-side session/token/cookie model,
-  and automatic refresh-token renewal.
+  Covers the hand-rolled Authorization Code flow, the defra-session strategy, route protection,
+  the server-side session/token/cookie model, and automatic refresh-token renewal.
 ---
 
 ## Overview
 
 Auth is OAuth 2.0 / OpenID Connect (Authorization Code flow) built **manually** on top of
-`@hapi/bell` and `@hapi/yar`. Bell is registered as a strategy but the sign-in redirect and
-code-for-token exchange are hand-rolled in `auth/controller.js` (to inject `serviceId` and
-avoid Bell's automatic redirect). Sessions are server-side; the browser holds only an opaque
-`sessionId`. Access tokens are refreshed transparently on each protected request.
+`@hapi/yar`. The sign-in redirect and code-for-token exchange are hand-rolled in
+`auth/controller.js` (to inject `serviceId` and control the redirect flow). Sessions are
+server-side; the browser holds only an opaque `sessionId`. Access tokens are refreshed
+transparently on each protected request.
 
 ## Read this first
 

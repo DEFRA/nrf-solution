@@ -31,7 +31,7 @@ directly via Docker service names. The following ports are mapped to your host:
 | `frontend` | 3010 | Web frontend — http://localhost:3010 |
 | `backend` | 3001 | API backend |
 | `impact-assessor` | 8085 | Spatial analysis API |
-| `defra-id-stub` | 3200 | OIDC auth stub (replaces DEFRA Identity) |
+| `defra-id-stub` | 3200 | OIDC auth stub (opt-in; auth defaults to real Defra ID) |
 | `cdp-uploader` | 7337 | File upload service |
 | `caddy` | 4001 | Reverse proxy (upload routing) |
 | `localstack` | 4566 | AWS emulation (S3, SQS, SNS) |

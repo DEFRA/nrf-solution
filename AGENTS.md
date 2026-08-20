@@ -9,6 +9,14 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 - Run `nvm use` before any npm/node commands (Node >=24, `.nvmrc` checked in).
 - **Never read `.env*`, `compose.override.yml`, or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
 
+## Global Behavior Guidelines
+- You must be brutally concise and direct. Eliminate all conversational filler, greetings, and post-text summaries.
+- Internal reasoning inside <think> tags must be restricted to a single short sentence.
+- Default your response length target to under 15 lines. Show results immediately.
+- Avoid repeating points you've already made, unless necessary.
+- Alternative options are welcome, but you must limit them to a single sentence or bullet point. Do not write alternative code blocks or lengthy comparisons unless explicitly asked.
+- Provide only ONE definitive code solution block.
+
 ## Repo layout
 
 Meta-repo. Service code lives in git submodules — each is an independent repo with its own CI/CD:
@@ -25,7 +33,7 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 
 - All services run in Docker on the `cdp-tenant` network and reach each other by Docker service name (e.g. `http://backend:3001`).
 - Outbound internet calls go through Squid (`HTTP_PROXY=http://squid:3128`) to mirror DEFRA CDP. HTTP clients must be proxy-aware: undici `ProxyAgent` (Node) or `httpx` (Python). A new external domain requires **both** `compose/squid.conf` AND a PR to `cdp-tenant-config` for each environment.
-- Auth locally is stubbed by `defra-id-stub` (replaces DEFRA Identity / OIDC).
+- Auth locally defaults to the real Defra ID (cpdev) tenant, with secrets supplied via `compose.override.yml`. The `defra-id-stub` service is available as an opt-in offline alternative (point the `DEFRA_ID_*` env at it in `compose.override.yml`).
 - File uploads go via `cdp-uploader`.
 
 ## Data stores

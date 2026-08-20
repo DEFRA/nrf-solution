@@ -274,12 +274,10 @@ services:
       context: ./frontend
       target: development
     ports:
-      - '3010:3000'
+      - '3000:3000'
       - '9230:9230'
     depends_on:
       squid:
-        condition: service_healthy
-      defra-id-stub:
         condition: service_healthy
       backend:
         condition: service_healthy
@@ -290,13 +288,24 @@ services:
       REDIS_PORT: 6379
       USE_SINGLE_INSTANCE_CACHE: 'true'
       ENABLE_DEFRA_ID: 'true'
-      # Server-side discovery fetch uses the Docker service name — the stub always returns localhost:3200
-      # in the discovery document so browser-facing OIDC redirects still work via the mapped port
-      DEFRA_ID_WELL_KNOWN_URL: http://defra-id-stub:3200/cdp-defra-id-stub/.well-known/openid-configuration
-      DEFRA_ID_CLIENT_ID: client-test
-      DEFRA_ID_CLIENT_SECRET: test_value
-      DEFRA_ID_SERVICE_ID: service-test
-      DEFRA_ID_REDIRECT_URL: http://localhost:3010/login/return
+      # DEFRA Customer Identity custom domain (origin) + OIDC well-known path
+      DEFRA_ID_BASE_URL: https://your-account.cpdev.cui.defra.gov.uk
+      DEFRA_ID_WELL_KNOWN_PATH: /idphub/b2c/b2c_1a_cui_cpdev_signupsignin/.well-known/openid-configuration
+      # Enable automatic token refresh
+      DEFRA_ID_REFRESH_TOKENS: true
+      # Auth defaults to the real Defra ID (cpdev) tenant — DEFRA_ID_BASE_URL and
+      # DEFRA_ID_WELL_KNOWN_PATH fall back to the config.js defaults, and the client
+      # ID/secret/service ID + scopes come from compose.override.yml.
+      #
+      # To use the offline defra-id-stub instead, set these in compose.override.yml
+      # (the stub service is still defined below):
+      #   DEFRA_ID_BASE_URL: http://defra-id-stub:3200
+      #   DEFRA_ID_WELL_KNOWN_PATH: /cdp-defra-id-stub/.well-known/openid-configuration
+      #   DEFRA_ID_CLIENT_ID: client-test
+      #   DEFRA_ID_CLIENT_SECRET: test_value
+      #   DEFRA_ID_SERVICE_ID: service-test
+      # Browser-facing base URL, used to build the OAuth return and sign-out redirect URLs
+      FRONTEND_BASE_URL: http://localhost:3000
       COOKIE_PASSWORD: nrf-frontend-secure-cookie-password-must-be-32-chars-minimum-abc123
       # Server-side API calls go directly to backend on the shared Docker network
       NRF_BACKEND_API_URL: http://backend:3001

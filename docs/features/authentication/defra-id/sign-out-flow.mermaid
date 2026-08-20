@@ -1,27 +1,32 @@
 sequenceDiagram
     participant Browser
     participant Ctrl as Auth Controller<br/>(auth/controller.js)
+    participant DefraId as Defra ID (B2C)<br/>end_session_endpoint
     participant Yar as Yar Session Cookie
     participant Cache as Session Cache<br/>(server.app.sessionCache)
 
-    %% User-initiated sign out (requires active session)
+    %% User clicks the "Sign out" link on the profile page
     Browser->>Ctrl: GET /auth/sign-out  (auth: defra-session)
     alt not authenticated
         Ctrl-->>Browser: 302 to start page
     else authenticated
         Ctrl->>Cache: drop(sessionId)
         Ctrl->>Yar: clear sessionId
+        Ctrl->>Yar: set signout_state (CSRF)
+        Ctrl-->>Browser: 302 to end_session_endpoint<br/>(id_token_hint, post_logout_redirect_uri=/login/signed-out, state)
+        Browser->>DefraId: GET end_session_endpoint
+        DefraId->>DefraId: Sign out of B2C and any upstream IdPs<br/>(may redirect via *.b2clogin.com etc.)
+        DefraId-->>Browser: 302 to post_logout_redirect_uri (/login/signed-out?state)
+
+        Browser->>Ctrl: GET /login/signed-out  (auth: false)
+        Ctrl->>Yar: get + clear signout_state
+        opt state mismatch
+            Ctrl->>Ctrl: log warning (does not block)
+        end
+        Ctrl->>Yar: get sessionId (failsafe)
+        opt sessionId present
+            Ctrl->>Cache: drop(sessionId)
+            Ctrl->>Yar: clear sessionId
+        end
         Ctrl-->>Browser: 302 to start page
     end
-
-    Note over Browser,Cache: Alternative: Defra ID logout callback (auth: false)
-
-    %% OIDC sign-out callback
-    Browser->>Ctrl: GET /auth/sign-out-oidc?state
-    Ctrl->>Ctrl: Parse + log base64 state (best-effort)
-    Ctrl->>Yar: get sessionId (failsafe)
-    opt sessionId present
-        Ctrl->>Cache: drop(sessionId)
-        Ctrl->>Yar: clear sessionId
-    end
-    Ctrl-->>Browser: 302 to start page
