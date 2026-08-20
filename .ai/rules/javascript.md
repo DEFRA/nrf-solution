@@ -26,8 +26,10 @@
 
 ### Config
 
-- If a env var will vary between envs, use config to set it
-- For every new `env:` key added to `config.js`, add a corresponding entry to `.env.example` — even if the var has a default value, so developers know it exists and can override it
+- If an env var varies between environments, read it via config rather than hard-coding it
+- Set non-secret env vars in `compose.yml` (committed)
+- Set secret env vars in the nrf-solution `compose.override.yml` (git-ignored) locally, and in the CDP portal for deployed services — never commit them
+- When you add a new `env:` key to `config.js`, note in the PR that it needs wiring into `compose.yml` (non-secret) or `compose.override.yml` (secret), plus any deployment config. For a secret, also add the var name — but not its value — to `compose.override.template.yml`, which is committed as a record of the secrets needed to run the apps locally
 - Read config inside functions, not at module scope — module-level reads are cached on first import, so the value is frozen for the lifetime of the process. This makes it impossible to test different config values without `vi.resetModules()` and dynamic imports, which adds significant test complexity
 
 ### Observability
