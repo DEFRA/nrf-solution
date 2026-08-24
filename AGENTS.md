@@ -39,7 +39,7 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 ## Data stores
 
 - **Postgres** — two DBs on one instance:
-  - `nrf_backend` (schema `public`) — backend; migrations via **Liquibase**, run on `tilt up`.
+  - `nrf_backend` (schema `public`) — backend; migrations via **Liquibase**, run on `tilt up`. See the `develop-backend-database` skill before reading/writing this database.
   - `nrf_impact` (schema `nrf_reference`) — impact-assessor; migrations via **Alembic** + `load_data.py` fixtures, run on `tilt up`.
 - **MongoDB** — used by frontend/backend (sessions, app state).
 - **Redis** — caching / session store.
@@ -110,3 +110,4 @@ Plugins registered in order: `requestLogger` → `requestTracing` → `secureCon
 - **Code-reviewer agent**: [code-reviewer.md](./.ai/agents/code-reviewer.md) — run across changed code after implementation.
 - **Browser-test skill**: [test-in-browser/SKILL.md](./.ai/skills/test-in-browser/SKILL.md) — verify a feature against AC in a real browser.
 - **Feature-builder agent**: [feature-builder.md](./.ai/agents/feature-builder.md) — staged cross-repo feature implementation from a Jira ticket + impl notes.
+- **Backend database skill**: [develop-backend-database/SKILL.md](./.ai/skills/develop-backend-database/SKILL.md) — read before reading/writing the backend Postgres database or its Liquibase migrations.
