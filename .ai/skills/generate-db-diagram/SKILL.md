@@ -84,9 +84,24 @@ docker compose ps postgres
   docker compose up -d postgres liquibase impact-assessor-migration
   ```
 
-  Those two migration services apply the changelogs and revisions and then exit,
-  so the databases are current. Wait for `postgres` to report healthy and for the
-  migration services to have exited successfully before continuing.
+  That single command covers **both** databases, which the service names do not
+  make obvious:
+
+  - `postgres` is one container hosting **both** `nrf_backend` and `nrf_impact`.
+    There is no separate container per database, and nothing named `backend`.
+  - `liquibase` applies the **backend** changelog to `nrf_backend` — see
+    `--url=jdbc:postgresql://postgres:5432/nrf_backend` in its `command:` in
+    `compose.yml`.
+  - `impact-assessor-migration` applies the Alembic revisions to `nrf_impact`.
+
+  Both migration services run to completion and exit. Before continuing, confirm
+  `postgres` is healthy and that both migration services **exited 0** — any
+  other exit code means the schema is half-applied and the diagram would be
+  wrong:
+
+  ```
+  docker compose ps -a postgres liquibase impact-assessor-migration
+  ```
 
 - If it still will not start, **stop** and tell the user. Do not reconstruct a
   schema from the migrations by hand — replaying cumulative migrations is
