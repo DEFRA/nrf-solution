@@ -6,10 +6,19 @@ tools: Bash, Read, Write, Glob, Grep
 
 ## What the catalogue is
 
-The data asset register for the NRF service: every data asset the service
-produces, consumes, stores or transmits, described against **Defra Minimum
-Metadata V0.3** so it is interoperable with the Defra Enterprise Data Catalogue
-(EDC) and the ESDA register.
+The data asset register for the **Nature Restoration Levy (NRL)** service: every
+data asset the service produces, consumes, stores or transmits, described
+against **Defra Minimum Metadata V0.3** so it is interoperable with the Defra
+Enterprise Data Catalogue (EDC) and the ESDA register.
+
+> **NRF and NRL.** The service was renamed from Nature Restoration *Fund* to
+> Nature Restoration *Levy*, and quote references now read `NRL-nnnnnn`
+> (changeset `2.9`). The old name survives in identifiers that were not renamed
+> with it, and these must be left alone: the repositories (`nrf-solution`,
+> `nrf-backend`, `nrf-impact-assessor`, …), the databases (`nrf_backend`,
+> `nrf_impact`), the Jira project key (`NRF2-`), and the workbook's own filename
+> (`NRF Data Catalogue_V0.1.xlsx`). Do not blanket-rename — check whether a
+> given `NRF` is prose or an identifier.
 
 **The workbook is not in this repository.** It is maintained in SharePoint —
 `.gitignore` carries `NRF Data Catalogue*.xlsx` so a local copy cannot be
