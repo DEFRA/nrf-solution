@@ -263,9 +263,12 @@ commit from within the submodule directory, and raise a PR per repo.
 Use the owning repo's migrations to enrich the live schema with intent the raw
 columns do not convey — never as the source of the structure itself:
 
-- `backend/changelog/` — e.g. `quotes.reference` is `'NRF-'` plus a hashed,
+- `backend/changelog/` — e.g. `quotes.reference` is `'NRL-'` plus a hashed,
   zero-padded id, defined in a raw `<sql>` block; changeset comments explain why
-  a unique constraint or a sequence offset exists.
+  a unique constraint or a sequence offset exists. (Changeset `2.9` changed that
+  prefix from `NRF-` when the service was renamed from Nature Restoration *Fund*
+  to Nature Restoration *Levy* — another reason to read the live column rather
+  than the oldest changeset that mentions it.)
 - `impact-assessor/alembic/versions/` — e.g. why a partial index covers only one
   `version`, or why a table was replaced.
 
