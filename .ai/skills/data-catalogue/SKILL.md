@@ -13,8 +13,25 @@ Metadata V0.3** so it is interoperable with the Defra Enterprise Data Catalogue
 
 **The workbook is not in this repository.** It is maintained in SharePoint —
 `.gitignore` carries `NRF Data Catalogue*.xlsx` so a local copy cannot be
-committed by accident. Ask the user for a current copy, or work from the one in
-their Downloads folder; do not assume the copy you find is the latest.
+committed by accident.
+
+### Where it lives
+
+| | |
+| --- | --- |
+| Current version | [`NRF Data Catalogue_V0.1.xlsx`](https://defra.sharepoint.com/:x:/r/sites/T_WorkDelivery99/Shared%20files/Nature%20Restoration%20Fund/04%20Architecture%20%26%20Assurance%20docs/Data/NRF%20Data%20Catalogue_V0.1.xlsx) |
+| Folder | [`04 Architecture & Assurance docs/Data`](https://defra.sharepoint.com/:f:/r/sites/T_WorkDelivery99/Shared%20files/Nature%20Restoration%20Fund/04%20Architecture%20%26%20Assurance%20docs/Data) |
+
+Requires access to the `T_WorkDelivery99` SharePoint site.
+
+**The version is in the filename**, so the file link breaks when `V0.2` is
+issued. Use the folder link to find the current one, and update the file link
+here when the version changes.
+
+Download a fresh copy rather than reusing one from a Downloads folder — a local
+copy tells you nothing about whether SharePoint has moved on, and SharePoint is
+the system of record. If you cannot reach it, ask the user rather than working
+from a stale file.
 
 Why it is not committed: it is a binary `.xlsx` with no meaningful diffs and
 unresolvable merge conflicts, roughly a quarter of it is `TBC` awaiting
