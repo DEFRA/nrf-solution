@@ -14,8 +14,9 @@ browser only holds an opaque session id.
 |-----------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------ |
 | `frontend/src/server/auth/controller.js`            | All 5 route handlers: login page, sign-in redirect, callback, sign-out, sign-out callback                                |
 | `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
-| `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; `createUserSession()`                  |
+| `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; triggers the one-time user sync to nrf-backend; `createUserSession()`                  |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
+| `frontend/src/server/auth/sync-user-to-backend.js`  | Fire-and-forget PATCH of the signed-in user's profile to nrf-backend (`/users/{defraId}`)                                 |
 | `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.baseUrl` + `defraId.wellKnownPath`, memoised in-process (fetched once per process on first use, not per sign-in) |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
 | `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/login`, remembering the requested path         |
@@ -98,12 +99,25 @@ id token is small enough to fit comfortably).
 - **Session store:** `server.app.sessionCache` (Catbox, segment `sessions`, 24h TTL). Holds the
   full `userSession`: `{ sessionId (uuid), isAuthenticated, profile, token, refreshToken, idToken, role, scope }`.
   `idToken` is the raw OIDC ID token, kept so it can be sent as the `id_token_hint` when signing out.
+  Once the profile has been synced to nrf-backend, `userSaved: true` is added (see below).
 - **Yar cookie:** server-side backed (`maxCookieSize: 0`), `httpOnly`, `SameSite=Lax`. Stores only
   `sessionId`, plus transient `oauth_state` and `redirectTo`. Default 4h TTL (`session.*` config).
 - **Token refresh:** on every `defra-session` request the access token is decoded and time-checked
   (60s skew). If expired and `defraId.refreshTokens` is on, a `refresh_token` grant is made and the
   new tokens are persisted transparently. If refresh is off or fails, the session is dropped and the
   user is unauthenticated. See [token-refresh-flow.mermaid](./token-refresh-flow.mermaid).
+
+## Syncing the user to nrf-backend
+
+On every `defra-session` request, if the cached session has no `userSaved` flag yet, the
+`defra-session` scheme fires a **fire-and-forget** `PATCH /users/{defraId}` to nrf-backend with
+the profile details from the token (`email`, `firstName`, `lastName` and, when present,
+`organisationDefraId`, `organisationName`, `relationshipType`). The call is not awaited, so a
+slow or down nrf-backend never blocks the page; failures are logged and retried on the session's
+next authenticated request. On success, `userSaved: true` is persisted to the cached session so
+the sync happens once per session. The backend upserts `users` (matching by `defra_id`, falling
+back to `email`) and, when an organisation is present, upserts the `organisations` row and the
+`user_organisations` link. See [sign-in-flow.mermaid](./sign-in-flow.mermaid).
 
 ## Flow diagrams
 
