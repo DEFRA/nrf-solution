@@ -114,7 +114,7 @@ exactly the kind of claim the live DB settles — trust the query, not the prose
 
 ## Steps
 
-Run steps 1–5 once per database. `<DB>` is `nrf_backend` or `nrf_impact`;
+Run steps 1–6 once per database. `<DB>` is `nrf_backend` or `nrf_impact`;
 `<SCHEMA>` is whatever step 1 reports.
 
 ### 1. List the in-scope tables and their schema
@@ -154,7 +154,7 @@ includes **views**, so without it PostGIS's `geometry_columns` and
 `geography_columns` appear as if they were tables.
 
 `\d <SCHEMA>.<table>` gives a human-readable view of one table with its keys and
-indexes in one place — useful to sanity-check steps 3–5.
+indexes in one place — useful to sanity-check steps 3–6.
 
 ### 3. Primary keys
 
@@ -203,7 +203,30 @@ docker compose exec -T postgres psql -U postgres -d <DB> -t -A -F '|' \
       FROM pg_indexes WHERE schemaname='<SCHEMA>' ORDER BY tablename, indexname;"
 ```
 
-### 6. Build the Mermaid ERD
+### 6. CHECK constraints
+
+Easy to skip, and the only place some rules are written down — the permitted
+values of a status or type column usually live here and nowhere else. They are
+not in `information_schema.columns`, so a column-only reading loses them
+silently, and a regenerated diagram then looks complete while having quietly
+dropped them.
+
+```
+docker compose exec -T postgres psql -U postgres -d <DB> -t -A -F '|' \
+  -c "SELECT rel.relname, con.conname, pg_get_constraintdef(con.oid)
+      FROM pg_constraint con
+      JOIN pg_class rel ON rel.oid = con.conrelid
+      JOIN pg_namespace n ON n.oid = rel.relnamespace
+      WHERE con.contype = 'c' AND n.nspname = '<SCHEMA>'
+      ORDER BY rel.relname, con.conname;"
+```
+
+Put the permitted values in the column's comment — `"nullable, CHECK: Employee
+or Agent"` — and the constraint itself in the constraints section. Note whether
+NULL passes, because a nullable column with a CHECK is still optional and that
+is not obvious.
+
+### 7. Build the Mermaid ERD
 
 Assemble an `erDiagram`. Rules for a clean, valid diagram:
 
@@ -238,7 +261,7 @@ reference-layer tables with an identical column set (`id`, `version`, `geometry`
 draw one, then list the tables that share it. Do not invent a placeholder entity
 name for the shared shape; use one of the real tables and say which others match.
 
-### 7. Write the output file
+### 8. Write the output file
 
 Each diagram goes in **its own repo**, so it lives beside the migrations that
 define it. Create the directory if needed, then write:
@@ -265,7 +288,7 @@ date.
 committed inside that submodule's own repo, not in `nrf-solution`. Stage and
 commit from within the submodule directory, and raise a PR per repo.
 
-### 8. Verify
+### 9. Verify
 
 - Re-read each written file.
 - Check the Mermaid is well-formed: every table named in a relationship line also
