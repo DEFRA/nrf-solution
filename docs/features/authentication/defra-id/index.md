@@ -16,7 +16,7 @@ browser only holds an opaque session id.
 | `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
 | `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; triggers the one-time user sync to nrf-backend; `createUserSession()`                  |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
-| `frontend/src/server/auth/sync-user-to-backend.js`  | Fire-and-forget PATCH of the signed-in user's profile to nrf-backend (`/users/{defraId}`)                                 |
+| `frontend/src/server/auth/sync-user-to-backend.js`  | Fire-and-forget PATCH of the signed-in user's profile to nrf-backend (`/users`)                                 |
 | `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.baseUrl` + `defraId.wellKnownPath`, memoised in-process (fetched once per process on first use, not per sign-in) |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
 | `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/login`, remembering the requested path         |
@@ -110,9 +110,10 @@ id token is small enough to fit comfortably).
 ## Syncing the user to nrf-backend
 
 On every `defra-session` request, if the cached session has no `userSaved` flag yet, the
-`defra-session` scheme fires a **fire-and-forget** `PATCH /users/{defraId}` to nrf-backend with
-the profile details from the token (`email`, `firstName`, `lastName` and, when present,
-`organisationDefraId`, `organisationName`, `relationshipType`). The call is not awaited, so a
+`defra-session` scheme fires a **fire-and-forget** `PATCH /users` to nrf-backend with
+the profile details from the token (`defraId`, `email`, `firstName`, `lastName` and, when
+present, `organisationDefraId`, `organisationName`, `relationshipType`) — the defra id and
+email both stay in the body so neither appears in URLs or access logs. The call is not awaited, so a
 slow or down nrf-backend never blocks the page; failures are logged and retried on the session's
 next authenticated request. On success, `userSaved: true` is persisted to the cached session so
 the sync happens once per session. The backend upserts `users` (matching by `defra_id`, falling

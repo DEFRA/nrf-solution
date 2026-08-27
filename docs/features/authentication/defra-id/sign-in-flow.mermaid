@@ -48,6 +48,6 @@ sequenceDiagram
     Browser->>Strategy: GET /profile (authenticated)
     Strategy->>Cache: get(sessionId) -> userSession
     Note over Strategy,Backend: fire-and-forget (not awaited),<br/>only if userSession.userSaved is not set
-    Strategy->>Backend: PATCH /users/{defraId}<br/>{ email, firstName, lastName,<br/>organisationDefraId?, organisationName?,<br/>relationshipType? }
+    Strategy->>Backend: PATCH /users<br/>{ defraId, email, firstName, lastName,<br/>organisationDefraId?, organisationName?,<br/>relationshipType? }
     Backend-->>Strategy: 204 No Content
     Strategy->>Cache: set(sessionId, userSession with userSaved = true)
