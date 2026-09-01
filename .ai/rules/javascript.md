@@ -133,6 +133,7 @@ Each helper lives in its own subfolder as `<name>/index.js` alongside `<name>/in
 - Use `request.yar.set(key, value)`, `request.yar.get(key)`, and `request.yar.clear(key)` — do not access the underlying storage directly
 - Session keys must be camelCase strings (e.g. `'quoteData'`, `'pendingUploadId'`) — never snake_case
 - Session data should be validated with Joi when read back, not assumed to be the shape that was written
+- Use optional chaining when accessing nested properties from session or cache data (e.g. `quoteData.boundaryGeojson?.intersectingExcludedAreas`). A user can reach any page via direct navigation, a shared link, or an expired session — an unguarded nested access throws a TypeError and returns a 500
 
 ## Client-side Javascript (run in the browser)
 
