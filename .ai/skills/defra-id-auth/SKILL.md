@@ -1,10 +1,12 @@
 ---
 name: defra-id-auth
 description: >
-  Defra ID / OAuth 2.0 / OIDC authentication in nrf-frontend.
-  TRIGGER when working on (reading, reviewing, editing, debugging, or testing) anything under
-  frontend/src/server/auth/, frontend/src/server/plugins/defra-identity.js, session handling,
-  or token refresh — load this before starting, reviews included, not only edits.
+  Defra ID / OAuth 2.0 / OIDC authentication across the nrf-frontend and nrf-backend codebases.
+  TRIGGER when working on (reading, reviewing, editing, debugging, or testing) any code that
+  involves Defra ID auth — including but not limited to frontend/src/server/auth/,
+  frontend/src/server/plugins/defra-identity.js, session handling, token refresh, or backend
+  routes/endpoints that consume or validate Defra ID tokens or the defraId claim.
+  Load this before starting, whether you are editing code or reviewing it.
   Covers the hand-rolled Authorization Code flow, the defra-session strategy, route protection,
   the server-side session/token/cookie model, and automatic refresh-token renewal.
 ---
@@ -16,6 +18,11 @@ Auth is OAuth 2.0 / OpenID Connect (Authorization Code flow) built **manually** 
 `auth/controller.js` (to inject `serviceId` and control the redirect flow). Sessions are
 server-side; the browser holds only an opaque `sessionId`. Access tokens are refreshed
 transparently on each protected request.
+
+**The Defra ID `sub` claim (`defraId`) is PII** — it is a persistent identifier for an
+individual. Never put it in URL paths or query strings (it would land in access logs,
+proxy logs, and browser history); pass it in request bodies or headers. This applies to
+backend endpoints too (e.g. `nrf-backend` `/users` routes), not just frontend auth code.
 
 ## Read this first
 
