@@ -29,7 +29,7 @@ their related access tokens, EDP levy results, and email notifications.
   `addForeignKeyConstraint`, etc.); drop to a raw `<sql>` block only for things Liquibase can't
   express (e.g. `CHECK` constraints, generated columns).
 
-This is **not** the impact-assessor database (`nrf_impact`, schema `nrf_reference`, Python /
+This is **not** the impact-assessor database (`nrf_impact`, schema `public`, Python /
 Alembic) — that's a separate service and out of scope here.
 
 ## Reading/writing data in application code

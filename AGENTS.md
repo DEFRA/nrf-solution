@@ -40,7 +40,7 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 
 - **Postgres** — two DBs on one instance:
   - `nrf_backend` (schema `public`) — backend; migrations via **Liquibase**, run on `tilt up`. See the `develop-backend-database` skill before reading/writing this database.
-  - `nrf_impact` (schema `nrf_reference`) — impact-assessor; migrations via **Alembic** + `load_data.py` fixtures, run on `tilt up`.
+  - `nrf_impact` (schema `public`) — impact-assessor; migrations via **Alembic** + `load_data.py` fixtures, run on `tilt up`.
 - **MongoDB** — used by frontend/backend (sessions, app state).
 - **Redis** — caching / session store.
 - **LocalStack** — emulates AWS S3, SQS, SNS for local dev.

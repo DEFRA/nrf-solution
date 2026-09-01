@@ -12,6 +12,7 @@ Several skills access Jira; [set Atlassian credentials](./atlassian-credentials.
 - [Feature builder agent](./feature-builder.md)
 - [Quote journey page (reference)](./quote-journey-page.md)
 - [Page from prototype](./page-from-prototype.md)
+- [Request to use from Figma](./request-to-use-from-figma.md)
 
 ### Code review
 - [Code reviewer agent & skill](./code-reviewer.md)
@@ -28,6 +29,13 @@ Several skills access Jira; [set Atlassian credentials](./atlassian-credentials.
 - [Sync Swagger](./sync-swagger.md)
 - [Generate DB diagram](./generate-db-diagram.md)
 - [Screenshots](./screenshots.md)
+- [Data catalogue](./data-catalogue.md)
+
+### Reference & integrations
+- [Defra ID auth](./defra-id-auth.md)
+- [Develop backend database](./develop-backend-database.md)
+- [Read Jira ticket](./read-jira-ticket.md)
+- [Read Confluence page](./read-confluence-page.md)
 
 ## Rules
 
