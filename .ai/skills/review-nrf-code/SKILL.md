@@ -46,7 +46,7 @@ End with a one-line summary: total files reviewed, total blockers, total suggest
 
 If a GitHub PR URL was provided, after outputting the report ask the user whether they want to post it as a comment on the PR. If they confirm, post the report using `gh pr comment <url> --body "<report>"`.
 
-> **Note:** `gh` may only be used for `gh pr comment`. Do not use any other `gh` subcommands (e.g. `gh pr diff`, `gh pr create`, `gh issue`).
+> **Note:** `gh` may only be used for `gh pr diff` (reading the PR diff) and `gh pr comment` (posting the report). Do not use any other `gh` subcommands (e.g. `gh pr create`, `gh pr merge`, `gh issue`).
 
 ## Subagent behaviour
 

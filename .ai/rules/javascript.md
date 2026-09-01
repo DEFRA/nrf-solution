@@ -67,6 +67,7 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 - validate / sanitize user inputs
 - Every POST route that accepts a request body must have a `options.validate.payload` Joi schema — especially unauthenticated ones. Without it, raw user-supplied values can be used for dynamic dispatch or passed directly to loggers/services
 - Nunjucks `autoescape: true` HTML-encodes output but does NOT prevent JS injection inside `<script>` blocks — any `{{ variable }}` rendered inside a JS string literal must either be validated against a strict allowlist (e.g. `/^GTM-[A-Z0-9]+$/`) or use the `| dump` filter to JSON-encode it safely
+- Never put PII or sensitive identifiers (Defra ID `sub` claims, emails, names) in URL paths or query strings — they are recorded in access logs, proxy logs, and browser history. Pass them in the request body or headers instead. If a value must appear in a URL, document and justify that decision in the route's OpenAPI description. When reviewing, check consistency: if one endpoint keeps a value out of the URL, a sibling endpoint exposing the same value in the path is a finding
 
 #### SQL injection (`pg`)
 
