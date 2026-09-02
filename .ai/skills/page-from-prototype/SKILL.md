@@ -130,7 +130,7 @@ Create a file called `get-next-page.js` in the target folder with a named defaul
 
 Create a file called `routes.js` in the target folder with a default export that is an array of route definitions.
 
-Every page will have at least a GET route. The GET route should be passed the route ID and the view model function that was created above. See `frontend/src/server/quote/start/routes.js` for the pattern to follow, except for the routePath format - for new routes it should use the format `/quote/{routeId}`.
+Every page will have at least a GET route. The GET route should be passed the route ID and the view model function that was created above. See `frontend/src/server/quote/start/routes.js` for the pattern to follow, except the path handling — for new pages, define the path in an import-free `route-path.js` leaf module (`export const routePath = \`/quote/${routeId}\``) and import it into `routes.js`, per the Route paths rule in javascript.md.
 
 In addition, if the source page included a form, then also create a POST route. See `frontend/src/server/quote/boundary-type/routes.js` for the pattern to follow. The route should be passed the route ID, the formValidation function, the getViewModel function and the getNextPage function.
 

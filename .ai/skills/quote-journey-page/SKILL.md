@@ -3,7 +3,7 @@ name: quote-journey-page
 description: >
   Conventions and file structure for quote journey pages in nrf-frontend. Read before
   creating or modifying any page under frontend/src/server/quote/. Covers the standard file
-  structure (routes, get-view-model, form-validation, get-next-page), quoteController /
+  structure (route-path, routes, get-view-model, form-validation, get-next-page), quoteController /
   quotePostController wiring, PRG validation flow, Nunjucks template conventions, Joi
   rules per input type, session cache helpers, and page/accessibility test patterns.
 ---
@@ -11,11 +11,12 @@ description: >
 ## Overview
 
 Every standard quote journey page follows the same structure. The page logic is split
-across up to five files in its own directory under `frontend/src/server/quote/<page-name>/`:
+across up to six files in its own directory under `frontend/src/server/quote/<page-name>/`:
 
 | File                 | Purpose                                                            |
 | -------------------- | ------------------------------------------------------------------ |
-| `routes.js`          | Route definitions; spreads controller objects; exports `routePath` |
+| `route-path.js`      | Defines the page's route path; import-free leaf module             |
+| `routes.js`          | Route definitions; spreads controller objects; re-exports `routePath` |
 | `get-view-model.js`  | Builds the template data object from session data                  |
 | `form-validation.js` | Returns a Joi schema for the POST payload                          |
 | `get-next-page.js`   | Returns the redirect path after a successful POST                  |
@@ -30,6 +31,7 @@ controller.
 
 ```
 frontend/src/server/quote/<page-name>/
+  route-path.js
   routes.js
   get-view-model.js
   form-validation.js      ← omit for GET-only pages
@@ -38,11 +40,24 @@ frontend/src/server/quote/<page-name>/
 
 ---
 
-## Step 2 — `routes.js`
+## Step 2 — `route-path.js` and `routes.js`
 
-The routes file is the wiring point. It imports the shared factory controllers and the
-page's own logic files, then exports the route array as the default export and the path
-as a named export.
+The page's path lives in its own leaf module, `route-path.js`. It must stay import-free —
+shared controllers and other pages' `get-next-page.js` / `get-view-model.js` files import
+this path, and anything it imports risks a circular import (their `routes.js` imports back
+into those controllers), which surfaces as an ESM TDZ crash:
+
+```js
+const routeId = '<page-name>'
+
+// Leaf module: must stay import-free — shared controllers and other pages
+// import this path to avoid circular imports through routes.js.
+export const routePath = `/quote/${routeId}`
+```
+
+The routes file is the wiring point. It imports the shared factory controllers, the page's
+own logic files, and `routePath` from the leaf module, then exports the route array as the
+default export and re-exports the path as a named export (so importers keep working):
 
 ```js
 import { quoteController } from '../controller-get.js'
@@ -50,9 +65,11 @@ import { quotePostController } from '../controller-post.js'
 import getViewModel from './get-view-model.js'
 import formValidation from './form-validation.js'
 import getNextPage from './get-next-page.js'
+import { routePath } from './route-path.js'
 
 const routeId = '<page-name>' // must match the Nunjucks template directory
-export const routePath = '/quote/<page-name>'
+
+export { routePath }
 
 /**
  * @openapi
@@ -212,7 +229,7 @@ Returns the path string for the next page. Receives the full (merged) quote sess
 so it can make conditional routing decisions.
 
 ```js
-import { routePath as routePathNext } from '../<next-page>/routes.js'
+import { routePath as routePathNext } from '../<next-page>/route-path.js'
 
 export default function getNextPage(quoteData) {
   // conditional logic if needed, otherwise:
@@ -220,7 +237,8 @@ export default function getNextPage(quoteData) {
 }
 ```
 
-Always import `routePath` from the target routes file — never hard-code path strings.
+Always import `routePath` from the target page's `route-path.js` — never hard-code path
+strings, and never import it from the target's `routes.js` (circular-import risk).
 
 ---
 

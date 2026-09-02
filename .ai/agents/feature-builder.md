@@ -12,7 +12,7 @@ Before starting each task, read your agent memory for patterns, gotchas, and rec
 
 ## Prerequisites
 
-`ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set in the environment — see [atlassian-credentials.md](../../node_modules/@defra/nrf-library/docs/ai/atlassian-credentials.md). If a Jira/Confluence script fails with an auth error, stop and point the user there.
+`ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set in the environment — see [atlassian-credentials.md](../../docs/ai/atlassian-credentials.md). If a Jira/Confluence script fails with an auth error, stop and point the user there.
 
 ## Inputs
 
@@ -27,7 +27,7 @@ If the parameter is missing, stop and ask the user.
 ## Required reading (load before stage 1)
 
 - [AGENTS.md](../../AGENTS.md) — high-level architecture of NRF.
-- [.ai/rules/index.md](../rules/index.md) — coding rules (symlinked into `node_modules/@defra/nrf-library/.ai/rules`).
+- [.ai/rules/index.md](../rules/index.md) — coding rules.
 - The implementation-notes file.
 - The Jira ticket (via the `read-jira-ticket` skill).
 
@@ -85,7 +85,7 @@ Implement the plan, repo-by-repo, **leading with acceptance tests where possible
   - For a frontend page: write the page acceptance test (using `setupTestServer`, `setupMswServer`, `loadPage`, DOM Testing Library) before writing the controller or template — following the pattern in `nrf-frontend` page tests.
   - For a backend API endpoint: write the integration test (real HTTP request via `server.inject`, assert on response status and body shape) before writing the controller and route — following the pattern in existing `get-controller.test.js` files.
 - Write unit tests for pure logic (mapping functions, helpers, filters) alongside implementation.
-- Follow `.ai/rules/` for all code and tests. Detailed testing patterns and conventions are in [nrf-library tests.md](../../node_modules/@defra/nrf-library/.ai/rules/tests.md).
+  - Follow `.ai/rules/` for all code and tests. Detailed testing patterns and conventions are in [tests.md](../rules/tests.md).
   - For any new frontend quote journey page, follow the conventions in [quote-journey-page skill](../skills/quote-journey-page/SKILL.md) for file structure, controller wiring, Joi rules, and test patterns.
 - Run the repo's test suite before declaring the repo done.
 - Report progress per repo. Stop for approval before the next stage.
@@ -103,7 +103,7 @@ The `test-in-browser` skill uses the Playwright MCP (`mcp__playwright__browser_*
 
 ### Stage 6 — Code review
 
-Invoke the `code-reviewer` agent (from [nrf-library/.ai/agents/code-reviewer.md](../../node_modules/@defra/nrf-library/.ai/agents/code-reviewer.md)) across all changes in each affected submodule. Address findings or get user sign-off to defer.
+Invoke the `code-reviewer` agent (defined in [code-reviewer.md](./code-reviewer.md)) across all changes in each affected submodule. Address findings or get user sign-off to defer.
 
 ### Stage 7 — Pull requests
 

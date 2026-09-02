@@ -126,7 +126,7 @@ Two PostgreSQL databases share a single Postgres instance:
 | Database | Used by | Schema |
 | -------------- | ---------------------- | --------------- |
 | `nrf_backend` | backend | `public` |
-| `nrf_impact` | impact-assessor | `nrf_reference` |
+| `nrf_impact` | impact-assessor | `public` |
 
 Connect with any PostgreSQL client (e.g. TablePlus) using:
 
@@ -140,7 +140,7 @@ Connect with any PostgreSQL client (e.g. TablePlus) using:
 Backend migrations are run by **Liquibase** against `nrf_backend` on every `tilt up`.
 
 Impact-assessor migrations are run by **Alembic** against `nrf_impact`, followed
-by **fixture data loading** (`load_data.py`), which populates the `nrf_reference`
+by **fixture data loading** (`load_data.py`), which populates the `public`
 schema with sample spatial data for local development.
 
 To re-run impact-assessor migrations and reload fixture data manually:

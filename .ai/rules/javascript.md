@@ -3,6 +3,7 @@
 ## Functions
 
 - Use short, single-purpose functions. Any over 75 lines will be failed by SonarQube, but aim to make them shorter. When a handler or function grows beyond ~20 lines, look for a named helper to extract — especially for logic that can be tested independently (rate limiting, cache reads, transformations). Keep controllers thin: they should orchestrate calls to helpers, not contain the logic themselves.
+- When the same non-trivial block of logic (not a one-liner) is duplicated across 3 or more modules, extract it into a shared helper rather than copying it again — same principle as the Joi fragment reuse rule in the Validation section. For the quote journey, shared helpers go in `src/server/quote/helpers/<name>/index.js` per the convention below.
 - If there are multiple function params, use an object param instead
 - For functions that accept params that include structured objects, add JSDoc annotations for the entire signature (all params, not just the structured ones) — this applies to all functions, including module-private helpers, not just exported ones. Functions where every param is a primitive don't need JSDoc as the types can be inferred.
 - All functions should be named, not anonymous, to improve readability in stack traces
@@ -104,7 +105,11 @@ This ensures browser back/refresh doesn't re-submit the form.
 
 ### Route paths
 
-- Never hard-code a page path (e.g. `'/quote/email'`) in a controller. Each page's `routes.js` exports `routePath` — import it (`import { routePath as emailPath } from '../email/routes.js'`) and redirect to that
+- Never hard-code a page path (e.g. `'/quote/email'`) in a controller. Import the target page's `routePath` and redirect to that
+- Each page's path is defined in its own leaf module `<page>/route-path.js`: a `routeId` const plus `export const routePath`, and nothing else. The module **must stay import-free** — it exists so shared controllers and other pages can import the path without pulling in route registration; if it imports anything, the circular-import problem returns (an ESM TDZ crash at import time). `frontend/src/server/quote/check-your-answers/route-path.js` is the canonical example
+- The page's `routes.js` imports `routePath` from `./route-path.js` for route registration, and may re-export it (`export { routePath }`) so existing importers keep working
+- Cross-page path imports (`get-next-page.js`, view models, shared controllers) must import from the target page's `route-path.js`, **never its `routes.js`** — `routes.js` pulls in controllers and route registration, which is what creates the cycle (eg `controller-post.js` → a page's `routes.js` → back into `controller-post.js`)
+- Pages written before this rule still export `routePath` inline from `routes.js`; they haven't been migrated. When touching such a page, add the leaf module, import it from `routes.js`, and re-export it so existing importers keep working
 - View models expose these imported paths to templates — see the Links rule in [html.md](./html.md) for the template side
 
 ### Handler method style
