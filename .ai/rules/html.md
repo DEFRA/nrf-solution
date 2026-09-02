@@ -14,6 +14,10 @@ All dates displayed to users must use the GOV.UK date format: day month-name yea
 - Anchors in page content must carry the `govuk-link` class — a bare `<a href="...">` misses GOV.UK link styling (colour, focus state, visited state)
 - Link hrefs to other pages in the service come from the view model (e.g. `href="{{ boundaryTypePath }}"`, populated from `routePath` imports), never hard-coded paths — see the Route paths rule in [javascript.md](./javascript.md)
 
+## GTM / analytics
+
+See the [analytics skill](../../.claude/skills/analytics/SKILL.md) for gate conditions, custom event patterns, and testing conventions.
+
 ## GOV.UK design system components reference
 
 Use macros to render GOV.UK design system components, rather than raw HTML, so that we pick up changes to the component HTML structure automatically.
