@@ -29,6 +29,11 @@ their related access tokens, EDP levy results, and email notifications.
   `addForeignKeyConstraint`, etc.); drop to a raw `<sql>` block only for things Liquibase can't
   express (e.g. `CHECK` constraints, generated columns).
 
+  **After applying a schema-changing migration, you must regenerate the ERD**
+  (`backend/docs/quote-database-diagram.md`) using the `generate-db-diagram` skill, which reads
+  the live `nrf_backend` database (required — the changelog alone is not a reliable source).
+  The migration task is not complete until the diagram reflects the new schema.
+
 This is **not** the impact-assessor database (`nrf_impact`, schema `public`, Python /
 Alembic) — that's a separate service and out of scope here.
 
@@ -58,8 +63,3 @@ Alembic) — that's a separate service and out of scope here.
   (`getAccessTokenRowsForReference`, `getEmailNotificationRowsForReference` in
   `test-utils/quote-request-helpers.js`).
 
-## After a schema-changing migration
-
-Regenerate the ERD so it doesn't drift: run the `generate-db-diagram` skill, which reads the
-live `nrf_backend` database (required — the changelog alone is not a reliable source) and
-rewrites `backend/docs/quote-database-diagram.md`.
