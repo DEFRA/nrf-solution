@@ -27,6 +27,21 @@ controller.
 
 ---
 
+## Step 0 — Check for existing work on this ticket
+
+If this page work comes from a Jira ticket, check whether a branch for it already exists
+before writing anything (run inside `frontend/`):
+
+```bash
+git branch -a | grep -i "<ticket-number>"   # e.g. nrf2-1032
+```
+
+If a matching branch exists locally or on the remote with commits for this ticket, continue
+from that branch — read its diff against `main` first — rather than re-deriving the change
+on the current branch.
+
+---
+
 ## Step 1 — Create the directory and files
 
 ```
