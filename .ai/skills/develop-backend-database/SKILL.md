@@ -62,4 +62,5 @@ Alembic) — that's a separate service and out of scope here.
   `server.inject` and asserts against rows read back from the database
   (`getAccessTokenRowsForReference`, `getEmailNotificationRowsForReference` in
   `test-utils/quote-request-helpers.js`).
+- Where the change consumes node-postgres query results, check numeric coercion — `COUNT()` and bigint columns come back as strings, so `count + 1` concatenates instead of adds. A unit test that mocks the query result as a number will not catch this; flag it.
 

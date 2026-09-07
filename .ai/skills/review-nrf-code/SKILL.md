@@ -19,8 +19,7 @@ run_as_subagent: true
    - If that returns no files, fall back to `git diff --name-only HEAD` (unstaged changes) and `git diff --name-only --cached` (staged changes), and combine the results.
    - If there are still no files, report that there is nothing to review and stop.
 3. For each file, read the file and any associated test files in the same directory (`*.test.js`, `*.acceptance.test.js`).
-4. Review each file against the rules loaded in step 1. Also apply these checks the rules don't spell out:
-   - Where the change consumes node-postgres query results, check numeric coercion — `COUNT()` and bigint columns come back as strings, so `count + 1` concatenates instead of adds. A unit test that mocks the query result as a number will not catch this; flag it.
+4. Review each file against the rules loaded in step 1.
 5. Output a structured report grouped by file. Within each file, group findings by severity:
    - **Blocker** — violates a project rule and must be fixed before merge
    - **Suggestion** — improvement that would be good to address but is not a rule violation
