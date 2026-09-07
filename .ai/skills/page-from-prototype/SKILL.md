@@ -12,7 +12,7 @@ description: Create a new page and associated files by parsing a prototype page
 ## Terms
 
 - 'source folder' - `../nrf-prototypes/app/views` relative to this repository's root (i.e. the `nrf-prototypes` repository is a sibling directory of this one).
-- 'target folder' - the folder below `frontend/src/server/quote` that is named after the route ID, eg `frontend/frontend/src/server/quote/start`
+- 'target folder' - the folder below `frontend/src/server/quote` that is named after the route ID, eg `frontend/src/server/quote/start`
 - 'content markdown' - the markdown file located using parameter 3
 
 ## Create a nunjucks page
@@ -81,7 +81,7 @@ If it's a form field component, just pass the `name` attribute in, no need to pa
 This is a simple function that returns the data that will be used to render data placeholders eg `{{pageTitle}}` in the nunjucks view.
 Create a file called `get-view-model.js` in the target folder with a named default export that returns an object including the following properties:
 
-- `pageTitle`, which should have the value of the page title that was read from the source page `<h1>`, plus ' - Gov.uk'
+- `pageTitle` — `getPageTitle(<h1 text>)` from `frontend/src/server/common/helpers/page-title.js` (as `quote-journey-page` and the `nrl-reference` example do)
 - `pageHeading`, which should have the value of the page title that was read from the source page `<h1>`
 - `backLinkPath` - set this to '#'
 

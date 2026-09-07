@@ -1,6 +1,6 @@
 ---
 name: review-nrf-code
-description: Reviews changed code against team coding standards. Use after writing code in a nrf-* repository
+description: Mandatory completion gate that reviews changed code against team coding standards. ALWAYS run after writing or changing any code in an nrf-* repository, before reporting the work as done — never skip it because tests pass.
 run_as_subagent: true
 ---
 

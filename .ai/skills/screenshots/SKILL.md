@@ -1,6 +1,6 @@
 ---
 name: screenshots
-description: Test a page in the browser against accessibility standards.
+description: Capture screenshots of every page in a user journey by walking the flow in a browser. Takes a journeys markdown file (docs/user-journeys by default) or a single URL.
 tools: Bash, Read, mcp__playwright__browser_navigate, mcp__playwright__browser_navigate_back, mcp__playwright__browser_snapshot, mcp__playwright__browser_evaluate, mcp__playwright__browser_run_code_unsafe, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_press_key, mcp__playwright__browser_wait_for, mcp__playwright__browser_close, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests
 ---
 

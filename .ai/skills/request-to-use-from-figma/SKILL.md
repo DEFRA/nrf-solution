@@ -82,7 +82,7 @@ If the page's `content` array contains any field-component block (`nunjucksMacro
 
 Create `get-view-model.js` in the target folder with a named default export returning:
 
-- `pageTitle` — `metadata.title` + `' - Gov.uk'`
+- `pageTitle` — `getPageTitle(metadata.title)` from `frontend/src/server/common/helpers/page-title.js`
 - `pageHeading` — `metadata.title`
 - `backLinkPath` — `'#'`
 
