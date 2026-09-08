@@ -37,6 +37,62 @@ their related access tokens, EDP levy results, and email notifications.
 This is **not** the impact-assessor database (`nrf_impact`, schema `public`, Python /
 Alembic) — that's a separate service and out of scope here.
 
+## jsonb columns need a CHECK constraint
+
+A bare `jsonb` column documents nothing and enforces nothing: the ERD shows only
+`jsonb <name>`, the catalogue's Data Dictionary gets a row with no shape, and any
+JSON value at all can be written. **When a migration adds a `jsonb` column, add a
+CHECK constraint describing its shape in the same changeSet** (or the next one, if
+the column is already applied). `generate-db-diagram` step 6 harvests CHECK
+constraints, so the structure then reaches both the diagram and the catalogue
+without anyone hand-writing it.
+
+Worked example: `catchments` on `quote_edp_results` — column in changeSet `30`,
+constraint in changeSet `31` (`backend/changelog/db.changelog-3.2.xml`).
+
+Three things that decide whether the constraint is worth having:
+
+- **Assert required keys, types and ranges — not the absence of extra keys.** A
+  permissive constraint lets the producer (e.g. the impact assessor) add a field
+  without a lockstep migration and deploy. Forbidding unknown keys turns every
+  upstream addition into a coordinated release.
+- **Use `jsonb_path_exists(col, '...')`, never the `@?` operator.** Liquibase sends
+  changeSets through JDBC, which rewrites the `?` in `@?` as a bind parameter
+  (`@$1`) and the changeSet fails with a syntax error. The function form is
+  equivalent and survives.
+- **A nullable column needs `col IS NULL OR (...)`**, and the ERD comment should say
+  NULL passes — a nullable jsonb with a CHECK is still optional, which is not
+  obvious from the constraint definition.
+
+The shape is a filter that must match *nothing*. Use `lax` for the key/type/range
+checks (in `strict` mode a missing key is a structural error that is suppressed, so
+`!exists(...)` silently never fires) and a separate `strict` clause to reject
+elements that are not objects:
+
+```sql
+ALTER TABLE <table>
+  ADD CONSTRAINT ck_<table>_<column> CHECK (
+    <column> IS NULL
+    OR (
+      jsonb_typeof(<column>) = 'array'
+      AND NOT jsonb_path_exists(<column>, 'strict $[*] ? (@.type() <> "object")')
+      AND NOT jsonb_path_exists(<column>, 'lax $[*] ? (
+           !exists(@.someKey) || @.someKey.type() <> "string"
+        || !exists(@.someNumber) || @.someNumber.type() <> "number"
+           || @.someNumber < 0 || @.someNumber > 100)')
+    )
+  );
+```
+
+Liquibase cannot express a CHECK, so it goes in a raw `<sql>` block with a
+`<rollback>` that drops the constraint by name. Before committing, check the
+predicate against the live DB with a `VALUES` list of good and bad samples — a
+filter that matches nothing accepts everything, and that failure is silent.
+
+Validation at the API boundary (a joi schema) is not a substitute: it does not
+reach the ERD or the catalogue, and it does not cover writes that arrive any other
+way.
+
 ## Reading/writing data in application code
 
 - The Postgres connection pool is a Hapi plugin,
