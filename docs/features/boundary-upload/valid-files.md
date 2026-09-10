@@ -37,12 +37,13 @@ coordinate systems.
 A valid boundary that falls inside an excluded area. These use WGS 84
 coordinates.
 
-| Test file | Format |
-|---|---|
-| [excluded_area.geojson](test-files/valid/excluded_area.geojson) | GeoJSON |
-| [excluded_area.json](test-files/valid/excluded_area.json) | JSON |
-| [excluded_area.kml](test-files/valid/excluded_area.kml) | KML |
-| [excluded_area.zip](test-files/valid/excluded_area.zip) | Shapefile (zip) |
+| Test file                                                                                 | Format          |
+|-------------------------------------------------------------------------------------------|-----------------|
+| [excluded_area.geojson](test-files/valid/excluded_area.geojson)                           | GeoJSON         |
+| [excluded_area.json](test-files/valid/excluded_area.json)                                 | JSON            |
+| [excluded_area.kml](test-files/valid/excluded_area.kml)                                   | KML             |
+| [excluded_area.zip](test-files/valid/excluded_area.zip)                                   | Shapefile (zip) |
+| [excluded_area_3_catchments.geojson](test-files/valid/excluded_area_3_catchments.geojson) | GeoJSON         |
 
 ## Size-limit edge case
 
