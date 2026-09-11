@@ -31,3 +31,8 @@ services:
 
     volumes:
       - ../nrf-library:/home/node/node_modules/@defra/nrf-library
+  impact-assessor:
+    environment:
+      # Upstream WMTS GetTile URL for the aerial basemap, without the tile
+      # coordinates — TILEMATRIX/TILEROW/TILECOL are appended per request.
+      AERIAL_PROXY_BASE_URL:
