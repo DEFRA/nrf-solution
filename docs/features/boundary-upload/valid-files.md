@@ -11,12 +11,14 @@ The main happy path: a valid boundary that overlaps an Environmental
 Delivery Plan area. Each returns a successful result with one intersecting
 EDP. These use British National Grid coordinates.
 
-| Test file | Format |
-|---|---|
-| [valid_in_edp.geojson](test-files/valid/valid_in_edp.geojson) | GeoJSON |
-| [valid_in_edp.json](test-files/valid/valid_in_edp.json) | JSON |
-| [valid_in_edp.kml](test-files/valid/valid_in_edp.kml) | KML |
-| [valid_shapefile.zip](test-files/valid/valid_shapefile.zip) | Shapefile (zip) |
+| Test file                                                                               | Format          |
+|-----------------------------------------------------------------------------------------|-----------------|
+| [valid_in_edp.geojson](test-files/valid/valid_in_edp.geojson)                           | GeoJSON         |
+| [valid_in_edp.json](test-files/valid/valid_in_edp.json)                                 | JSON            |
+| [valid_in_edp.kml](test-files/valid/valid_in_edp.kml)                                   | KML             |
+| [valid_shapefile.zip](test-files/valid/valid_shapefile.zip)                             | Shapefile (zip) |
+| [valid_in_edp_2_catchments.geojson](test-files/valid/valid_in_edp_2_catchments.geojson) | GeoJSON         |
+| [valid_in_edp_3_catchments.geojson](test-files/valid/valid_in_edp_3_catchments.geojson) | GeoJSON         |
 
 ## Valid boundary outside any EDP
 
