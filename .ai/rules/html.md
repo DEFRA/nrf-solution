@@ -8,6 +8,7 @@ All dates displayed to users must use the GOV.UK date format: day month-name yea
 - Use a Nunjucks filter or macro to apply the format (e.g. `{{ application.createdAt | govukDate }}`); do not pre-format dates in JavaScript before passing them to `h.view()`
 - Defining the filter: add a `govukDate` filter to the Nunjucks environment in the server setup (or reuse one already defined in the project) that converts the value using `Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })` or equivalent
 - If the value is null, undefined, or an invalid date, the filter must return a hyphen `–` rather than throwing or rendering a fallback epoch date
+- When a time component is needed, use the pattern `d MMM yyyy 'at' HH:mm` (e.g. "8 Sep 2026 at 08:35") — use the standard 3-letter month abbreviation (`Sep`, not `Sept`), and format in local time (not UTC)
 
 ## Links
 

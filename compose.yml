@@ -216,6 +216,7 @@ services:
       # Service-to-service API keys (local dev only; real values come from CDP secrets)
       BACKEND_API_KEY: local-dev-backend-key
       IMPACT_ASSESSOR_API_KEY: local-dev-impact-assessor-key
+      NOTIFY_SEND_RETRY_ENABLED: 'true'
     volumes:
       - ./backend/src:/home/node/src
       - ./backend/package.json:/home/node/package.json
