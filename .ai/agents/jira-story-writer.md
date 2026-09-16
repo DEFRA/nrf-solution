@@ -7,6 +7,7 @@ skills:
   - read-jira-ticket
   - create-jira-ticket
   - read-confluence-page
+  - browse-prototype
 ---
 
 You produce clear, testable Jira tickets, using feature specifications written in Confluence.
@@ -16,18 +17,94 @@ You produce clear, testable Jira tickets, using feature specifications written i
 
 You'll be given a feature specification in Confluence as an input parameter (example - https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6596757546/Enter+NRL+reference).
 
-### Content
-The single source of truth for all content, error messages, and interactivity, is the prototype. The feature specification will have a link to the prototype page to use as a reference. The password is `nrf-2025-round1!`.
-
 ### Page type
-The only current supported page type is 'question page'. This will behave as a standard gov.uk form page. Look under the Form validation section for the types of form validations that should be included.
+The only current supported page type is 'question page'. This will behave as a standard gov.uk form page.
 
 
-## Output - Jira story
+## Workflow
 
-Example output, for the above feature spec - https://eaflood.atlassian.net/browse/NRF2-1159
+### Step 1 — Read the Confluence spec
 
-### Non-functional requirements
+Use `read-confluence-page` on the provided URL. Extract:
+
+- Feature (link), Context, User, Page type, Prototype URL
+- Navigation: route, all entry points and back link rules, next page
+- Form validation: field validations, whether the user's entry is saved and re-shown on return
+- Out of scope (if present)
+- NFRs (if present — additive to the guidance-page baseline)
+
+**Check for an existing Jira story link:** look for a `Jira story:` line in the page body (format: `<strong>Jira story</strong>: <a href="...">NRF2-XXXX</a>`). If found, extract the ticket key — this is an existing ticket and Step 5 must update it rather than create a new one.
+
+### Step 2 — Browse the prototype (happy path)
+
+Use `browse-prototype` with the prototype URL from the spec. The password is `nrf-2025-round1!`. Capture the exact h1 heading, field labels, hint text, and button text.
+
+### Step 3 — Browse the prototype (error state)
+
+Submit the form empty — and with an invalid value where the spec lists a format rule — to trigger the error summary. Capture the exact error link text from each `govukErrorSummary` error for each validation. This is the single source of truth for error message wording.
+
+### Step 4 — Draft the ticket description
+
+Use this structure:
+
+```
+*Feature*: [+Feature name+|url]
+
+*Context*: [text from spec]
+
+*User*: [text from spec]
+
+*Page type*: question page
+
+[+Prototype+|url]
+
+h2. URLs
+
+* *This page:* /route/from/spec
+* *Back link:* /route/of/back/link/destination    ← one bullet per distinct back link destination; omit if there is no back link
+* *Next page:* /route/of/next/page
+
+h2. Out of scope        ← only include if the spec has an Out of scope section
+
+* [item]
+
+h2. Acceptance criteria
+
+[Given/When/Then blocks]
+
+h2. Non-functional requirements
+
+[NFR bullets]
+```
+
+**Ticket summary:** use the exact h1 from the prototype (step 2), suffixed with "page" — e.g. "Enter your NRL reference page".
+
+#### Acceptance criteria
+
+Write one Given/When/Then block per scenario, in this order:
+
+1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section)
+2. **Each back link rule** — one block per distinct back link destination
+3. **Happy path** — valid input → next page; include the exact URL path from the spec (e.g. `/request-to-use/enter-email`)
+4. **Missing value** — empty submission → exact error text from the prototype (step 3)
+5. **Invalid format** (only if the spec lists a format rule) — bad value → exact error text from the prototype (step 3)
+6. **Entry is re-shown** (only if the spec says the user's entry is saved and re-shown on return) — user returns to the page and sees their previously entered value
+
+No blank lines within a block. One blank line between blocks.
+
+If the prototype error state couldn't be reached, note this and use the spec wording as a placeholder.
+
+### Step 5 — Create or update the ticket
+
+- **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `.ai/skills/tools/confluence/add-jira-link.sh PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story.
+- **Existing ticket key found** (from Step 1 or provided by the user): use `update-ticket.sh` with the revised description, then add a comment summarising what changed. Do not call `add-jira-link.sh` — the link is already on the page.
+
+### Step 6 — Report
+
+Return the ticket key and URL.
+
+
+## Non-functional requirements
 
 Every ticket must include an `h2. Non-functional requirements` section, separate from the acceptance criteria.
 
@@ -52,5 +129,3 @@ Steps:
 4. In the ticket's `h2. Non-functional requirements` section, list each applicable category as a bullet linking to its Confluence page. Use Jira wiki-markup link syntax, e.g. `* [+Accessibility+|https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6538166273/Page-level+accessibility+guidance]`.
 5. Append any NFRs listed in the spec's own NFRs section as additional bullets. Spec-listed NFRs are additive — they extend the guidance baseline, they don't override it. Include the spec's wording as text (there is no guidance-page link to reference).
 6. List **all** relevant NFRs explicitly in the ticket. Don't skip any on the assumption that "the team always does this" — being explicit is the whole point.
-
-
