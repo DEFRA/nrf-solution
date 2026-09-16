@@ -35,15 +35,16 @@ Use `read-confluence-page` on the provided URL. Extract:
 
 **Check for an existing Jira story link:** look for a `Jira story:` line in the page body (format: `<strong>Jira story</strong>: <a href="...">NRF2-XXXX</a>`). If found, extract the ticket key — this is an existing ticket and Step 5 must update it rather than create a new one.
 
-### Step 2 — Browse the prototype (happy path)
+### Step 2 — Browse the prototype
 
-Use `browse-prototype` with the prototype URL from the spec. The password is `nrf-2025-round1!`. Capture the exact h1 heading, field labels, hint text, and button text.
+Use `browse-prototype` with the prototype URL from the spec. The password is `nrf-2025-round1!`. In a single browser session:
 
-### Step 3 — Browse the prototype (error state)
+1. Capture the exact h1 heading, hint text, and button text from the happy-path page.
+2. Submit the form empty — and with an invalid value where the spec lists a format rule — to trigger the error summary. Capture the exact error link text from each `govukErrorSummary` error. This is the single source of truth for error message wording.
 
-Submit the form empty — and with an invalid value where the spec lists a format rule — to trigger the error summary. Capture the exact error link text from each `govukErrorSummary` error for each validation. This is the single source of truth for error message wording.
+You only need these specific strings — h1, hint, button label, and error messages — not the full JSON output of the extraction script.
 
-### Step 4 — Draft the ticket description
+### Step 3 — Draft the ticket description
 
 Use this structure:
 
@@ -84,22 +85,22 @@ h2. Non-functional requirements
 Write one Given/When/Then block per scenario, in this order:
 
 1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section)
-2. **Each back link rule** — one block per distinct back link destination
+2. **Each back link rule** — one block per distinct back link destination. Where the back link destination depends on which entry point the user came from, name the entry point in the `Given` clause.
 3. **Happy path** — valid input → next page; include the exact URL path from the spec (e.g. `/request-to-use/enter-email`)
-4. **Missing value** — empty submission → exact error text from the prototype (step 3)
-5. **Invalid format** (only if the spec lists a format rule) — bad value → exact error text from the prototype (step 3)
-6. **Entry is re-shown** (only if the spec says the user's entry is saved and re-shown on return) — user returns to the page and sees their previously entered value
+4. **Missing value** — empty submission → exact error text from the prototype (step 2). Always include this block for a `question page`: empty-submission validation is standard GOV.UK form behaviour even when the spec does not mention it explicitly.
+5. **Invalid format** (only if the spec lists a format rule) — bad value → exact error text from the prototype (step 2)
+6. **Entry is re-shown** (only if the spec says the user's previously entered value is restored when they navigate back within the same session) — user navigates back to the page and sees their previously entered value
 
 No blank lines within a block. One blank line between blocks.
 
 If the prototype error state couldn't be reached, note this and use the spec wording as a placeholder.
 
-### Step 5 — Create or update the ticket
+### Step 4 — Create or update the ticket
 
-- **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `.ai/skills/tools/confluence/add-jira-link.sh PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story.
+- **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `.ai/skills/tools/confluence/add-jira-link.sh PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
 - **Existing ticket key found** (from Step 1 or provided by the user): use `update-ticket.sh` with the revised description, then add a comment summarising what changed. Do not call `add-jira-link.sh` — the link is already on the page.
 
-### Step 6 — Report
+### Step 5 — Report
 
 Return the ticket key and URL.
 

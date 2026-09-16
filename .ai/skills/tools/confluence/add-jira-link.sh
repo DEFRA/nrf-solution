@@ -26,7 +26,7 @@ if [[ -z "$INPUT" || -z "$JIRA_KEY" || -z "$JIRA_URL" ]]; then
   exit 1
 fi
 
-if ! [[ "$JIRA_KEY" =~ ^[A-Z]+-[0-9]+$ ]]; then
+if ! [[ "$JIRA_KEY" =~ ^[A-Z][A-Z0-9]*-[0-9]+$ ]]; then
   echo "Error: invalid Jira key format: $JIRA_KEY"
   exit 1
 fi

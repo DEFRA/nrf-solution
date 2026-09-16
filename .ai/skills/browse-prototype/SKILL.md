@@ -307,7 +307,16 @@ Run the following JavaScript via `mcp__playwright__browser_evaluate`. It parses 
 })()
 ```
 
-## Step 3: Validate and report
+## Step 3: Capture error states (when requested by caller)
+
+If the caller needs error message text, trigger each validation in the same browser session immediately after Step 2:
+
+1. **Empty submission** — click the Continue button without filling any fields. Take a snapshot. The `govukErrorSummary` will appear; each `<a>` in the error list is the exact error link text to capture.
+2. **Invalid format** (only if the caller's spec lists a format rule) — fill the field with a value that matches the input type but fails the format check (e.g. `ABC123` for a field expecting `NRL-123456`). Submit and capture the error summary again.
+
+The error link text in `govukErrorSummary` is the single source of truth for error message wording — do not use the inline field error or the spec wording.
+
+## Step 4: Validate and report
 
 - If the result is `null`, the page has no `<main>` element — stop and report this to the user.
 - If `metadata.title` is `null`, inspect the snapshot for an `<h1>` that may have been missed, extract its text manually, and flag it in the summary as needing confirmation.
