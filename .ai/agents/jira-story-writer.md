@@ -39,10 +39,10 @@ Use `read-confluence-page` on the provided URL. Extract:
 
 Use `browse-prototype` with the prototype URL from the spec. The password is `nrf-2025-round1!`. In a single browser session:
 
-1. Capture the exact h1 heading, hint text, and button text from the happy-path page.
-2. Submit the form empty — and with an invalid value where the spec lists a format rule — to trigger the error summary. Capture the exact error link text from each `govukErrorSummary` error. This is the single source of truth for error message wording.
+1. Capture the exact h1 heading from the happy-path page (used for the ticket summary only).
+2. Submit the form empty — and with an invalid value where the spec lists a format rule — to confirm each error state is reachable. You do not need to capture the error text; ACs link to the prototype rather than embed content strings.
 
-You only need these specific strings — h1, hint, button label, and error messages — not the full JSON output of the extraction script.
+You only need the h1 and confirmation that each error state is reachable — not the full JSON output of the extraction script.
 
 ### Step 3 — Draft the ticket description
 
@@ -80,6 +80,12 @@ h2. Non-functional requirements
 
 **Ticket summary:** use the exact h1 from the prototype (step 2), suffixed with "page" — e.g. "Enter your NRL reference page".
 
+#### Content strings and prototype links
+
+Never copy content strings (h1 headings, hint text, button labels, error messages) into the ticket. Link to the prototype page instead — it is the single source of truth for all wording. This rule must always be followed.
+
+**Exception — page references:** Referring to a page by name in a Given/When/Then clause (e.g. "Given I am on the enter NRL reference page") is acceptable. Do not put the page name in quotes — it is a navigational reference, not a copy of the h1 content.
+
 #### Acceptance criteria
 
 Write one Given/When/Then block per scenario, in this order:
@@ -87,13 +93,13 @@ Write one Given/When/Then block per scenario, in this order:
 1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section)
 2. **Each back link rule** — one block per distinct back link destination. Where the back link destination depends on which entry point the user came from, name the entry point in the `Given` clause.
 3. **Happy path** — valid input → next page; include the exact URL path from the spec (e.g. `/request-to-use/enter-email`)
-4. **Missing value** — empty submission → exact error text from the prototype (step 2). Always include this block for a `question page`: empty-submission validation is standard GOV.UK form behaviour even when the spec does not mention it explicitly.
-5. **Invalid format** (only if the spec lists a format rule) — bad value → exact error text from the prototype (step 2)
+4. **Missing value** — empty submission → error summary as shown on the [prototype|prototype-url]. Always include this block for a `question page`: empty-submission validation is standard GOV.UK form behaviour even when the spec does not mention it explicitly.
+5. **Invalid format** (only if the spec lists a format rule) — bad value → error summary as shown on the [prototype|prototype-url]
 6. **Entry is re-shown** (only if the spec says the user's previously entered value is restored when they navigate back within the same session) — user navigates back to the page and sees their previously entered value
 
 No blank lines within a block. One blank line between blocks.
 
-If the prototype error state couldn't be reached, note this and use the spec wording as a placeholder.
+If a prototype error state couldn't be reached, note this and omit that AC block — do not use spec wording as a substitute.
 
 ### Step 4 — Create or update the ticket
 
