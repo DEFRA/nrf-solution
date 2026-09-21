@@ -1,6 +1,6 @@
 ---
-name: jira-story-reviewer
-description: Reviews a Jira story for completeness, testability, and compliance with jira-story-writer conventions
+name: review-jira-story
+description: Reviews a Jira story for completeness, testability, and compliance with write-jira-story conventions
 ---
 
 ## Parameters
@@ -22,19 +22,7 @@ Run every check below in full. Collect all findings before reporting — do not 
 
 #### Check A — Required sections present
 
-The description must contain all of the following, in order:
-
-| Element | Expected |
-|---|---|
-| Feature | `*Feature*:` followed by a `[+…+\|url]` link |
-| User need | `*User need*:` followed by an "As a … I want … so that …" statement |
-| Page type | `*Page type*:` line |
-| Prototype link | A bare `[+Prototype+\|url]` line |
-| URLs section | `h2. URLs` with at minimum a `* *This page*:` bullet |
-| Acceptance criteria | `h2. Acceptance criteria` |
-| Scenarios | At least one `h3. Scenario N` subheading under the AC section |
-| Step keywords | Every scenario uses `*Given*`, `*When*`, `*Then*` (Jira bold markup) |
-| NFRs | `h2. Non-functional requirements` with at least one bullet |
+The description must contain all of the required sections in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md)
 
 Flag any element that is missing or malformed.
 
@@ -69,12 +57,7 @@ For each scenario, verify:
 
 #### Check D — NFR completeness
 
-The four baseline categories must all be present unless the ticket is clearly out of scope for one (e.g. an internal admin-only page). For a `question page` all four apply. Flag any missing baseline category:
-
-- Accessibility
-- Browser & device compatibility
-- Page load performance
-- Security
+Use the mapping in [non-functional requirements](../../../docs/ai/non-functional-requirements.md) to check that all relevant NFRs are linked to.
 
 ---
 
