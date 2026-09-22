@@ -70,7 +70,7 @@ Exceptions:
 - The h1 is used verbatim as the ticket summary (see above).
 - Page names may appear in Given/When/Then clauses as navigational references (e.g. "Given I am on the enter NRL reference page") — do not put them in quotes.
 
-For error states, link directly to the error state by appending `?preview=1&error=1` to the prototype page URL (e.g. `https://nrf-prototypes.ext-test.cdp.defra.gov.uk/nrf-request-to-use-1/quote-reference?preview=1&error=1`).
+For error states, link directly to the prototype error state. Use the prototype URL from the spec's form validation section if one is provided (e.g. `?preview=1&error=format`). Fall back to appending `?preview=1&error=1` only when the spec does not give a specific error URL for that validation.
 
 #### Acceptance criteria
 
