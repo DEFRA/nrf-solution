@@ -17,10 +17,9 @@ divergence-is-configuration-not-behaviour, high drift cost, low churn, one-sente
 | 2 | `logger-options.js` | T2 | backend `src/common/helpers/logging/`, frontend `src/server/common/helpers/logging/`, admin `src/server/plugins/` | near: backend↔frontend 20 diff lines; frontend↔admin 46 | 3-way copy; pino redaction/level config |
 | 3 | `serve-static-files.js` | T2 | frontend `src/server/common/helpers/`, admin `src/server/plugins/` | import paths only (6 diff lines) | hapi static file handler |
 | 4 | CSP (Blankie config) | T2 | frontend `src/server/common/helpers/content-security-policy.js`, admin `src/server/plugins/content-security-policy.js` | same skeleton; values differ (conditional origins/nonces vs static + GOV.UK hash) | Needs configurable factory — would be the library's first plugin-style export |
-| 5 | Session-cookie helper | T1 | frontend `src/server/quote/quote-details/helpers/quote-details-session-cookie.js`, frontend `src/server/request-to-use/session-cookie.js` | renamed identifiers only | Intra-repo; factory `createSessionCookieHelper({ name })` |
-| 6 | `cdp-uploader.js` | T2? | admin `src/server/common/services/cdp-uploader/`, backend `src/services/cdp-uploader/` | **drifted fork** — 128 diff lines of ~140/159 | High effort: align first or accept divergence; ~77 lines still token-identical |
-| 7 | Result-union typedefs | T3 | backend: `zip-safety.js`, `safe-filename.js`, `shapefile-contents.js` | same pattern re-declared 3× locally | Convention: one shared typedef per repo |
-| 8 | `Toolkit` → `ResponseToolkit` | T3 | frontend `src/server/auth/redirect-to-sign-in.js` (old name) vs 5+ files using `ResponseToolkit` | naming only | One-line fix |
+| 5 | `cdp-uploader.js` | T2? | admin `src/server/common/services/cdp-uploader/`, backend `src/services/cdp-uploader/` | **drifted fork** — 128 diff lines of ~140/159 | High effort: align first or accept divergence; ~77 lines still token-identical |
+| 6 | Result-union typedefs | T3 | backend: `zip-safety.js`, `safe-filename.js`, `shapefile-contents.js` | same pattern re-declared 3× locally | Convention: one shared typedef per repo |
+| 7 | `Toolkit` → `ResponseToolkit` | T3 | frontend `src/server/auth/redirect-to-sign-in.js` (old name) vs 5+ files using `ResponseToolkit` | naming only | One-line fix |
 
 ## Sweep findings
 
@@ -126,14 +125,13 @@ export surface to the library.
 
 1. **Library "server kit" — logging/observability + verbatim misc** (T2, cheapest × 3 repos): `logger.js`, `log-formatters.js` (verbatim), `request-logger.js`, `request-tracing.js`, `pulse.js`, `metrics.js`, `git-hash`, `statusCodes` (align keys `found`/`redirect` first), `formatCurrency`/`formatDate` (join `formatCurrencyPrecise`). One version bump, 3 consumer PRs, near-zero design work.
 2. **Library "security kit"** (T2, highest drift cost): `security-headers.js` (COEP value per app) + CSP Blankie factory + `serve-static-files.js`. **This is the ticket's pre-seeded item #1** — and it introduces the library's first configurable-plugin/factory pattern (see premise correction below).
-3. **Frontend session-cookie factory** (T1, trivial): `createSessionCookieHelper({ name })` collapsing the near-verbatim pair. The ticket's pre-seeded item #2.
-4. **Admin `reference-pattern.js` → library import** (T1, trivial): last lingering v1.11.0 local copy.
-5. **Library "service-client kit"** (T2): the 6-copy header builder, `nrf-backend.js` core, `wreckErrorContext`, base-URL fallback, `getS3Client` singleton, impact-assessor wrapper.
-6. **Quote wire-contract enums to library** (T2, needs product decision): planningType/boundaryEntryType lists + `MAX_BOUNDARY_FILENAME_LENGTH`; **reconcile `housingUnits` 50,000 (fe) vs 999,999 (be) deliberately**.
-7. **Library "view kit"** (T2, new export surface): nunjucks config factory, `heading` component, filters, `renderComponent` helper, `initGovukFrontend()`, shared SCSS partials, test-utils entry (axe-helper, setup-msw-server).
-8. **Align-then-decide forks** (one ticket per fork, or a decision ticket): `cdp-uploader.js` (admin↔backend, 128-line drift), `redis-client.js`/`cache-engine.js`, `errors.js` catchAll (share message-map core, per-app templates), `setup-proxy.js` (global-agent vs undici), `logger-options.js` (admin missing ECS error structuring), convict base-config + `page.njk` base layout + `context.js` manifest adapter (longer-term).
-9. **Security alignment (not dedup — separate small tickets)**: harden admin's `getRefererAsRelativeURL` catch-fallback to reject scheme-relative `//…` strings (fe's `get-safe-redirect.js` is the model — iteration 2 confirmed admin *has* a sanitiser, but the fallback is weak); admin yar `maxCookieSize: 0` omission.
-10. **Conventions tidy** (T3): `Toolkit` → `ResponseToolkit` (one fe file); backend shared `Result` typedef (3 re-declarations); backend email-Joi fragment (2 verbatim inline copies + fe canonical); `requireInProduction` already counts toward ticket item #3's spirit.
+3. **Admin `reference-pattern.js` → library import** (T1, trivial): last lingering v1.11.0 local copy.
+4. **Library "service-client kit"** (T2): the 6-copy header builder, `nrf-backend.js` core, `wreckErrorContext`, base-URL fallback, `getS3Client` singleton, impact-assessor wrapper.
+5. **Quote wire-contract enums to library** (T2, needs product decision): planningType/boundaryEntryType lists + `MAX_BOUNDARY_FILENAME_LENGTH`; **reconcile `housingUnits` 50,000 (fe) vs 999,999 (be) deliberately**.
+6. **Library "view kit"** (T2, new export surface): nunjucks config factory, `heading` component, filters, `renderComponent` helper, `initGovukFrontend()`, shared SCSS partials, test-utils entry (axe-helper, setup-msw-server).
+7. **Align-then-decide forks** (one ticket per fork, or a decision ticket): `cdp-uploader.js` (admin↔backend, 128-line drift), `redis-client.js`/`cache-engine.js`, `errors.js` catchAll (share message-map core, per-app templates), `setup-proxy.js` (global-agent vs undici), `logger-options.js` (admin missing ECS error structuring), convict base-config + `page.njk` base layout + `context.js` manifest adapter (longer-term).
+8. **Security alignment (not dedup — separate small tickets)**: harden admin's `getRefererAsRelativeURL` catch-fallback to reject scheme-relative `//…` strings (fe's `get-safe-redirect.js` is the model — iteration 2 confirmed admin *has* a sanitiser, but the fallback is weak); admin yar `maxCookieSize: 0` omission.
+9. **Conventions tidy** (T3): `Toolkit` → `ResponseToolkit` (one fe file); backend shared `Result` typedef (3 re-declarations); backend email-Joi fragment (2 verbatim inline copies + fe canonical); `requireInProduction` already counts toward ticket item #3's spirit.
 
 ### Not extraction (documented to prevent re-litigation)
 
@@ -178,9 +176,7 @@ corrections, for the record:
 
 | Candidate | Tier | Copies | Notes |
 |---|---|---|---|
-| `quoteAccessStatus` wire-contract enum (7 lines, byte-identical) | T2 | backend `src/api/quote/quote-access-status.js` ↔ fe `quote/quote-details/helpers/quote-access-status.js` | third consumer (`request-to-use/controller-get.js:16`) already compares the raw string `'not_found'` — live drift proof; one-line library PR (`QUOTE_ACCESS_STATUS`), cf. `BOUNDARY_ERRORS` |
-| Request-to-use individual/business page pairs | T1 | fe `request-to-use/defra-id-individual-{name,phone}` ↔ `defra-id-business-{your-name,your-phone}`, `defra-id-memorable-word` ↔ `defra-id-business-memorable-word` | `index.njk` **byte-identical** in all 3 pairs (~170 template lines); JS differs only by route ids. Parameterise per logical page; three lookalike pairs (company-number, what-address, check-details) are genuinely different pages — leave |
-| `createPageController` hardwired to quote journey | T1 | fe `common/controllers/page-controller.js` (33 lines) + r2u re-implementations `controller-get/post.js` | "shared" controller imports quote cache/validation directly — **manage routes read/write the quote session cache** (latent coupling); r2u can't reuse it. Parameterise collaborators (`getSession`, `saveSession`, validation-flash hooks); highest-leverage refactor of the pass |
+| `quoteAccessStatus` wire-contract enum (7 lines, byte-identical) | T2 | backend `src/api/quote/quote-access-status.js` ↔ fe `quote/quote-details/helpers/quote-access-status.js` | the API contract between backend and frontend, both sides branching on the same strings across ~10 call sites; one-line library PR (`QUOTE_ACCESS_STATUS`), cf. `BOUNDARY_ERRORS` |
 | `createRequiredChoiceValidator` | T1 | fe `quote/{boundary-type,confirm-housing,planning-type,delete-quote}/form-validation.js` | same `joi.string().valid(…).required().messages(…)` shape ×4; repo precedent exists (`number-validators.js`, `email.js`) — this is the one pattern not yet extracted |
 | Admin upstream-error mapping (~30 lines/file) | T1 | admin `routes/api/{data-sync,uploads}/controller.js` (3 + 5 handlers) | every handler repeats "if (result.error) map statusCode → JSON error, default BAD_GATEWAY"; extract `mapUpstreamResult(result, h, …)`. Bonus: these files import `StatusCodes` from npm `http-status-codes` while the rest of admin uses the local constant — two vocabularies in one repo |
 | Third, drifted backend email rule | strengthens existing email candidate | backend `api/quote/resend-unknown-controller.js:13-19` | `max(256)` (vs 254 everywhere else), no `trim`, no no-spaces rule — its own comment warns about frontend/backend disagreement while already disagreeing with every other copy. Promotes the email-fragment extraction in priority |
@@ -195,10 +191,9 @@ corrections, for the record:
 
 - **Ticket 1 (server kit)** gains `quoteAccessStatus` (one-line library export).
 - **Email Joi fragment** moves up the priority order: three backend copies, one already drifted (256 vs 254, missing no-spaces).
-- **New ticket — frontend page-module engine (T1):** parameterise `createPageController`/`createPostController` collaborators, fold in the r2u individual/business page pairs and `createRequiredChoiceValidator`. One coherent frontend refactor; also fixes the manage↔quote session-cache coupling.
 - **New ticket — admin API tidy (T1):** `mapUpstreamResult` helper + unify on one status-code vocabulary (drop the npm `http-status-codes` imports).
 - **T3 conventions list grows:** shared eslint base; route-path import rule; `MAX_RESIDENTIAL_UNITS` cross-reference.
 
 ### Confirmed negatives (don't re-tread)
 
-Backend is the cleanest of the three repos — no intra-repo extraction worth doing (resend controller pair differs in authz semantics; no pagination/sort/string-utils duplication exists). Admin delete vs bulk-delete is well-factored (composes via `Promise.allSettled`); only a minor `get-quote.js` re-fetch overlap. The 58 fe `get-view-model.js` stubs are parallel-by-design — the fix is the page-module convention, not per-file extraction. Admin `plugins/session-cookie.js` vs fe `request-to-use/session-cookie.js`: same filename, entirely different purposes (`@hapi/cookie` auth vs iron-sealed magic-link cookie).
+Backend is the cleanest of the three repos — no intra-repo extraction worth doing (resend controller pair differs in authz semantics; no pagination/sort/string-utils duplication exists). Admin delete vs bulk-delete is well-factored (composes via `Promise.allSettled`); only a minor `get-quote.js` re-fetch overlap. The 58 fe `get-view-model.js` stubs are parallel-by-design — not per-file extraction candidates.
