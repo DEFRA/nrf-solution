@@ -51,11 +51,11 @@ divergence-is-configuration-not-behaviour, high drift cost, low churn, one-sente
 | Sign-out controllers | T3 | frontend `server/auth/controller.js`, admin `server/routes/auth/sign-out-controller.js` | same shape (clear session → discovery → end_session_endpoint → redirect); different IdPs/stores |
 | Session-creation-on-callback | T3 | frontend `signInOidcController`/`createUserSession`, admin `auth-callback-controller.js` + `save-user-session.js` | structural; different providers/session shapes |
 
-**Drifted forks (need align-then-extract decision):** `redis-client.js` (fe 95 ↔ admin 67 lines, ~55-line shared core), `errors.js`/catchAll (fe adds error templates; admin passes through API messages), `start-server.js` (3 copies, shared ~15-line core + repo-specific health checks), `cache-engine.js` (admin has memory fallback; fe redis-only), `nrf-backend.js` Wreck client (fe 102 ↔ admin 48, fe superset), `cdp-uploader.js` (already known).
+**Drifted forks (need align-then-extract decision):** `redis-client.js` (fe 95 ↔ admin 67 lines — 66 of admin's 67 lines byte-identical, even more than round 1 claimed), `errors.js`/catchAll (fe adds error templates; admin passes through API messages; fe rewritten by NRF2-1178 on 21–22 Sep — now 65 lines with `getPageTitle`/`pageHeading`, re-baseline before extracting), `start-server.js` (3 copies, shared ~12–15-line core + repo-specific health checks), `cache-engine.js` (admin has memory fallback; fe redis-only), `nrf-backend.js` Wreck client (fe 102 ↔ admin 48, fe superset), `cdp-uploader.js` (already known).
 
 **Rejected as duplicates (intentionally different):** the auth stacks overall — frontend hand-rolls Defra ID B2C OIDC (288-line controller + refresh tokens); admin delegates to `@defra/hapi-auth-oidc` with Entra/Cognito. Token refresh, router boilerplate trio, fail-action patterns: concept-similar only. `plugins/cookies.js` (fe) vs `plugins/session-cookie.js` (admin): similar names, unrelated purposes.
 
-**⚠️ Security drift found by the sweep (not dedup — align):** admin's sign-in captures the HTTP Referer as post-login redirect with **no open-redirect guard** (escapeHtml on output only); frontend validates via `get-safe-redirect.js` (relative-only, rejects `//`, `%2f%2f`). This is exactly the drift cost the rubric warns about — worth its own small ticket.
+**⚠️ Security drift found by the sweep (not dedup — align; reframed by iteration-2 verification):** admin's sign-in *does* sanitise the Referer (`getRefererAsRelativeURL` strips origin/host via `new URL()`), **but** its catch-branch fallback accepts any `/`-prefixed string verbatim — so a protocol-relative `//evil.com` (unparseable standalone → falls into catch) still reaches the auth-callback meta-refresh `URL='…'` with only escapeHtml applied. Lower severity than "unguarded" (browsers send absolute-URL Referers, so it needs a hand-crafted request), but a real weak fallback. Frontend's stronger model is `src/server/auth/get-safe-redirect.js` (relative-only, rejects `//`, `%2f%2f`). Worth a small hardening ticket: reject scheme-relative strings in the fallback branch.
 
 **Consolidation verdict (area 1):** the verbatim cluster — logger.js, log-formatters.js, logger-options.js, request-logger.js, request-tracing.js, pulse.js, index.js, security-headers.js, serve-static-files.js — is one coherent **"server bootstrap kit"** extraction into `@defra/nrf-library` (single version bump + 3 consumer PRs), rather than nine piecemeal tickets. Bigger forks (redis-client, cdp-uploader, nrf-backend client, errors) each need an align-first decision.
 
@@ -132,7 +132,7 @@ export surface to the library.
 6. **Quote wire-contract enums to library** (T2, needs product decision): planningType/boundaryEntryType lists + `MAX_BOUNDARY_FILENAME_LENGTH`; **reconcile `housingUnits` 50,000 (fe) vs 999,999 (be) deliberately**.
 7. **Library "view kit"** (T2, new export surface): nunjucks config factory, `heading` component, filters, `renderComponent` helper, `initGovukFrontend()`, shared SCSS partials, test-utils entry (axe-helper, setup-msw-server).
 8. **Align-then-decide forks** (one ticket per fork, or a decision ticket): `cdp-uploader.js` (admin↔backend, 128-line drift), `redis-client.js`/`cache-engine.js`, `errors.js` catchAll (share message-map core, per-app templates), `setup-proxy.js` (global-agent vs undici), `logger-options.js` (admin missing ECS error structuring), convict base-config + `page.njk` base layout + `context.js` manifest adapter (longer-term).
-9. **Security alignment (not dedup — separate small tickets)**: admin sign-in open-redirect guard (fe's `get-safe-redirect.js` is the model); admin yar `maxCookieSize: 0` omission.
+9. **Security alignment (not dedup — separate small tickets)**: harden admin's `getRefererAsRelativeURL` catch-fallback to reject scheme-relative `//…` strings (fe's `get-safe-redirect.js` is the model — iteration 2 confirmed admin *has* a sanitiser, but the fallback is weak); admin yar `maxCookieSize: 0` omission.
 10. **Conventions tidy** (T3): `Toolkit` → `ResponseToolkit` (one fe file); backend shared `Result` typedef (3 re-declarations); backend email-Joi fragment (2 verbatim inline copies + fe canonical); `requireInProduction` already counts toward ticket item #3's spirit.
 
 ### Not extraction (documented to prevent re-litigation)
@@ -147,3 +147,58 @@ consumed by direct ESM import (`referenceParam`, `quotePatchSchema`, …), with 
 register/configure machinery. A configurable plugin/factory would be a **new pattern** for
 `@defra/nrf-library`, so that follow-up ticket needs to design the registration/config shape
 rather than copy an existing one.
+
+## Iteration 2 — verification & gap-hunt (2026-09-22)
+
+Every round-1 claim was re-diffed by four adversarial verifiers (one per area), plus a
+gap-hunt pass over angles round 1 didn't cover.
+
+**Verification outcome: ~44 of 54 claims verified verbatim-accurate, 10 corrected on
+details, 0 failed.** No candidate was removed. An md5 sweep of both view trees found no
+verbatim view file that round 1 missed. Round-1 entries above already carry the material
+corrections in place (security finding reframed; errors.js re-baselined). Remaining
+corrections, for the record:
+
+- Wreck error-context idiom: **10** occurrences (not 9), plus 2 partial statusCode-only variants
+- backend impact-assessor client is 190 lines (not ~160); fe `uploader.js` 102 (not 103); serve-static-files diff is 5 lines (not 6); upload redirect rule sits at `upload.js:44`
+- MSW localhost-passthrough handler is in **frontend's** copy (round 1 said backend's); `load-page.js` downgraded from near-verbatim to same-purpose / different parameter contract (fe `headers`, admin `auth` + fixture)
+- `requireInProduction` JSDoc identical in 2 of 3 (fe adds a parenthetical)
+- health/version endpoints: the verbatim OpenAPI JSDoc claim holds **fe↔be only**; admin's health route has no OpenAPI block and admin has no `/version` endpoint at all — but fe↔admin health *controllers* are a near-verbatim 8-line pair
+- yar session plugin: `clearInvalid: true` is in **both** copies (round 1 wrongly called it admin-only); the real divergences are the `maxCookieSize: 0` omission and the cookie-name source (`cache.name` vs `cookie.name`)
+- `_govuk-frontend.scss` differs in quote style as well as `$govuk-assets-path`; `component-helpers.js` lives at admin **repo root** `test-helpers/` (alias `#/`), not under `src/`; "getContext builders" naming was imprecise — the fe-only artefacts are the 58 `get-view-model.js` stubs
+
+**Drift since round 1** (no verdicts invalidated; all measurements above re-taken on the current tree):
+
+- **NRF2-1178** (fe, 21–22 Sep): `errors.js` rewritten (67 → 65 lines, `getPageTitle`/`pageHeading`, `badGateway` case) + error templates — fe↔admin error divergence has **widened**; re-baseline before any shared-error-template work. The admin-side NRF2-1178 equivalent is a known follow-up ticket.
+- **NRF2-1171** (fe+be, 21 Sep): Swagger plugins deleted; `@openapi` JSDoc blocks intentionally kept. The pending JSDoc-removal ticket will also delete the 5 backend `NRL-\d{6}` literals and the repeated OpenAPI reference-param stanzas — **self-resolving, no action needed** for those.
+- **NRF2-853** (fe): footer "Privacy" → "Privacy policy" in `page.njk`/`email.njk`.
+- admin-frontend: zero commits since 2026-09-17.
+
+### New candidates found by iteration 2
+
+| Candidate | Tier | Copies | Notes |
+|---|---|---|---|
+| `quoteAccessStatus` wire-contract enum (7 lines, byte-identical) | T2 | backend `src/api/quote/quote-access-status.js` ↔ fe `quote/quote-details/helpers/quote-access-status.js` | third consumer (`request-to-use/controller-get.js:16`) already compares the raw string `'not_found'` — live drift proof; one-line library PR (`QUOTE_ACCESS_STATUS`), cf. `BOUNDARY_ERRORS` |
+| Request-to-use individual/business page pairs | T1 | fe `request-to-use/defra-id-individual-{name,phone}` ↔ `defra-id-business-{your-name,your-phone}`, `defra-id-memorable-word` ↔ `defra-id-business-memorable-word` | `index.njk` **byte-identical** in all 3 pairs (~170 template lines); JS differs only by route ids. Parameterise per logical page; three lookalike pairs (company-number, what-address, check-details) are genuinely different pages — leave |
+| `createPageController` hardwired to quote journey | T1 | fe `common/controllers/page-controller.js` (33 lines) + r2u re-implementations `controller-get/post.js` | "shared" controller imports quote cache/validation directly — **manage routes read/write the quote session cache** (latent coupling); r2u can't reuse it. Parameterise collaborators (`getSession`, `saveSession`, validation-flash hooks); highest-leverage refactor of the pass |
+| `createRequiredChoiceValidator` | T1 | fe `quote/{boundary-type,confirm-housing,planning-type,delete-quote}/form-validation.js` | same `joi.string().valid(…).required().messages(…)` shape ×4; repo precedent exists (`number-validators.js`, `email.js`) — this is the one pattern not yet extracted |
+| Admin upstream-error mapping (~30 lines/file) | T1 | admin `routes/api/{data-sync,uploads}/controller.js` (3 + 5 handlers) | every handler repeats "if (result.error) map statusCode → JSON error, default BAD_GATEWAY"; extract `mapUpstreamResult(result, h, …)`. Bonus: these files import `StatusCodes` from npm `http-status-codes` while the rest of admin uses the local constant — two vocabularies in one repo |
+| Third, drifted backend email rule | strengthens existing email candidate | backend `api/quote/resend-unknown-controller.js:13-19` | `max(256)` (vs 254 everywhere else), no `trim`, no no-spaces rule — its own comment warns about frontend/backend disagreement while already disagreeing with every other copy. Promotes the email-fragment extraction in priority |
+| Loose `boundaryGeojson: joi.object().required()` | T2 | fe `quote/helpers/quote-schema/index.js:15` ↔ backend `post-schema.js:33` | submit contract re-declared by hand on both sides while the library already ships `boundaryGeojsonSchema` + `requiredGeometryObject` |
+| `MAX_RESIDENTIAL_UNITS` same name, different values | T3 | fe 50000 ↔ backend 999999 | the 20× gap is presumably UX vs DB ceiling but is undocumented on the backend side — shared constant or cross-referencing comment |
+| Manual re-anchoring of library pattern | T1 (tiny) | backend `api/quote/validation/reference-param-schema.js:8` | rebuilds `new RegExp(\`^${referencePattern.source}$\`)` though the library exports exactly that in `referenceParam` (custom messages are the only addition) |
+| eslint configs byte-identical | T3 | fe ↔ admin `eslint.config.js` (backend adds 2 rules) | publish shared eslint base from `@defra/nrf-library` (it already maintains its own config) |
+| Route-path convention drift | T3 | fe `quote/**` | 8 pages use dedicated `route-path.js` leaf modules (built to break circular imports); 11 still export `routePath` from `routes.js` with 31 cross-page imports from there — convention rule + migrate |
+| Marginal / noted only | — | fe↔admin | byte-identical scaffolding READMEs (`server/common/README.md`, `client/common/README.md` + `.gitkeep`, `partials/README.md`); near-identical `application.scss` barrel skeleton; backend resend controllers share only doc/response-shape scaffolding (authz logic genuinely differs — don't extract); GitHub workflows + Dockerfiles are shared CDP-template convention, not extraction |
+
+### Iteration-2 ranking deltas
+
+- **Ticket 1 (server kit)** gains `quoteAccessStatus` (one-line library export).
+- **Email Joi fragment** moves up the priority order: three backend copies, one already drifted (256 vs 254, missing no-spaces).
+- **New ticket — frontend page-module engine (T1):** parameterise `createPageController`/`createPostController` collaborators, fold in the r2u individual/business page pairs and `createRequiredChoiceValidator`. One coherent frontend refactor; also fixes the manage↔quote session-cache coupling.
+- **New ticket — admin API tidy (T1):** `mapUpstreamResult` helper + unify on one status-code vocabulary (drop the npm `http-status-codes` imports).
+- **T3 conventions list grows:** shared eslint base; route-path import rule; `MAX_RESIDENTIAL_UNITS` cross-reference.
+
+### Confirmed negatives (don't re-tread)
+
+Backend is the cleanest of the three repos — no intra-repo extraction worth doing (resend controller pair differs in authz semantics; no pagination/sort/string-utils duplication exists). Admin delete vs bulk-delete is well-factored (composes via `Promise.allSettled`); only a minor `get-quote.js` re-fetch overlap. The 58 fe `get-view-model.js` stubs are parallel-by-design — the fix is the page-module convention, not per-file extraction. Admin `plugins/session-cookie.js` vs fe `request-to-use/session-cookie.js`: same filename, entirely different purposes (`@hapi/cookie` auth vs iron-sealed magic-link cookie).
