@@ -89,12 +89,12 @@ If a prototype error state couldn't be reached, note this and omit that AC block
 
 ### Step 4 — Create or update the ticket
 
-- **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `.ai/skills/tools/confluence/add-jira-link.sh PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
-- **Existing ticket key found** (from Step 1 or provided by the user): update the description by piping it to `bash .ai/skills/tools/jira/update-ticket.sh NRF2-XXXX -d -`, then add a comment summarising what changed using `bash .ai/skills/tools/jira/add-comment.sh NRF2-XXXX -`. Do not call `add-jira-link.sh` — the link is already on the page.
+- **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
+- **Existing ticket key found** (from Step 1 or provided by the user): update the description by piping it to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed using `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Do not call `add-jira-link.mjs` — the link is already on the page.
 
 ### Step 5 — Review
 
-Use the `jira-story-reviewer` skill with the ticket key from Step 4. If any findings are returned, fix them once by piping the revised description to `bash .ai/skills/tools/jira/update-ticket.sh NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
+Use the `jira-story-reviewer` skill with the ticket key from Step 4. If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
 
 ### Step 6 — Report
 

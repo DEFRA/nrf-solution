@@ -39,7 +39,7 @@ Description text must use **Jira wiki markup** — not HTML or plain text. Key s
 2. Run the create script:
 
    ```bash
-   bash .ai/skills/tools/jira/create-ticket.sh --summary "..." --description "..." [other options]
+   node .ai/skills/tools/jira/create-ticket.mjs --summary "..." --description "..." [other options]
    ```
 
    Pass description via `--description "..."`. For multi-line descriptions, write the content to a variable and pass it as a string — do not use a temp file.

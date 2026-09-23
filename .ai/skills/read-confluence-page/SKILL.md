@@ -15,7 +15,7 @@ description: Fetch a Confluence page's details (title, space, version, labels, b
 1. Run the page script:
 
    ```bash
-   bash ./.ai/skills/tools/confluence/page.sh <page_id_or_url> [format]
+   node .ai/skills/tools/confluence/page.mjs <page_id_or_url> [format]
    ```
 
    Requires `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` env vars. See [atlassian-credentials.md](../../../docs/ai/atlassian-credentials.md) for setup.

@@ -20,7 +20,7 @@ description: Fetch a Jira ticket's details (summary, description, acceptance cri
 2. Run the ticket script:
 
    ```bash
-   bash .ai/skills/tools/jira/ticket.sh <ticket>
+   node .ai/skills/tools/jira/ticket.mjs <ticket>
    ```
 
 3. **If the script fails for any reason, stop immediately.** Report the exact error to the user and ask them to fix it before retrying. Do not fall back to scraping the Jira UI or guessing the ticket contents.
