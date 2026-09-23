@@ -74,7 +74,7 @@ For error states, link directly to the prototype error state. Use the prototype 
 
 #### Acceptance criteria
 
-Write one scenario per block, numbered with an `h3. Scenario N` subheading. Immediately after the heading, write a single plain-text line (no markup) summarising what the scenario tests — e.g. "Entry point from the previous page — page loads" or "Empty submission shows error". Use Jira wiki-markup bold for the step keywords: `*Given*`, `*When*`, `*Then*`. Order:
+Write one scenario per block. Each block's `h3.` heading is `Scenario N - <summary>` — the number, a hyphen, then a short plain-text phrase (no markup) stating what the scenario tests, all on the same line. The step lines start on the next line. Example: `h3. Scenario 1 - Entry point from the previous page`. Use Jira wiki-markup bold for the step keywords: `*Given*`, `*When*`, `*Then*`. Order:
 
 1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section). Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`, where `PROTOTYPE_URL` is the prototype URL from the spec.
 2. **Back link** — if the back link destination is always the same regardless of how the user arrived, write one block. If it varies by entry point (e.g. shown on some routes, hidden on others, or pointing to different pages), write one block per distinct case and name the entry point in the `Given` clause.
