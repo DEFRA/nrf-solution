@@ -35,7 +35,7 @@ The only current supported page type is 'question page'. This will behave as a s
 
 Use `read-confluence-page` on the provided URL. Extract:
 
-- Feature (link), User need ("As a <user type>, I want … so that …"), Page type, Prototype URL
+- Feature (link), User need (three lines: "As a <user type> / I want … / So that …"), Page type, Prototype URL
 - Navigation: route, all entry points and back link rules, next page
 - Form validation: field validations, whether the user's entry is saved and re-shown on return
 - Out of scope (only if present in the spec — omit from the ticket if the spec has none)
@@ -74,7 +74,7 @@ For error states, link directly to the prototype error state. Use the prototype 
 
 #### Acceptance criteria
 
-Write one scenario per block, numbered with an `h3. Scenario N` subheading. Use Jira wiki-markup bold for the step keywords: `*Given*`, `*When*`, `*Then*`. Order:
+Write one scenario per block, numbered with an `h3. Scenario N` subheading. Immediately after the heading, write a single plain-text line (no markup) summarising what the scenario tests — e.g. "Entry point from the previous page — page loads" or "Empty submission shows error". Use Jira wiki-markup bold for the step keywords: `*Given*`, `*When*`, `*Then*`. Order:
 
 1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section). Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`, where `PROTOTYPE_URL` is the prototype URL from the spec.
 2. **Back link** — if the back link destination is always the same regardless of how the user arrived, write one block. If it varies by entry point (e.g. shown on some routes, hidden on others, or pointing to different pages), write one block per distinct case and name the entry point in the `Given` clause.
