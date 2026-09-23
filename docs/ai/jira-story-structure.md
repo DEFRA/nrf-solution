@@ -10,7 +10,7 @@ For user interface development stories:
 | Prototype link      | A bare `[+Prototype+\|url]` line                                                  |
 | URLs section        | `h2. URLs` with `* *This page*:`, `* *Next page*:` and optionally `* *Back link*:` (one entry per distinct destination; omit if the page has no back link) |
 | Acceptance criteria | `h2. Acceptance criteria`                                                         |
-| Scenarios           | At least one `h3. Scenario N` subheading under the AC section, followed by a one-line plain-text summary of what the scenario tests |
+| Scenarios           | At least one `h3. Scenario N - <summary>` heading under the AC section, where `<summary>` is a short plain-text phrase (no markup) on the same line |
 | Step keywords       | Every scenario uses `*Given*`, `*When*`, `*Then*` (Jira bold markup)              |
 | Out of scope        | Optional, if anything was defined in the confluence page                          |
 | NFRs                | `h2. Non-functional requirements` with at least one bullet                        |
@@ -47,8 +47,7 @@ h2. Out of scope
 
 h2. Acceptance criteria
 
-h3. Scenario 1
-[one-line summary of what this scenario tests]
+h3. Scenario 1 - [summary of what this scenario tests]
 
 *Given* …
 *When* …
