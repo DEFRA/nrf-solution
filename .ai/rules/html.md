@@ -19,6 +19,24 @@ All dates displayed to users must use the GOV.UK date format: day month-name yea
 
 See the [analytics skill](../../.claude/skills/analytics/SKILL.md) for gate conditions, custom event patterns, and testing conventions.
 
+## Accessibility
+
+### GOV.UK Frontend JS initialisation
+
+GOV.UK Frontend components that require JavaScript (e.g. `NotificationBanner`, `Accordion`, `Tabs`) must have their JS module initialised on every page that renders them. The standard pattern is `initAll()` in the page's script bundle, or targeted `new ComponentName(el).init()` calls.
+
+- A notification banner on a success/confirmation page that is not initialised will not receive `tabindex="-1"` from the JS module, so focus will not move to it after a PRG redirect — keyboard-only and screen-reader users will not know the action succeeded.
+- When reviewing: confirm that any page using a GOV.UK Frontend JS-dependent component calls `initAll()` (or the targeted constructor) in its client-side script.
+
+### Asynchronously loaded content
+
+Any content that loads or updates asynchronously after the initial page render must be announced to screen-reader users. Use one of these patterns:
+
+- Add `aria-live="polite"` (or `aria-live="assertive"` for urgent content) to the container element **before** the content loads — live regions only announce changes that occur after they are in the DOM.
+- Alternatively, move focus to the container's heading or the updated region once the async operation completes.
+
+A `role="region"` alone is not sufficient — it does not cause screen readers to announce dynamic content changes. When reviewing: flag any element whose content is populated asynchronously (API call, polling redirect, form submission response) that has neither an `aria-live` attribute nor programmatic focus management.
+
 ## GOV.UK design system components reference
 
 Use macros to render GOV.UK design system components, rather than raw HTML, so that we pick up changes to the component HTML structure automatically.

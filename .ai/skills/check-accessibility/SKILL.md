@@ -1,14 +1,14 @@
 ---
 name: check-accessibility
 description: Test a page in the browser against accessibility standards.
-tools: Bash, Read, mcp__playwright__browser_navigate, mcp__playwright__browser_navigate_back, mcp__playwright__browser_snapshot, mcp__playwright__browser_evaluate, mcp__playwright__browser_run_code_unsafe, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_press_key, mcp__playwright__browser_wait_for, mcp__playwright__browser_close, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests
+allowed-tools: Bash, Read, playwright_browser_navigate, playwright_browser_navigate_back, playwright_browser_snapshot, playwright_browser_evaluate, playwright_browser_run_code_unsafe, playwright_browser_click, playwright_browser_type, playwright_browser_fill_form, playwright_browser_press_key, playwright_browser_wait_for, playwright_browser_close, playwright_browser_console_messages, playwright_browser_network_requests, playwright_browser_take_screenshot, mcp__playwright__browser_navigate, mcp__playwright__browser_navigate_back, mcp__playwright__browser_snapshot, mcp__playwright__browser_evaluate, mcp__playwright__browser_run_code_unsafe, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_press_key, mcp__playwright__browser_wait_for, mcp__playwright__browser_close, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests
 ---
 
 # Check accessibility
 
 ## Parameters
 
-`args` is a path to a **journeys markdown file** (by default look in docs/user-journeys folder), or a single URL to a page to test.
+`args` is a path to a **journeys markdown file** (by default use docs/user-journeys/quote.md), or a single URL to a page to test.
 
 Each numbered step within a journey is a separate page.
 
@@ -34,6 +34,8 @@ If a sub-step can't be performed or a page doesn't load, record the failure and 
 ## Output format
 
 A results table with one row per failed check, grouped by journey and page (and sub-step where relevant). List pages that passed cleanly in a brief line; detail every failure with the offending element and the rule it breaks. Write the results table to a markdown file and save to `docs/accessibility-check-results` folder.
+
+**File naming:** `YYYY-MM-DD-<journey-name>.md` where `<journey-name>` is the journey's `#` heading lowercased and hyphenated (e.g. `# Create a quote (drawn boundary)` → `2026-06-16-create-quote-drawn-boundary.md`). Use today's date.
 
 | Journey | Page | Sub-step | Check | Result | Notes |
 | ------- | ---- | -------- | ----- | ------ | ----- |
@@ -90,15 +92,5 @@ To trigger form validation, submit the form without selecting an option or enter
 - If a page does an async update to content then either the change should be announced in an ARIA region, or focus should be sent to that panel subheading so the user can continue from there
 - On page load, the functionality available on the different map panels should be clear to the user via the heading structure
 
-#### Keyboard technique for the draw-boundary map
-
-Use `mcp__playwright__browser_evaluate` (not `mcp__playwright__browser_click`) for all map button interactions — Playwright click times out on map buttons because they don't trigger navigation. Use `mcp__playwright__browser_press_key` for arrow keys and Enter once focus is on the map.
-
-1. **Wait for map to load** — after navigating to the page, wait ~2 s before interacting (`new Promise(r => setTimeout(r, 2000))`).
-2. **Search** — `evaluate` to call `.click()` on `[aria-label="Open search"]`, then `mcp__playwright__browser_type` into `input[placeholder="Search"]`, wait 1.5 s for results, then `press_key` ArrowDown + Enter. Confirm the URL centre coordinates have changed.
-3. **Wait for pan** — wait another 1.5 s after selecting a search result.
-4. **Enter draw mode** — `evaluate` to `.focus()` the `[data-draw-action="draw"]` button, then `press_key` Enter. Confirm `#draw-boundary-map-draw-cancel` is present in the DOM before proceeding.
-5. **Draw a triangle** — place three points using `press_key` Enter, panning between them with `evaluate`-dispatched ArrowRight / ArrowDown keyboard events (dispatch on `document.activeElement`). After the third point, the Done button should be enabled.
-6. **Click Done** — `evaluate` to check Done is not disabled, then `evaluate` to `.focus()` the Done button, then `press_key` Enter.
-7. **Save and continue** — Tab once (`press_key` Tab), confirm `document.activeElement` is the "Save and continue" button, then `press_key` Enter. Confirm the URL changed to the next page.
+For selectors, interaction patterns, and the checking-file auto-redirect workaround, see the **Map page conventions** section at the top of the journey file (e.g. `docs/user-journeys/quote.md`). That file is the single source of truth for map interaction technique.
 

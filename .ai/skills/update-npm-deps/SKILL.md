@@ -1,7 +1,7 @@
 ---
 name: update-npm-deps
 description: Run npm-check-updates across each npm sub-repo, applying only minor and patch upgrades (excluding major), and raise one PR per repo. A faster, on-demand alternative to Dependabot.
-tools: Bash, Read
+allowed-tools: Bash, Read
 ---
 
 ## What this does

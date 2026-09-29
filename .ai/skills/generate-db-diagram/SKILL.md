@@ -1,7 +1,7 @@
 ---
 name: generate-db-diagram
 description: Generate or update the Mermaid ERD for a Postgres database in this solution — the backend quote DB (`nrf_backend`) and/or the impact-assessor reference DB (`nrf_impact`). Each diagram is written into the repo that owns the schema. Sources the schema from the live Postgres instance, cross-checked against that repo's migrations. Re-run to refresh after schema-changing migrations.
-tools: Bash, Read, Write, Glob
+allowed-tools: Bash, Read, Write, Glob
 ---
 
 ## What this does
