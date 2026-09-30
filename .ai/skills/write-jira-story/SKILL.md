@@ -1,7 +1,7 @@
 ---
 name: write-jira-story
 description: Creates and updates a Jira story using a feature specification in Confluence. Use when the user shares a Confluence link and asks for a ticket, story, or backlog item.
-tools: Read, Bash
+allowed-tools: Read, Bash
 model: inherit
 skills:
   - read-jira-ticket

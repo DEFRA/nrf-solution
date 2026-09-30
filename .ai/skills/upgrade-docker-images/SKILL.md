@@ -1,7 +1,7 @@
 ---
 name: upgrade-docker-images
 description: Check each submodule's Dockerfile for a newer base image on Docker Hub, keeping the Node version aligned with .nvmrc and package.json, then raise one PR per repo where an upgrade is available.
-tools: Bash, Read
+allowed-tools: Bash, Read
 ---
 
 ## What this does

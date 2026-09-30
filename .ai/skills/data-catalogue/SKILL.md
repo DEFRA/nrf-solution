@@ -1,7 +1,7 @@
 ---
 name: data-catalogue
 description: Work on the NRF Data Catalogue — the data asset register describing every data asset the service produces, consumes, stores or transmits, against Defra Minimum Metadata V0.3. TRIGGER when asked to update, review, extend or check the catalogue or data dictionary; when a migration adds or removes a table; when a reference layer is onboarded or retired; or when a new external integration is added. Also covers checking the workbook for drift against the code.
-tools: Bash, Read, Write, Glob, Grep
+allowed-tools: Bash, Read, Write, Glob, Grep
 ---
 
 ## What the catalogue is
