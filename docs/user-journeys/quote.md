@@ -1,39 +1,7 @@
 # Create a quote (drawn boundary)
 
-## Map page conventions
+http://localhost:3000
 
-The interactive map requires keyboard navigation for drawing. Many map buttons have zero bounding-box dimensions and **must be activated via `.evaluate(el => el.click())`** — Playwright's standard `locator.click()` times out on them.
-
-| Interaction | How to target |
-|---|---|
-| Open search panel | `getByRole('button', { name: 'Search', exact: true })` → `.evaluate(el => el.click())` |
-| Search input | `getByRole('combobox', { name: 'Search' })` → `pressSequentially(query)` |
-| Select a search result | `getByRole('option', { name: /^Aylsham(,|$)/i }).first()` → wait for visible → `.click()` |
-| Key panel | `getByRole('button', { name: 'Key', exact: true })` |
-| Start drawing | `getByRole('button', { name: 'Draw', exact: true })` → `.focus()` → `keyboard.press('Enter')`; wait for Cancel button to confirm drawing mode |
-| Place a vertex | `keyboard.press('Enter')` |
-| Pan between vertices | Arrow keys (~15 presses between points) |
-| Done button | `getByRole('button', { name: 'Done' }).and(locator(':not([aria-disabled="true"])'))` — `aria-disabled="true"` is present until ≥3 distinct spaced vertices; wait for it to be absent before clicking |
-| Save and continue (map/file-preview) | `.evaluate(el => el.click())` then `waitForURL(/\/quote\/.../, { waitUntil: 'commit' })` — `locator.click()` times out here because lingering tile fetches hold the load event |
-| Back (map page only) | `getByRole('button', { name: 'Back' })` — this is a `<button>`, not a link |
-| Back (all other pages) | `getByRole('link', { name: 'Back', exact: true })` — `exact: true` avoids matching "give your feedback" in the phase banner |
-
-### checking-file auto-redirect
-
-The checking-file page polls the server and redirects client-side. `waitForURL` and `waitForFunction` both time out even though the redirect succeeds. After clicking Continue on the upload page, use a fixed wait then read `page.url()` directly to confirm where you landed:
-
-```js
-await page.getByRole('button', { name: 'Continue' }).click()
-await page.waitForTimeout(500) // let checking-file appear
-await page.waitForTimeout(15000) // allow scan + redirect to complete
-const url = page.url() // verify expected destination
-```
-
-### Housing units input
-
-The unit-number input does not carry a `spinbutton` ARIA role. Target it by ID: `page.locator('#housingUnits')`.
-
----
 
 1. Start page
     1. Click View cookies
@@ -65,10 +33,14 @@ The unit-number input does not carry a `spinbutton` ARIA role. Target it by ID: 
     2. Select Draw on a map
 11. Map page
     1. Open the search panel (Search button), type "Aylsham", wait for and click the option whose text starts with "Aylsham,"
-    2. Focus the Draw button and press Enter; wait for the Cancel button to confirm drawing mode is active
-    3. Press Enter to place the first vertex; press ArrowRight ~15 times then Enter for the second; press ArrowDown ~15 times then Enter for the third; wait for the Done button to become enabled (aria-disabled removed)
-    4. Click Done — the boundary information panel should appear showing Area, Perimeter, and the EDP the boundary falls within
-    5. Click Save and continue (use waitUntil: 'commit' when waiting for the next URL)
+    2. Open the Styles panel and switch to "Satellite"
+    3. Focus the Draw button and press Enter; wait for the Cancel button to confirm drawing mode is active
+    4. Press Enter to place the first vertex; press ArrowRight ~15 times then Enter for the second; press ArrowDown ~15 times then Enter for the third; wait for the Done button to become enabled (aria-disabled removed)
+    5. Click Done — the boundary information panel should appear showing Area, Perimeter, and the EDP the boundary falls within
+    6. Open the Draw tools menu and click "Edit feature"; move a vertex by pressing an arrow key ~5 times then Enter; wait for the Done button to become enabled; click Done — boundary info panel should update
+    7. Open the Draw tools menu and click "Delete feature" — the shape should be removed and the boundary information panel should clear
+    8. Focus the Draw button and press Enter; draw another triangle (same technique as step 4); click Done — boundary information panel should appear again
+    9. Click Save and continue (use waitUntil: 'commit' when waiting for the next URL)
 12. Enter email address
     1. Submit with no option selected
     2. Submit with valid email

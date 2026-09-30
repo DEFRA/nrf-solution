@@ -22,9 +22,9 @@ Tested: 2026-09-29 · Journey file: `docs/user-journeys/quote.md` · Environment
 | Create a quote | 3 Planning application type | 1 Submit empty | Page title | ✅ Pass | "Error:" prefix added |
 | Create a quote | 4 Not available for planning type | — | Page title vs H1 | ✅ Pass | "Not available for planning type" conveys meaning of H1 |
 | Create a quote | 4 Not available for planning type | — | Back link | ✅ Pass | `<a>` tag, `href="/quote/planning-type"` |
-| Create a quote | 6 Are you developing housing units? | — | Page title vs H1 | ✅ Pass | Title now uses page heading "Are you developing housing units?" (fixed: `confirm-housing/get-view-model.js`) |
+| Create a quote | 6 Are you developing housing units? | — | Page title vs H1 | ⚠️ Advisory | Title "Confirm housing" does not clearly convey the question "Are you developing housing units?" |
 | Create a quote | 6 Are you developing housing units? | 1 Submit empty | Forms — error summary | ✅ Pass | Focus on summary; href, inline error id, fieldset aria-describedby all correct |
-| Create a quote | 7 NRL only for housing units | — | Page title vs H1 | ✅ Pass | Title now uses page heading "Nature restoration levy is only available for housing units" (fixed: `not-housing/get-view-model.js`) |
+| Create a quote | 7 NRL only for housing units | — | Page title vs H1 | ⚠️ Advisory | Title "Not housing" is very abbreviated vs H1 "Nature restoration levy is only available for housing units" |
 | Create a quote | 9 How many residential units? | — | Forms — input | ✅ Pass | `type="text"` (no spinbutton, as designed); label matches H1; hint linked via `aria-describedby` |
 | Create a quote | 9 How many residential units? | 1–3 Invalid inputs | Forms — validation | ✅ Pass | Correct error messages for empty, -1, and 0.1; focus on summary; inline error linked to input |
 | Create a quote | 10 Boundary type | — | Radio hints | ✅ Pass | "Upload a file" item hint `id="boundaryEntryType-2-item-hint"` linked via `aria-describedby` on that radio |
@@ -40,7 +40,7 @@ Tested: 2026-09-29 · Journey file: `docs/user-journeys/quote.md` · Environment
 | Create a quote | 15 Upload boundary file | — | File input | ✅ Pass | `id="file"`, label matches H1, hint `id="file-hint"` linked via `aria-describedby` |
 | Create a quote | 17 Not available in this area | — | Structure | ✅ Pass | H1 matches, back link is `<a>` |
 | Create a quote | 20 Within excluded area | — | Structure | ✅ Pass | H1 matches, back link is `<a>` |
-| Create a quote | 23 File preview | — | Page title vs H1 | ✅ Pass | Title now matches heading dynamically: "Your uploaded red line boundary file" (success) or "Your red line boundary file contains an error" (error) (fixed: `file-preview/get-view-model.js`) |
+| Create a quote | 23 File preview | — | Page title vs H1 | ⚠️ Advisory | Title "File preview" is abbreviated vs H1 "Your uploaded red line boundary file" |
 | Create a quote | 23 File preview | — | Map panel headings | ✅ Pass | H2 per panel as on draw-boundary page |
 | Create a quote | 26 Delete quote | — | Delete/cancel pattern | ✅ Pass | Delete is `<button type="submit">`; Cancel is `<a>` link — correct pattern |
 | Create a quote | 28 Confirmation | — | Heading hierarchy | ✅ Pass | H1 → H2 → H2 |
