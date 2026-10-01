@@ -50,3 +50,18 @@ Use macros to render GOV.UK design system components, rather than raw HTML, so t
 | Checkboxes    | `govuk-checkboxes`    | https://design-system.service.gov.uk/components/checkboxes/#checkboxes-example-nunjucks       |
 | Panel         | `govuk-panel`         | https://design-system.service.gov.uk/components/panel/#panel-example-nunjucks                 |
 | Table         | `govuk-table`         | https://design-system.service.gov.uk/components/table/#table-example-nunjucks                 |
+
+### Tables
+
+Every `govukTable` call must include a `caption` and `captionClasses` parameter. Without a caption the table has no programmatic label — screen reader users navigating by table list cannot distinguish one table from another, which fails WCAG 2.1 SC 1.3.1 (Level A).
+
+```njk
+{{ govukTable({
+  caption: "Descriptive table name",
+  captionClasses: "govuk-visually-hidden",
+  head: [...],
+  rows: [...]
+}) }}
+```
+
+Use `govuk-visually-hidden` when a visible heading immediately above the table already labels it — the caption is still read by screen readers but does not duplicate the heading visually. Use `govuk-table__caption--m` (or `--s`) only when no surrounding heading provides that label.

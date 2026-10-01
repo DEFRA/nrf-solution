@@ -73,9 +73,10 @@ To trigger form validation, submit the form without selecting an option or enter
 
 ### Tables
 
-- Table heading cells use `<th>` with `scope` set to `"col"` or `"row"`
-- complex tables use `<caption>`
-- Layout-via-`<table>` is forbidden - tables should only be used for data presentation, not layout.
+- Every `<table>` has a `<caption>` — without one, screen reader users navigating by table list cannot identify the table's subject (WCAG SC 1.3.1). Verify with `document.querySelectorAll('table')` and check each for a `caption` child.
+- Column header cells use `<th scope="col">`; row header cells use `<th scope="row">`. Verify with `querySelectorAll('th')` — every `<th>` must have a `scope` attribute.
+- Complex tables (merged cells, multi-level headers) additionally use `id`/`headers` associations on data cells.
+- Layout-via-`<table>` is forbidden — tables must only be used for data presentation, not layout.
 
 ### Keyboard navigation
 
