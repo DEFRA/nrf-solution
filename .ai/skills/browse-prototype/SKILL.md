@@ -45,7 +45,10 @@ The `hint` property is omitted when no hint text is present. `nextSteps` is empt
 
 1. Navigate to the URL using the `browser_navigate` tool.
 2. Take a snapshot with the `browser_snapshot` tool to see what loaded.
-3. **If the page shows a password prompt** (look for a password `<input>` or any form asking for a password/passphrase), fill it with `nrf-2025-round1!` and submit, then wait for navigation and take a new snapshot to confirm you have reached the prototype.
+3. **If the page shows a password prompt** (look for a password `<input>` or any form asking for a password/passphrase):
+   - Check for the password in the `PROTOTYPE_PASSWORD` environment variable using the `Bash` tool (e.g. `printenv PROTOTYPE_PASSWORD`). Do not print its value in your response.
+   - If it's set, fill the password field with it and submit, then wait for navigation and take a new snapshot to confirm you have reached the prototype.
+   - If it's not set, stop and ask the user to type the password into the open browser's password field themselves (do not ask them to paste it into the chat). Wait for them to confirm, then take a new snapshot to confirm you have reached the prototype.
 
 ## Step 2: Extract page content
 

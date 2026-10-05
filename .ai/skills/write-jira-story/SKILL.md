@@ -35,8 +35,8 @@ The only current supported page type is 'question page'. This will behave as a s
 
 Use `read-confluence-page` on the provided URL. Extract:
 
-- Feature (link), User need (three lines: "As a <user type> / I want … / So that …"), Page type, Prototype URL
-- Navigation: route, all entry points and back link rules, next page
+- Feature (link), User need (three lines: "*As a* <user type> / *I want* … / *So that* …"), Page type, Prototype URL
+- Navigation: route, all entry points and back link rules (every distinct previous-page destination), next page route(s) (every distinct next-page destination if routing is conditional)
 - Form validation: field validations, whether the user's entry is saved and re-shown on return
 - Out of scope (only if present in the spec — omit from the ticket if the spec has none)
 - NFRs (if present — additive to the guidance-page baseline)
@@ -49,10 +49,12 @@ Use `read-confluence-page` on the provided URL. Extract:
 
 Use `browse-prototype` with the prototype URL from the spec. In a single browser session:
 
-1. Capture the exact h1 heading from the happy-path page (used for the ticket summary only).
-2. Submit the form empty — and with an invalid value where the spec lists a format rule — to confirm each error state is reachable. You do not need to capture the error text; ACs link directly to the prototype error state by appending `?preview=1&error=1` to the prototype URL.
+1. Capture the exact h1 heading from the happy-path page (used for the ticket summary, and as the "this page" name in the Page URLs section).
+2. Submit a valid value and follow Continue to reach the next page; capture its h1 (the "next page" name). If the spec's Navigation section describes more than one possible next page, repeat for each distinct destination.
+3. Return to the happy-path page. If it has a back link, click it to reach the previous page and capture its h1 (the "previous page" name). If the spec's back-link rules describe more than one possible previous page, repeat for each distinct destination — re-enter the happy-path page via each entry point described in the spec to reach the corresponding back-link target.
+4. Submit the form empty — and with an invalid value where the spec lists a format rule — to confirm each error state is reachable. You do not need to capture the error text; ACs link directly to the prototype error state by appending `?preview=1&error=1` to the prototype URL.
 
-You only need the h1 and confirmation that each error state is reachable — not the full JSON output of the extraction script.
+Page names must come from the prototype, never from spec wording — you only need each page's h1 and confirmation that each error state is reachable, not the full JSON output of the extraction script.
 
 ### Step 3 — Draft the ticket description
 
@@ -69,16 +71,27 @@ Never copy content strings from the prototype into the ticket description — li
 Exceptions:
 - The h1 is used verbatim as the ticket summary (see above).
 - Page names may appear in Given/When/Then clauses as navigational references (e.g. "Given I am on the enter NRL reference page") — do not put them in quotes.
+- Page names captured in Step 2 are used verbatim as the bullet labels in the Page URLs section (see below) — these come from the prototype, not the spec, so they aren't a copy of spec wording.
 
 For error states, link directly to the prototype error state. Use the prototype URL from the spec's form validation section if one is provided (e.g. `?preview=1&error=format`). Fall back to appending `?preview=1&error=1` only when the spec does not give a specific error URL for that validation.
+
+#### Page URLs section
+
+Build the `h2. Page URLs` bullets from the routes in the spec's Navigation section and the page names captured in Step 2:
+
+- `* *<this-page name> (this page):* <route>`
+- `* *<previous-page name> (previous page):* <route>` — one bullet per distinct previous-page destination described in the spec's back-link rules. Omit entirely if the page never has a back link.
+- `* *<next-page name> (next page):* <route>` — one bullet per distinct next-page destination.
+
+Do not add parenthetical explanations of when each conditional destination applies (e.g. "shown only when arriving from X") — that detail belongs in the acceptance criteria, not the Page URLs section.
 
 #### Acceptance criteria
 
 Write one scenario per block. Each block's `h3.` heading is `Scenario N - <summary>` — the number, a hyphen, then a short plain-text phrase (no markup) stating what the scenario tests, all on the same line. The step lines start on the next line. Example: `h3. Scenario 1 - Entry point from the previous page`. Use Jira wiki-markup bold for the step keywords: `*Given*`, `*When*`, `*Then*`. Order:
 
 1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section). Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`, where `PROTOTYPE_URL` is the prototype URL from the spec.
-2. **Back link** — if the back link destination is always the same regardless of how the user arrived, write one block. If it varies by entry point (e.g. shown on some routes, hidden on others, or pointing to different pages), write one block per distinct case and name the entry point in the `Given` clause.
-3. **Happy path** — valid input → next page; include the exact URL path from the spec (e.g. `/request-to-use/enter-email`)
+2. **Back link** — if the back link destination is always the same regardless of how the user arrived, write one block. If it varies by entry point (e.g. shown on some routes, hidden on others, or pointing to different pages), write one block per distinct case and name the entry point in the `Given` clause. Refer to the destination by its page name only (e.g. "I am taken to the have NRL reference page") — the route is already in the Page URLs section, don't restate it.
+3. **Happy path** — valid input → next page. Refer to the destination by its page name only (e.g. "I am taken to the enter email page") — the route is already in the Page URLs section, don't restate it.
 4. **Missing value** — empty submission → error summary as shown on the [prototype error state|prototype-url?preview=1&error=1]. Always include this block for a `question page`: empty-submission validation is standard GOV.UK form behaviour even when the spec does not mention it explicitly.
 5. **Invalid format** (only if the spec lists a format rule) — bad value → error summary as shown on the [prototype error state|prototype-url?preview=1&error=1]
 6. **Entry is re-shown** (only if the spec says the user's previously entered value is restored when they navigate back within the same session) — user navigates back to the page and sees their previously entered value

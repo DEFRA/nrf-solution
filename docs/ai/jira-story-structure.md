@@ -5,10 +5,10 @@ For user interface development stories:
 | Element             | Expected                                                                          |
 |---------------------|-----------------------------------------------------------------------------------|
 | Generated from      | `*Generated from*:` followed by a `[+…+\|url]` link to the Confluence source page |
-| User need           | Three lines: `As a [user type]`, `I want …`, `So that …` — no `*User need*:` prefix |
+| User need           | Three lines: `*As a* [user type]`, `*I want* …`, `*So that* …` — no `*User need*:` prefix |
 | Page type           | `*Page type*:` line                                                               |
 | Prototype link      | A bare `[+Prototype+\|url]` line                                                  |
-| URLs section        | `h2. URLs` with `* *This page*:`, `* *Next page*:` and optionally `* *Back link*:` (one entry per distinct destination; omit if the page has no back link) |
+| Page URLs section   | `h2. Page URLs` with one bullet per page: `* *<page name> (this page):*`, `* *<page name> (previous page):*` (one per distinct previous-page destination; omit entirely if the page never has a back link), `* *<page name> (next page):*` (one per distinct next-page destination). `<page name>` is the exact h1 captured from the prototype for that page |
 | Acceptance criteria | `h2. Acceptance criteria`                                                         |
 | Scenarios           | At least one `h3. Scenario N - <summary>` heading under the AC section, where `<summary>` is a short plain-text phrase (no markup) on the same line |
 | Step keywords       | Every scenario uses `*Given*`, `*When*`, `*Then*` (Jira bold markup)              |
@@ -21,9 +21,9 @@ For user interface development stories:
 
 ----
 
-As a [user type]
-I want …
-So that …
+*As a* [user type]
+*I want* …
+*So that* …
 
 *Page type*: question page
 
@@ -31,11 +31,11 @@ So that …
 
 ----
 
-h2. URLs
+h2. Page URLs
 
-* *This page:* /route/from/spec
-* *Back link:* /back-link/destination
-* *Next page:* /route/of/next/page
+* *[This page h1] (this page):* /route/from/spec
+* *[Previous page h1] (previous page):* /back-link/destination
+* *[Next page h1] (next page):* /route/of/next/page
 
 ----
 
