@@ -26,7 +26,7 @@ Run every check below in full. Collect all findings before reporting — do not 
 
 The description must contain all of the required sections in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md). Rows marked Optional in that table (e.g. Out of scope) should only be flagged if present but malformed — do not flag them as missing.
 
-Flag any required element that is missing or malformed. Read the ticket's `*Page type*:` line and apply the page-type rules: a `dropout page` is a dead end, so do not flag the absence of next-page bullets, happy-path scenarios, or error-state scenarios. Do flag any of those if they are present on a `dropout page`.
+Flag any required element that is missing or malformed. Read the ticket's `*Page type*:` line and apply the page-type rules: a `dropout page` is a dead end, so do not flag the absence of next-page bullets, happy-path scenarios, or error-state scenarios. Do flag any of those if they are present on a `dropout page`. A `confirmation page` is also a dead end, and additionally has no back link: do not flag the absence of a back link scenario, and do flag a back link scenario if present. A `confirmation page` should instead have a browser-back scenario whose `Then` step is `I am redirected to <path or URL>` — flag it if missing.
 
 ---
 
@@ -53,7 +53,7 @@ Flag any AC step or other field that:
 For each scenario, verify:
 
 1. **Starting URL is resolvable** — if the `Given` clause says the user is on a named page, that page's URL must appear under `h2. URLs → *This page*:`, `*Back link*:`, or `*Next page*:`. Flag it if the URL cannot be determined from the URLs section alone.
-2. **Outcome URL is resolvable** — if the `Then` clause says the user is taken to another page, that destination must also appear in the URLs section. Flag any `Then` step that names a destination whose URL is not listed. **Exception:** content-link scenarios (`*When* I select the … link`) state their destination path or URL directly in the `Then` step — that is correct, do not flag it for being absent from the URLs section.
+2. **Outcome URL is resolvable** — if the `Then` clause says the user is taken to another page, that destination must also appear in the URLs section. Flag any `Then` step that names a destination whose URL is not listed. **Exception:** content-link scenarios (`*When* I select the … link`) and browser-back scenarios on a `confirmation page` (`*Then* I am redirected to …`) state their destination path or URL directly in the `Then` step — that is correct, do not flag it for being absent from the URLs section.
 3. **No ambiguous placeholders** — steps must not contain `[url]`, `[page name]`, `[prototype-url]`, or any other unfilled placeholder. Prototype links must be real URLs.
 4. **Error-state ACs link to the prototype error state** — `Then` steps describing an error outcome must link to the prototype URL with `?preview=1&error=<value>` appended — `error=1` for an empty/no-value submission, `error=format` for an invalid-format value (e.g. `[prototype error state|https://…?preview=1&error=1]`). Flag any error-state `Then` step that quotes error text inline or links to the prototype without the query string.
 
@@ -61,7 +61,7 @@ For each scenario, verify:
 
 #### Check D — NFR completeness
 
-Use the mapping in [non-functional requirements](../../../docs/ai/non-functional-requirements.md) to check that all NFR categories applicable to the ticket's page type (`question page` or `dropout page`) are linked to in the `h2. Non-functional requirements` section.
+Use the mapping in [non-functional requirements](../../../docs/ai/non-functional-requirements.md) to check that all NFR categories applicable to the ticket's page type (`question page`, `dropout page` or `confirmation page`) are linked to in the `h2. Non-functional requirements` section.
 
 A category may legitimately be omitted if the ticket includes a brief note explaining why it doesn't apply to this ticket — treat that as a pass, not a finding. Flag only categories that are missing with no exclusion rationale given.
 

@@ -30,6 +30,7 @@ Supported page types:
 
 - **question page** — a standard gov.uk form page: has form validation and an onward journey.
 - **dropout page** — a dead-end page shown when the user can't continue (e.g. they're not eligible). No form, no validation, no onward journey. Has a back link.
+- **confirmation page** — a dead-end page shown after the user submits a form, confirming what has happened (e.g. an email has been sent). No form, no validation, no onward journey. No back link — if the user uses the browser back button, they are redirected to a URL given in the spec.
 
 Read the `Page type` from the spec and follow the matching branch in the steps below. If the page type is missing or is anything else, stop and alert the user.
 
@@ -42,7 +43,8 @@ Use `read-confluence-page` on the provided URL. Extract:
 
 - Feature (link), User need (three lines: "*As a* <user type> / *I want* … / *So that* …"), Page type, Prototype URL
 - Navigation: route, all entry points and back link rules (every distinct previous-page destination); for a `question page` also next page route(s) (every distinct next-page destination if routing is conditional)
-- Content links (if present, either page type): a single link appears inline as `Content link: <text> - <destination>`; multiple links appear under a `Content links:` heading as a bulleted list. Each link gives all or part of the link text as it appears in the page content, and the path or full URL the link goes to
+- Navigation, `confirmation page` only: route, each `Previous page` (route and, if given, a prototype link — this is the entry point, the page whose form submission leads here), and the `Browser back` redirect destination (a path or full URL). There is no back link and no next page. If the spec has no previous page or no browser back redirect, stop and alert the user rather than guessing
+- Content links (if present, any page type): a single link appears inline as `Content link: <text> - <destination>`; multiple links appear under a `Content links:` heading as a bulleted list. Each link gives all or part of the link text as it appears in the page content, and the path or full URL the link goes to
 - Form validation (`question page` only): field validations, whether the user's entry is saved and re-shown on return
 - Out of scope (only if present in the spec — omit from the ticket if the spec has none)
 - NFRs (if present — additive to the guidance-page baseline)
@@ -57,6 +59,13 @@ Use `browse-prototype` with the prototype URL from the spec.
 
 **`dropout page`:** in a single browser session, capture the exact h1 from the page (used for the ticket summary and the "this page" name in the Page URLs section). Then, for each distinct previous-page destination in the spec's back-link rules, reach the dropout page via the corresponding entry point, click the back link, and capture the h1 of the page you land on (the "previous page" name). Skip the remaining steps below — there is no form, error state or next page.
 
+**`confirmation page`:** in a single browser session:
+
+1. Capture the exact h1 from the confirmation page (used for the ticket summary and the "this page" name in the Page URLs section). Confirm the page has no back link; if it has one, note it for the report.
+2. For each previous page in the spec, open its prototype link (if the spec gives none, stop and alert the user), capture its h1 (the "previous page" name), submit a valid value and follow Continue, and confirm you land on the confirmation page. If you can't reach it, note it for the report — the previous page name is still taken from its h1.
+
+Do not browse to the browser-back redirect destination or look up its page name. Skip the remaining steps below — there is no form, error state or next page.
+
 **`question page`:** in a single browser session:
 
 1. Capture the exact h1 heading from the happy-path page (used for the ticket summary, and as the "this page" name in the Page URLs section).
@@ -64,7 +73,7 @@ Use `browse-prototype` with the prototype URL from the spec.
 3. Return to the happy-path page. If it has a back link, click it to reach the previous page and capture its h1 (the "previous page" name). If the spec's back-link rules describe more than one possible previous page, repeat for each distinct destination — re-enter the happy-path page via each entry point described in the spec to reach the corresponding back-link target.
 4. Submit the form empty — and with an invalid value where the spec lists a format rule — to confirm each error state is reachable. You do not need to capture the error text; ACs link directly to the prototype error state by appending `?preview=1&error=1` to the prototype URL.
 
-If the spec lists content links, confirm in the same session that each one appears in the page content of the happy-path page (match on the link text from the spec). If one can't be found, note it for the report and omit its AC block — do not guess.
+If the spec lists content links, confirm in the same session that each one appears in the page content of the happy-path page (or, for a `dropout page` or `confirmation page`, of the page itself) (match on the link text from the spec). If one can't be found, note it for the report and omit its AC block — do not guess.
 
 Page names must come from the prototype, never from spec wording — you only need each page's h1 and confirmation that each error state and content link is reachable, not the full JSON output of the extraction script.
 
@@ -93,8 +102,8 @@ For error states (`question page` only), link directly to the prototype error st
 Build the `h2. Page URLs` bullets from the routes in the spec's Navigation section and the page names captured in Step 2:
 
 - `* *<this-page name> (this page):* <route>`
-- `* *<previous-page name> (previous page):* <route>` — one bullet per distinct previous-page destination described in the spec's back-link rules. Omit entirely if the page never has a back link.
-- `* *<next-page name> (next page):* <route>` — one bullet per distinct next-page destination. `question page` only — a `dropout page` has no next page, so omit these bullets.
+- `* *<previous-page name> (previous page):* <route>` — one bullet per distinct previous-page destination described in the spec's back-link rules. Omit entirely if the page never has a back link. For a `confirmation page` (which has no back link), use one bullet per `Previous page` in the spec, with that page's route.
+- `* *<next-page name> (next page):* <route>` — one bullet per distinct next-page destination. `question page` only — `dropout page` and `confirmation page` have no next page, so omit these bullets. Do not add the browser-back redirect destination to the Page URLs section.
 
 Do not add parenthetical explanations of when each conditional destination applies (e.g. "shown only when arriving from X") — that detail belongs in the acceptance criteria, not the Page URLs section.
 
@@ -107,6 +116,31 @@ Use the same block format as for a `question page` (see below), but only these s
 3. **Content links** (only if the spec has a `Content link` / `Content links` entry) — see [Content link scenarios](#content-link-scenarios).
 
 Do not write happy path, missing value, invalid format or entry-is-re-shown scenarios — a dropout page has no form and no onward journey. Do not add a scenario for the absence of a Continue button or form; the prototype link in the entry-point scenario already covers page content.
+
+#### Acceptance criteria — confirmation page
+
+Use the same block format as for a `question page` (see below), but only these scenarios, in this order:
+
+1. **Entry point → page loads** — one block per `Previous page` in the spec. Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`.
+
+   ```
+   h3. Scenario N - Entry point from the <previous-page name> page
+   *Given* I am on the <previous-page name> page
+   *When* I submit valid details and continue
+   *Then* I am taken to the <this-page name> page
+   *And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]
+   ```
+2. **Browser back** — the confirmation page has no back link, so do not write a back link scenario. Write one block for the spec's `Browser back` redirect. State the destination as a path or full URL exactly as given in the spec (not a page name), and do not repeat the spec's parenthetical about where the user is not sent.
+
+   ```
+   h3. Scenario N - Browser back button redirects
+   *Given* I am on the <this-page name> page
+   *When* I use the browser back button
+   *Then* I am redirected to <path or full URL from the spec>
+   ```
+3. **Content links** (only if the spec has a `Content link` / `Content links` entry) — see [Content link scenarios](#content-link-scenarios).
+
+Do not write happy path, missing value, invalid format, back link or entry-is-re-shown scenarios — a confirmation page has no form, no back link and no onward journey.
 
 #### Acceptance criteria — question page
 
@@ -160,7 +194,7 @@ Use the mapping in [non-functional requirements](../../../docs/ai/non-functional
 Steps:
 
 1. Work from the cached category list above — do **not** fetch the guidance index or child pages on every run. The category name is enough to judge relevance in almost every case (Accessibility, Security, Browser compat and Performance are all self-explanatory for a `question page`).
-2. Start from the categories mapped to the ticket's page type in the page-types table of the NFR doc (a `dropout page` has no form, so Security is not included). For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply (e.g. page load performance on an internal admin page behind auth). Briefly note any category you deliberately excluded so the user can push back.
+2. Start from the categories mapped to the ticket's page type in the page-types table of the NFR doc (a `dropout page` or `confirmation page` has no form, so Security is not included). For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply (e.g. page load performance on an internal admin page behind auth). Briefly note any category you deliberately excluded so the user can push back.
 3. If a category name is genuinely ambiguous for the ticket in front of you, fetch that one child page via `read-confluence-page` to read the guidance — but do not paste the guidance into the ticket.
 4. In the ticket's `h2. Non-functional requirements` section, list each applicable category as a bullet linking to its Confluence page. Use Jira wiki-markup link syntax, e.g. `* [+Accessibility+|https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6538166273/Page-level+accessibility+guidance]`.
 5. Append any NFRs listed in the spec's own NFRs section as additional bullets. Spec-listed NFRs are additive — they extend the guidance baseline, they don't override it. Include the spec's wording as text (there is no guidance-page link to reference).
