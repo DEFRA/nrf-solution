@@ -18,9 +18,9 @@ services:
       # When set, the map page uses OS Vector Tile API base tiles instead of demo tiles
       OS_API_KEY: key
 
-      # OAuth Client Credentials
+      # OAuth Client Credentials - use pre-prod env
       DEFRA_ID_CLIENT_ID:
-      # Client secret expires 04/02/2027
+      # Client secret
       DEFRA_ID_CLIENT_SECRET:
       # Service ID
       DEFRA_ID_SERVICE_ID:
