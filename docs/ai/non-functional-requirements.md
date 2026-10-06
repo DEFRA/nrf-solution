@@ -21,7 +21,7 @@ For a `question page` these NFRs apply:
 - Page load performance
 - Security
 
-For a `dropout page` these NFRs apply (no form, so Security is not relevant):
+For a `dropout page` or `confirmation page` these NFRs apply (no form, so Security is not relevant):
 - Accessibility
 - Browser & device compatibility
 - Page load performance
