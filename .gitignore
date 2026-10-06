@@ -11,3 +11,6 @@ compose.override.yml
 
 # Data catalogue is maintained in SharePoint, not in git (see .ai/skills/data-catalogue/)
 NRF Data Catalogue*.xlsx
+
+# Browser compatibility evidence PNGs are local-only (reports in docs/browser-compatibility-results/*.md are committed)
+docs/browser-compatibility-results/**/*.png
