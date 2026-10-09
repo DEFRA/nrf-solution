@@ -5,11 +5,6 @@ services:
       # Host-mapped frontend port, so emailed quote links resolve from the host
       # (e.g. journey tests following the magic link).
       FRONTEND_BASE_URL: http://localhost:3010
-    # Bind-mount the local nrf-library checkout over the container's installed
-    # copy, mirroring the `npm link` set up on the host — lets local edits to
-    # nrf-library show up in the container without a rebuild or release tag.
-    volumes:
-      - ../nrf-library:/home/node/node_modules/@defra/nrf-library
   frontend:
     environment:
       GTM_ID: gtm_id
@@ -28,9 +23,6 @@ services:
       # Adding the client ID at the end means an access token will be returned
       # Which can be used to authenticate with nrf-backend API
       DEFRA_ID_SCOPES: openid,offline_access,<paste defra ID client ID here>
-
-    volumes:
-      - ../nrf-library:/home/node/node_modules/@defra/nrf-library
   impact-assessor:
     environment:
       # Upstream WMTS GetTile URL for the aerial basemap, without the tile
