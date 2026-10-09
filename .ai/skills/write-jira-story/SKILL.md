@@ -51,6 +51,8 @@ Use `read-confluence-page` on the provided URL. Extract:
 
 **If the spec has no user-need statement, stop immediately and alert the user** — do not draft a ticket without one.
 
+**Check every prototype URL path begins with `/handoffs`:** this covers the spec's Prototype URL and any prototype link given for a previous page. A prototype URL whose path doesn't begin with `/handoffs` means the prototype page isn't ready for dev. If any prototype URL in the spec fails this check, **stop immediately and alert the user**, listing each offending URL — do not browse the prototype or draft a ticket.
+
 **Check for an existing Jira story link:** look for a `Jira story:` line in the page body (format: `<strong>Jira story</strong>: <a href="...">NRF2-XXXX</a>`). If found, extract the ticket key — this is an existing ticket and Step 4 must update it rather than create a new one.
 
 ### Step 2 — Browse the prototype
@@ -84,6 +86,8 @@ Use the structure in [jira-story-structure.md](../../../docs/ai/jira-story-struc
 **Ticket summary:** use the exact h1 from the prototype (step 2), suffixed with "page" — e.g. "Enter your NRL reference page".
 
 **Generated from timestamp:** include both date and time in the `*Generated from*:` line — e.g. `on 21 Sep 2026 at 14:30`.
+
+**Journey tests note:** end every description (any page type, create or update) with the `h2. Testing notes` section from the structure doc, containing the bullet `* Update the journey tests to include the new page`. It comes after the `h2. Non-functional requirements` section and nothing follows it.
 
 #### Content strings and prototype links
 
@@ -193,8 +197,8 @@ Use the mapping in [non-functional requirements](../../../docs/ai/non-functional
 
 Steps:
 
-1. Work from the cached category list above — do **not** fetch the guidance index or child pages on every run. The category name is enough to judge relevance in almost every case (Accessibility, Security, Browser compat and Performance are all self-explanatory for a `question page`).
-2. Start from the categories mapped to the ticket's page type in the page-types table of the NFR doc (a `dropout page` or `confirmation page` has no form, so Security is not included). For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply (e.g. page load performance on an internal admin page behind auth). Briefly note any category you deliberately excluded so the user can push back.
+1. Work from the cached category list above — do **not** fetch the guidance index or child pages on every run. The category name is enough to judge relevance in almost every case (Accessibility and Security are self-explanatory for a `question page`). Never list Browser & device compatibility or Page load performance, even if the guidance index shows them.
+2. Start from the categories mapped to the ticket's page type in the page-types table of the NFR doc (a `dropout page` or `confirmation page` has no form, so Security is not included). For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply. Briefly note any category you deliberately excluded so the user can push back.
 3. If a category name is genuinely ambiguous for the ticket in front of you, fetch that one child page via `read-confluence-page` to read the guidance — but do not paste the guidance into the ticket.
 4. In the ticket's `h2. Non-functional requirements` section, list each applicable category as a bullet linking to its Confluence page. Use Jira wiki-markup link syntax, e.g. `* [+Accessibility+|https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6538166273/Page-level+accessibility+guidance]`.
 5. Append any NFRs listed in the spec's own NFRs section as additional bullets. Spec-listed NFRs are additive — they extend the guidance baseline, they don't override it. Include the spec's wording as text (there is no guidance-page link to reference).

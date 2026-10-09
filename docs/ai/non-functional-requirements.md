@@ -9,19 +9,15 @@ The NFR catalogue lives in Confluence so the whole cross-disciplinary team can s
 | Category | Confluence page |
 |---|---|
 | Accessibility | https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6538166273/Page-level+accessibility+guidance |
-| Browser & device compatibility | https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6535679196/Compatibility+Testing |
-| Page load performance | https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6598722117/Page+level+performance+guidance |
 | Security | https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6598689168/Page-level+security+guidance |
+
+Browser & device compatibility and Page load performance exist in the guidance index but are deliberately not listed as NFRs on any story, for any page type. Do not add them to the cached list or to a ticket.
 
 ## Page types
 
 For a `question page` these NFRs apply:
 - Accessibility
-- Browser & device compatibility
-- Page load performance
 - Security
 
 For a `dropout page` or `confirmation page` these NFRs apply (no form, so Security is not relevant):
 - Accessibility
-- Browser & device compatibility
-- Page load performance
