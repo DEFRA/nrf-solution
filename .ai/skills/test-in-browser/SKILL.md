@@ -99,3 +99,12 @@ Results table only — no preamble. List bugs/gaps below the table.
 | Scenario | Description | Result                                            | Notes |
 | -------- | ----------- | ------------------------------------------------- | ----- |
 | 1        | ...         | ✅ Pass / ❌ Fail / ⚠️ Partial / 🔍 Code-verified | ...   |
+
+## Jira comment
+
+After the results table, add a comment to the Jira ticket confirming the browser test was run. Keep it concise: plain text, no table, no per-scenario detail for passing scenarios.
+
+- All scenarios passed: `Browser tested against <url> on <date>: all <N> acceptance criteria passed.`
+- Otherwise: `Browser tested against <url> on <date>: <P> of <N> acceptance criteria passed. Did not pass:` followed by one line per failed or partial scenario, `- Scenario <n> - <title>: <short reason>`.
+
+Post it with `echo "<comment>" | node .ai/skills/tools/jira/add-comment.mjs <ticket> -`. If the script fails, report the exact error and don't retry or call the Jira API directly.

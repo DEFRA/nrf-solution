@@ -17,6 +17,7 @@ For user interface development stories:
 | Confirmation page   | Only entry-point, browser-back and content-link scenarios — no back link scenario, no happy path or error scenarios, no next-page bullet, no Security NFR. The browser-back scenario's `Then` is `I am redirected to <path or URL from the spec>`, stated directly and not added to Page URLs |
 | Out of scope        | Optional, if anything was defined in the confluence page                          |
 | NFRs                | `h2. Non-functional requirements` with at least one bullet                        |
+| Journey tests note  | Final element of the description, after the NFRs: `h2. Testing notes` followed by the bullet `* Update the journey tests to include the new page`. Always present, for every page type |
 
 
 ```
@@ -61,4 +62,10 @@ h3. Scenario 1 - [summary of what this scenario tests]
 h2. Non-functional requirements
 
 [NFR bullets]
+
+----
+
+h2. Testing notes
+
+* Update the journey tests to include the new page
 ```
