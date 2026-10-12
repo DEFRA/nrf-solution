@@ -100,13 +100,3 @@ Plugins registered in order: `requestLogger` → `requestTracing` → `secureCon
 **Error handling:** Use `@hapi/boom` for HTTP errors (`Boom.notFound()`, etc.).
 
 **Module system:** ES modules (`"type": "module"`). All imports use `.js` extensions.
-
-## Tools available to agents
-
-- **Coding rules**: [.ai/rules/index.md](./.ai/rules/index.md).
-- **Jira/Confluence scripts**: `.ai/skills/tools/{jira,confluence}/`. Require `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` — see [atlassian-credentials.md](./docs/ai/atlassian-credentials.md).
-- **Code-reviewer agent**: [code-reviewer.md](./.ai/agents/code-reviewer.md) — run across changed code after implementation.
-- **Browser-test skill**: [test-in-browser/SKILL.md](./.ai/skills/test-in-browser/SKILL.md) — verify a feature against AC in a real browser.
-- **Browser-compatibility skill**: [test-browser-compatibility/SKILL.md](./.ai/skills/test-browser-compatibility/SKILL.md) — run the quote journey across Chrome/Firefox/WebKit/iOS/Android MCP targets and write a compat report with a production-readiness verdict. Requires a session started with `claude --mcp-config .mcp-browser-compat.json`.
-- **Feature-builder agent**: [feature-builder.md](./.ai/agents/feature-builder.md) — staged cross-repo feature implementation from a Jira ticket + impl notes.
-- **Backend database skill**: [develop-backend-database/SKILL.md](./.ai/skills/develop-backend-database/SKILL.md) — read before reading/writing the backend Postgres database or its Liquibase migrations.

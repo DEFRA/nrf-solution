@@ -50,3 +50,7 @@ The **Run journey tests** button has inline inputs. Change them before clicking 
 The **Feature** list is generated from the files in `journey-tests/test/features/` when Tilt loads, so it stays in sync as features are added or removed (reload the Tiltfile to pick up new ones).
 
 The tests can also be run directly from the repo root with `./run-journey-tests.sh` (honours the same `FEATURE`, `E2E_HEADFUL`, `BROWSER` and `TAGS` environment variables).
+
+## Checking step wiring without the stack
+
+When the Tilt stack isn't running, `npx cucumber-js --dry-run` (run in `journey-tests/` after `npm install`) checks that every step in the feature files matches a step definition, without launching a browser.
