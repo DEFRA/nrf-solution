@@ -94,10 +94,10 @@ Implement the plan, repo by repo. If existing uncommitted work is already on the
 
 ### Stage 5 — Browser test
 
-Run the `test-in-browser` skill yourself, using the Playwright tools in your `tools:` list. Only if those tools turn out to be unavailable (a tool call fails with "no such tool"), ask the user to invoke the skill from the main Claude Code session instead.
+Follow the `test-in-browser` skill yourself, using the Playwright tools in your `tools:` list. Only if those tools turn out to be unavailable (a tool call fails with "no such tool"), ask the user to invoke the skill from the main Claude Code session instead.
 
 1. Run `tilt up` in the meta-repo root to ensure all containers are running.
-2. Invoke the `test-in-browser` skill with the Jira ticket key and starting URL as args — e.g. `test-in-browser NRF2-1262 http://localhost:3010/manage/start-page`. Confirm the correct port/URL with the user if unsure. Start at the new page's route (or its previous page).
+2. Read and follow the [test-in-browser skill](../skills/test-in-browser/SKILL.md) with the Jira ticket key and starting URL as its inputs — e.g. ticket `NRF2-1262`, starting at `http://localhost:3010/manage/start-page`. Confirm the correct port/URL with the user if unsure. Start at the new page's route (or its previous page).
 3. While browser tests run, tail `tilt logs frontend` to catch server-side errors that wouldn't be visible in the browser. After each scenario, check for errors.
 4. Report the results. Fix any failures (return to Stage 4 if needed). Stop for approval before Stage 6.
 
