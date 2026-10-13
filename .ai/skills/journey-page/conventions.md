@@ -12,6 +12,7 @@ Each page lives in its own folder, `frontend/src/server/<area>/<route ID>/`:
 | `routes.js`             | Route definitions; re-exports `routePath`                             | all                |
 | `get-view-model.js`     | Builds the template data object                                       | all                |
 | `index.njk`             | The view                                                              | all                |
+| `options.js`            | Radio/checkbox items, shared by the view model and validation         | pages with radios or checkboxes |
 | `form-validation.js`    | Returns a Joi schema for the POST payload                             | form pages         |
 | `get-next-page.js`      | Returns the redirect path after a successful POST                     | form pages         |
 | `controller-post.js`    | Only when the standard POST controller can't be used (see Controllers) | rare               |
@@ -85,6 +86,7 @@ The template must:
 - For each radio or checkbox macro set `name` to the field name as a plain string (e.g. `name: "boundaryEntryType"`); for radios set `value: formSubmitData.boundaryEntryType`; for checkboxes set `values: formSubmitData.<name>` (the macro expects an array, not a scalar). This pre-selects the previously submitted value when the form is re-rendered after a validation error.
 - Set each form group's `errorMessage` from `validationErrors.messagesByFormField.<name>`
 - Do not set `id` on individual radio/checkbox items
+- Pass the items to the macro from the view model (`items: <name>Options`) rather than writing them inline in the template (see `options.js`)
 - Prefix the `pageTitle` block value with `{% if validationErrors %}Error: {% endif %}`
 - Add an error summary macro above the content, wrapped in `{% if validationErrors %}`, with `titleText: "There is a problem"` and `errorList: validationErrors.summary`
 
@@ -100,6 +102,21 @@ Convert markup matching these patterns to the corresponding macro. For each, fet
 | `govuk-radios`        | Radios        | https://design-system.service.gov.uk/components/radios/#radios-example-nunjucks               |
 | `govuk-checkboxes`    | Checkboxes    | https://design-system.service.gov.uk/components/checkboxes/#checkboxes-example-nunjucks       |
 | `govuk-panel`         | Panel         | https://design-system.service.gov.uk/components/panel/#panel-example-nunjucks                 |
+
+## `options.js`
+
+Every page with radios or checkboxes defines its items once, in `options.js`, so the values are not duplicated across the template, the view model and the validation schema. Export a named array `<fieldName>Options` of macro items (`value`, `text`, plus `hint` etc. where the design needs them). See `quote/planning-type/options.js`.
+
+```js
+export const planningTypeOptions = [
+  { value: 'full-planning-permission', text: 'Full planning permission' },
+  { value: 'other', text: 'Other' }
+]
+```
+
+- `get-view-model.js` imports it and returns it in the view model, and `index.njk` passes it to the macro as `items: planningTypeOptions`
+- `form-validation.js` derives the allowed values from it: `.valid(...planningTypeOptions.map((o) => o.value))`
+- `get-next-page.js` may compare against a literal value, as `quote/planning-type/get-next-page.js` does
 
 ## `get-view-model.js`
 
@@ -125,7 +142,7 @@ For `backLinkPath`, import the previous page's `routePath` from its `route-path.
 
 A function returning a Joi schema (the schema factory, not the schema itself — the POST controller calls `formValidation()`). Handle each input type as follows:
 
-- **Radios / selects**: `joi.string().valid(...allowedValues).required()`. Nothing selected means the field is absent from the payload. Handle both `'any.required'` and `'any.only'` (unrecognised value) with the same message.
+- **Radios / selects**: `joi.string().valid(...allowedValues).required()`, with `allowedValues` derived from the page's `options.js`. Nothing selected means the field is absent from the payload. Handle both `'any.required'` and `'any.only'` (unrecognised value) with the same message.
 - **Checkboxes**: `joi.array().items(joi.string().valid(...allowedValues)).single().required()`. `.single()` is required because one checked box submits a plain string rather than an array. Handle `'any.required'` and `'any.only'` with the same message; do not add `'array.min'` (unreachable via a normal HTML form).
 - **Text inputs (required)**: an empty string is submitted when blank, so handle both `'string.empty'` and `'any.required'`.
 - **Text inputs (optional)**: `joi.string().allow('')`. Always include optional fields, or Hapi rejects submissions that include them as unknown fields.
