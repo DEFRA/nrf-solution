@@ -102,6 +102,8 @@ Results table only — no preamble. List bugs/gaps below the table.
 
 ## Jira comment
 
+Only add a Jira comment if the starting URL is a deployed environment. If it is `localhost` (local development), skip this section and don't post anything to the ticket.
+
 After the results table, add a comment to the Jira ticket confirming the browser test was run. Keep it concise: plain text, no table, no per-scenario detail for passing scenarios.
 
 - All scenarios passed: `Browser tested against <url> on <date>: all <N> acceptance criteria passed.`
