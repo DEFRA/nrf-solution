@@ -48,6 +48,7 @@ The `hint` property is omitted when no hint text is present. `nextSteps` is empt
 3. **If the page shows a password prompt** (look for a password `<input>` or any form asking for a password/passphrase):
    - Check for the password in the `PROTOTYPE_PASSWORD` environment variable using the `Bash` tool (e.g. `printenv PROTOTYPE_PASSWORD`). Do not print its value in your response.
    - If it's set, fill the password field with it and submit, then wait for navigation and take a new snapshot to confirm you have reached the prototype.
+   - The Playwright MCP server's environment may not include `PROTOTYPE_PASSWORD` even when your shell does, and filling the field by hand would put the value in the conversation. In that case log in from the shell instead: use `curl` with a cookie jar to submit the password (read it from `$PROTOTYPE_PASSWORD` inside the command, never echo it), fetch each prototype page's HTML with that cookie, and parse it with jsdom (`querySelector('main').outerHTML`, or `.ai/skills/tools/prototype/extract-page.js`). Delete the temp files afterwards.
    - If it's not set, stop and ask the user to type the password into the open browser's password field themselves (do not ask them to paste it into the chat). Wait for them to confirm, then take a new snapshot to confirm you have reached the prototype.
 
 ## Step 2: Extract page content
