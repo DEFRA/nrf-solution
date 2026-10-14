@@ -169,17 +169,26 @@ When the new page's previous page or next pages already exist, update them so ex
 
 ## Controllers
 
-**GET:** each area exports a GET controller built with `createPageController({ viewsDir })` from `common/controllers/page-controller.js` (`quoteController`, `manageController`). It reads any validation flash from the session and clears it, builds `formSubmitData` from the area's session data, calls `getViewModel(data, request.query)`, and renders `<viewsDir>/<routeId>/index` with `validationErrors` and `formSubmitData` merged in. This is what re-displays errors after the PRG redirect.
+**GET:** each area exports a GET controller built with `createPageController({ viewsDir })` from `common/controllers/page-controller.js` (`quoteController`, `manageController`, `requestToUseController`). It reads any validation flash from the session and clears it, builds `formSubmitData` from the session data returned by the route's `getSessionData(request)` (default: the quote session; pages outside `quote` pass their own namespace's `get`), calls `getViewModel(data, request.query)`, and renders `<viewsDir>/<routeId>/index` with `validationErrors` and `formSubmitData` merged in. This is what re-displays errors after the PRG redirect.
 
 **POST (`quote` area):** use `quotePostController` from `quote/controller-post.js`. It runs `formValidation()` as the Joi payload schema; on failure maps the errors, saves a flash to the session and redirects back (303, `.takeover()`); on success saves the payload into the quote session, calls `getNextPage(quoteData)` and redirects forward (303).
 
-**POST (other areas):** `quotePostController` saves into the quote session, whose schemas are closed objects, so it must not be used for other areas' fields. Use the first of these that exists: a shared POST controller factory in `common/controllers/`; the area's own `controller-post.js`; otherwise a minimal page-local `controller-post.js` that validates with `formValidation()`, uses `redirectToFormWithValidationErrors` from `quote/controller-post.js` as the `failAction`, and redirects to `getNextPage(payload)` with `statusCodes.redirectAfterPost`.
+**POST (other areas):** `quotePostController` saves into the quote session, whose schemas are closed objects, so it must not be used for other areas' fields. Use `createPostController` from `common/controllers/post-controller.js` (`quotePostController` is a thin wrapper around it). Pass `formValidation`, `getNextPage` and `saveToSession(request, payload)`, which saves the payload to the page's own session namespace and returns the merged session data that is passed to `getNextPage`. Do not write a page-local `controller-post.js`.
 
 Write a custom POST controller in the `quote` area only when the handler must do more than validate, save and redirect (calling a backend API, clearing dependent keys, resolving a display name). Always follow PRG: on validation failure save the flash and redirect back with `statusCodes.redirectAfterPost` and `.takeover()`; on success redirect forward with `statusCodes.redirectAfterPost`.
 
 ## Quote area session helpers
 
 For pages in the `quote` area, use the helpers in `quote/helpers/quote-session-cache/` (`saveQuoteDataToCache`, `getQuoteDataFromCache`, `getCompleteQuoteDataFromCache`, `clearQuoteDataFromCache`). Session keys are camelCase. Never read `request.yar` directly in a page controller.
+
+## Other session namespaces
+
+Pages outside `quote` store answers in their own top-level session key, made with `createSessionNamespace({ key, schema })` from `common/helpers/session-namespace/` (init, get, save, clear). Build the schema by calling `extract` on the page `form-validation.js` schemas, with each field `.optional().allow(null)`:
+
+- `manage` (`manage/helpers/manage-session/`): the what would you like to do answer.
+- `retrieveQuote` (`request-to-use/helpers/retrieve-quote-session/`): the do you have an NRL reference and enter your NRL reference answers. The email is never stored.
+
+A page is only reachable when its journey is valid. The what would you like to do answer decides which journey is selected (`selectJourney` and `isJourneySelected` in `common/helpers/journey-session/`). Retrieve quote pages are guarded by `checkForValidRetrieveQuoteSession`, which matches exact paths: add a new retrieve quote page's path to it. Page tests for guarded pages need a primed session: `withValidRetrieveQuoteSession` or `withValidQuoteSession` from `src/test-utils/`.
 
 ## `page.test.js`
 

@@ -3,7 +3,7 @@
 # Run the journey-tests (Playwright + Cucumber) suite on the HOST against the
 # Tilt stack. Invoked by the Tilt "journey-tests" resource / Run button.
 #
-# The browser runs on the host so it reaches the frontend (localhost:3010) and
+# The browser runs on the host so it reaches the frontend (localhost:3000) and
 # the cdp-uploader form action (localhost:7337) exactly as a real user's browser
 # does — the upload journey then works with no container networking hacks.
 #
@@ -23,7 +23,7 @@ if [ ! -x node_modules/.bin/cucumber-js ]; then
   npm ci
 fi
 
-export BASE_URL="http://localhost:3010"
+export BASE_URL="http://localhost:3000"
 export BROWSER="${BROWSER:-chromium}"
 
 args=()
