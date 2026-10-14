@@ -91,12 +91,20 @@ To fully clear all cookies (including HttpOnly/server-set ones), use Playwright'
 
 **Browser tool errors:** Retry once. If the retry fails, stop and wait for the user.
 
+## Landing on a page that may not be built yet
+
+If an AC is about landing on another page (e.g. "I am taken to the enter email page"), judge it by the browser URL alone. If the URL matches the path in the AC, the scenario is ✅ Pass, even if the page itself is a 404 or "Page not found" — the destination may belong to a story that hasn't been built yet. Don't fail or mark it ⚠️ Partial for that. Add a note to the result, e.g. "Lands on `/request-to-use/enter-email` as expected; page returns 404 (not built yet)".
+
+This only covers the destination page's existence. Content, errors and other behaviour on the destination page are still tested when the page loads, and a URL that doesn't match the AC is still a fail.
+
+Don't list these in the Jira comment as not passing, since they count as passed.
+
 ## Error monitoring
 
 After each scenario, check for client-side errors using `mcp__playwright__browser_console_messages` and `mcp__playwright__browser_network_requests`. Flag in the Notes column:
 
 - Console errors or warnings (ignore info/debug level)
-- Failed network requests (4xx/5xx responses, or requests that never completed)
+- Failed network requests (4xx/5xx responses, or requests that never completed). A 404 from a destination page that isn't built yet (see "Landing on a page that may not be built yet") is noted on that scenario but is not a failure.
 
 ## Cleanup
 
