@@ -51,6 +51,10 @@ The **Feature** list is generated from the files in `journey-tests/test/features
 
 The tests can also be run directly from the repo root with `./run-journey-tests.sh` (honours the same `FEATURE`, `E2E_HEADFUL`, `BROWSER` and `TAGS` environment variables).
 
+## Adding a page to an existing journey
+
+Extend the existing feature file for the area (for example `request-to-use.feature`) rather than adding a new one, and register new page objects in `test/support/world.js`. Don't add steps that depend on a page that isn't built yet; leave them out and note them in the PR description. The story that builds the next page adds the follow-on step (for example `I should be taken to {string}`, which checks the URL path).
+
 ## Checking step wiring without the stack
 
 When the Tilt stack isn't running, `npx cucumber-js --dry-run` (run in `journey-tests/` after `npm install`) checks that every step in the feature files matches a step definition, without launching a browser.

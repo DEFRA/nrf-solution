@@ -24,6 +24,12 @@ Common cases:
 - A backend PR that changes the API schema → `Depends-On` the frontend PR and the journey-tests PR
 - A journey-tests PR → `Depends-On` the frontend PR and the backend PR
 
+Because `Depends-On` is circular between repos (each PR lists the others), the PR number of the second PR isn't known when the first is created. Create the first PR with a placeholder URL, create the second, then `gh pr edit` the first with the real URL.
+
+## Commits and PR titles
+
+Use `<JIRA-KEY> - <short description>` for both, e.g. `NRF2-1186 - Enter NRL reference page`. The pre-commit hooks in the frontend and journey-tests repos run lint and tests (the frontend commit takes a while); never skip them. If a hook fails, fix the cause and make a new commit.
+
 ## PR descriptions
 
 Don't include a "Test plan" section in PR descriptions — features are verified against Jira acceptance criteria, not a PR checklist.
