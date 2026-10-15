@@ -45,7 +45,7 @@
 
 - Test titles should be in readable English and avoid implementation details.
 - Do not define fixtures, helper functions, or large data objects inline in test files. Extract them to `src/test-utils/` (helpers) or `src/test-utils/fixtures/` (data). This keeps test files focused on assertions and makes fixtures reusable across tests.
-- Re-use fixture data across test files rather than duplicating it — this makes it easier to maintain data contracts, especially without TypeScript.
+- Re-use fixture data across test files rather than duplicating it — this makes it easier to maintain data contracts, especially without TypeScript. Before writing a literal test value (NRL reference, email, ID, etc.), check `src/test-utils/fixtures/` for it and import it rather than retyping it.
 - Test assertion blocks should begin with 'it' rather than 'test'
 - Write parameterised tests up front to satisfy SonarQube. Two rules bite in CI if you don't:
   - **S5976** — when 3+ tests differ only in their input/expected values (same setup and assertions), use a single `it.each([...])` instead of separate `it(...)` blocks. Sonar fails the quality gate on the 3rd near-duplicate test.
@@ -56,10 +56,17 @@
 - Do not assert on literal strings that are config defaults (e.g. a header name like `'x-cdp-request-id'`). Read the value from config instead, or mock config explicitly — otherwise the test passes even when config changes the value at runtime.
 - Exception for unit tests of pure helpers: prefer asserting literal expected values (with config at its defaults) over mocking config — a mocked config only tests the mock.
 
+## Constants vs literals in expectations
+
+- Don't take an *expected output* from the same constant the code under test reads — if the constant's value changes, code and test change together and the test still passes. Assert a literal when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to another service, or shown to the user.
+- Using a constant as *test input* (fixtures, setup) is fine either way: a stale literal input makes the test fail loudly, not pass falsely.
+- HTTP status codes are the exception: always `statusCodes.<name>` (see [javascript.md](./javascript.md)), they can't drift.
+
 ## Test performance
 
 - Favour fast tests over extending test timeouts. If a test is slow because it repeats an operation many times to reach a threshold (e.g. firing 60+ requests to trip a rate limit), lower that threshold in the test environment via config (e.g. `default: isTest ? 5 : 60`) rather than raising the test's timeout. Extending the timeout hides slowness and makes the suite drag; reducing the work keeps the test fast and still proves the behaviour.
 
 ## Acceptance tests
 
+- Assert the observable outcome the change delivers, not just the status code. If a change pre-fills an input, assert the input's value; if it shows a message, assert the message. A `200` alone passes when the behaviour is broken.
 - Every page should have a acceptance test file in the same folder, named page.test.js, and a accessibility test, named accessibility.test.js.
