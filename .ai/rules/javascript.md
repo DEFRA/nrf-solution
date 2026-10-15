@@ -5,7 +5,7 @@
 - Use short, single-purpose functions. Any over 75 lines will be failed by SonarQube, but aim to make them shorter. When a handler or function grows beyond ~20 lines, look for a named helper to extract — especially for logic that can be tested independently (rate limiting, cache reads, transformations). Keep controllers thin: they should orchestrate calls to helpers, not contain the logic themselves.
 - When the same non-trivial block of logic (not a one-liner) is duplicated across 3 or more modules, extract it into a shared helper rather than copying it again — same principle as the Joi fragment reuse rule in the Validation section. For the quote journey, shared helpers go in `src/server/quote/helpers/<name>/index.js` per the convention below.
 - If there are multiple function params, use an object param instead
-- For functions that accept params that include structured objects, add JSDoc annotations for the entire signature (all params, not just the structured ones) — this applies to all functions, including module-private helpers, not just exported ones. Functions where every param is a primitive don't need JSDoc as the types can be inferred.
+- For functions that accept params that include structured objects, add JSDoc annotations for the entire signature (all params, not just the structured ones) — this applies to all functions, including module-private helpers, not just exported ones. Functions where every param is a primitive don't need JSDoc as the types can be inferred. The JSDoc type must be what callers actually pass: if a function destructures `({ path, query })` from a hapi request and is called with the whole `request`, document `@param {import('@hapi/hapi').Request} request`, not an ad-hoc `{ path, query }` shape. Match sibling functions that take the same thing.
 - All functions should be named, not anonymous, to improve readability in stack traces
 - Prefer named exports (`export const`, `export function`) over default exports. Default exports are acceptable for page-level single-purpose files where the file name already conveys the identity (e.g. `get-view-model.js`, `form-validation.js`) — but always name the function even then: `export default function getViewModel() { ... }` not `export default function () { ... }`
 
@@ -87,6 +87,7 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 
 - Always use `statusCodes.<name>` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
 - This applies in test files too: assert `expect(response.statusCode).toBe(statusCodes.redirectAfterPost)` not `.toBe(303)`, and pass constants (not literals) when stubbing response statuses in MSW handlers or fixtures
+- When you rewrite or touch a test block, fix any literal status code in it too, even if the literal was already there — reviewers flag these in changed blocks
 - If a needed code is missing from the constants object (e.g. `found: 302`), add it there rather than falling back to a literal
 - Import `statusCodes` from `@defra/cdp-validation-kit` if it is available as a dependency: `import { statusCodes } from '@defra/cdp-validation-kit'`. If not available, use the local `src/server/common/constants/status-codes.js` copy. Do not duplicate status code values inline.
 
