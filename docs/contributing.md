@@ -26,6 +26,15 @@ Common cases:
 
 Because `Depends-On` is circular between repos (each PR lists the others), the PR number of the second PR isn't known when the first is created. Create the first PR with a placeholder URL, create the second, then `gh pr edit` the first with the real URL.
 
+## Changing an API contract
+
+When a PR changes an endpoint's response shape, status codes, parameters or headers (e.g. a backend route), find **every** caller across all submodules, not just the feature the change was made for: `grep` the endpoint path in `frontend/`, `admin-frontend/`, `journey-tests/` and `impact-assessor/`, and check test mocks (MSW handlers, fixtures) that encode the old shape.
+
+- For each caller that breaks or silently changes behaviour, either raise a companion PR (with `Depends-On` lines) or state in the PR description why it's safe (e.g. the feature isn't user facing yet).
+- A caller that keeps working by accident (e.g. a check that can no longer be true) still needs updating — dead branches and mocks of the old contract hide regressions.
+- Say which repo should merge first.
+- For migrations that drop or rename columns, note in the PR that the previous app version still queries them (so an app rollback needs a DB rollback) and what the `<rollback>` does not restore.
+
 ## Commits and PR titles
 
 Use `<JIRA-KEY> - <short description>` for both, e.g. `NRF2-1186 - Enter NRL reference page`. The pre-commit hooks in the frontend and journey-tests repos run lint and tests (the frontend commit takes a while); never skip them. If a hook fails, fix the cause and make a new commit.

@@ -27,7 +27,10 @@ their related access tokens, EDP levy results, and email notifications.
   master) — never edit an already-applied changeSet. Give every `createTable`/`addColumn` a
   matching `<rollback>`. Prefer typed Liquibase elements (`createTable`, `addColumn`,
   `addForeignKeyConstraint`, etc.); drop to a raw `<sql>` block only for things Liquibase can't
-  express (e.g. `CHECK` constraints, generated columns).
+  express (e.g. `CHECK` constraints, generated columns). When a migration drops or renames
+  columns, the previous app version still queries them, so say in the PR that an app rollback
+  needs the matching DB rollback, and what the `<rollback>` cannot restore (data in dropped
+  columns, rows changed by a data `UPDATE`).
 
   **After applying a schema-changing migration, you must regenerate the ERD**
   (`backend/docs/quote-database-diagram.md`) using the `generate-db-diagram` skill, which reads
