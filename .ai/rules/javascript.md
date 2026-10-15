@@ -6,7 +6,7 @@
 - When the same non-trivial block of logic (not a one-liner) is duplicated across 3 or more modules, extract it into a shared helper rather than copying it again — same principle as the Joi fragment reuse rule in the Validation section. For the quote journey, shared helpers go in `src/server/quote/helpers/<name>/index.js` per the convention below.
 - If there are multiple function params, use an object param instead
 - For functions that accept params that include structured objects, add JSDoc annotations for the entire signature (all params, not just the structured ones) — this applies to all functions, including module-private helpers, not just exported ones. Functions where every param is a primitive don't need JSDoc as the types can be inferred. The JSDoc type must be what callers actually pass: if a function destructures `({ path, query })` from a hapi request and is called with the whole `request`, document `@param {import('@hapi/hapi').Request} request`, not an ad-hoc `{ path, query }` shape. Match sibling functions that take the same thing.
-- All functions should be named, not anonymous, to improve readability in stack traces
+- All functions should be named, not anonymous, to improve readability in stack traces. An arrow function assigned to a `const` or named export (`export const getQuote = async ({ db }) => { ... }`) counts as named. Avoid anonymous default exports and non-trivial inline callbacks (extract those to a named function); short one-liners like `.map((x) => x.id)` are fine
 - Prefer named exports (`export const`, `export function`) over default exports. Default exports are acceptable for page-level single-purpose files where the file name already conveys the identity (e.g. `get-view-model.js`, `form-validation.js`) — but always name the function even then: `export default function getViewModel() { ... }` not `export default function () { ... }`
 
 ## Comments
@@ -125,7 +125,7 @@ export const myController = {
 }
 ```
 
-Do not use arrow function syntax for `handler` (`handler: async (request, h) => { ... }`) — method shorthand is consistent with how Hapi documents its API and matches the pattern used across the codebase.
+Do not use arrow function syntax for `handler` (`handler: async (request, h) => { ... }`) — method shorthand is consistent with how Hapi documents its API and matches the pattern used across the codebase. This is a style convention, not a naming rule (the arrow would still be named in stack traces); it applies to Hapi `handler` properties only, and a `const` arrow is fine for helpers.
 
 ### Responses
 
