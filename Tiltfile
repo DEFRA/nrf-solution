@@ -63,7 +63,7 @@ cmd_button(
 
 # ── Journey tests (host-run) ────────────────────────────────────────────────
 # Runs the Playwright/Cucumber suite on the HOST (not in a container) against the
-# Tilt frontend at localhost:3010. The browser must run on the host so it hits
+# Tilt frontend at localhost:3000. The browser must run on the host so it hits
 # the same localhost origins a real user does — including the cdp-uploader form
 # action on localhost:7337 — so the upload journey works with no extra wiring.
 # Manual trigger; toggle E2E_HEADFUL=true to watch the browser drive the journey.

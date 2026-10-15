@@ -140,7 +140,7 @@ return URL (`/login/return`) and the post sign-out redirect (`/login/signed-out`
 ## Local setup
 
 Run the frontend via `tilt up` from the `nrf-solution` meta-repo — don't run it standalone. Sign
-out from the profile page: http://localhost:3010/profile.
+out from the profile page: http://localhost:3000/profile.
 
 Locally auth defaults to the **real Defra ID (cpdev) tenant** — the `baseUrl`/`wellKnownPath`
 config defaults are used, so you only need to supply the credentials. Copy the `frontend` auth

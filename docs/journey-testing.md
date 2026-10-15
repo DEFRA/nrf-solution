@@ -2,7 +2,7 @@
 
 Journey (end-to-end) tests run via [nrf-journey-tests](https://github.com/DEFRA/nrf-journey-tests) using Cucumber and Playwright. The submodule is included at `journey-tests/`.
 
-Unlike the other test suites, the browser runs **on your host**, not in a container — it drives the Tilt stack through `localhost:3010` exactly as a real user's browser does. This is what lets the upload journey work: the cdp-uploader form action (`localhost:7337`) resolves the same way it does for a user, with no container networking hacks.
+Unlike the other test suites, the browser runs **on your host**, not in a container — it drives the Tilt stack through `localhost:3000` exactly as a real user's browser does. This is what lets the upload journey work: the cdp-uploader form action (`localhost:7337`) resolves the same way it does for a user, with no container networking hacks.
 
 ## Running the tests
 
