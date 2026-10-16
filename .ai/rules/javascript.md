@@ -115,6 +115,15 @@ This ensures browser back/refresh doesn't re-submit the form.
 - Pages written before this rule still export `routePath` inline from `routes.js`; they haven't been migrated. When touching such a page, add the leaf module, import it from `routes.js`, and re-export it so existing importers keep working
 - View models expose these imported paths to templates — see the Links rule in [html.md](./html.md) for the template side
 
+### Keep routes.js skinny
+
+A page's `routes.js` only wires things together: imports, the OpenAPI block, and the route array. It must not contain handler bodies, lookups, session logic or other helpers.
+
+- The **handler** lives in `controller-post.js` (or `controller-get.js`) in the same folder, exported as an object holding only the method-shorthand `handler`: `export const quoteSubmitController = { async handler(request, h) { ... } }`.
+- The route **options** (`validate`, `failAction`, `pre`, payload config) stay in `routes.js`, and the controller is spread in after them: `{ method: 'POST', path: routePath, options: { validate: { payload: formValidation(), failAction: redirectToFormWithValidationErrors } }, ...enterEmailPostController }`. See `quote/check-your-answers/routes.js` and `controller-post.js`.
+- If a handler is just a `createPostController(...)` or `requestToUseController(...)` call with a few options, that call may stay inline.
+- When reviewing, flag any `async handler(...)`, `handler(...)` or helper function defined in a `routes.js`, and any controller file that carries route `options`.
+
 ### Handler method style
 
 Use method shorthand syntax inside controller objects:
