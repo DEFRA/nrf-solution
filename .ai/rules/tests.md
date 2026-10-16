@@ -56,6 +56,11 @@
 - Do not assert on literal strings that are config defaults (e.g. a header name like `'x-cdp-request-id'`). Read the value from config instead, or mock config explicitly — otherwise the test passes even when config changes the value at runtime.
 - Exception for unit tests of pure helpers: prefer asserting literal expected values (with config at its defaults) over mocking config — a mocked config only tests the mock.
 
+## Concurrency
+
+- Any operation that must happen at most once (token redemption, claiming a record) needs an acceptance test that fires several requests in parallel (`Promise.all`) against a real server and database, and asserts exactly one succeeds. Sequential "second attempt fails" tests do not catch races.
+- Mock return values should contain only what the code under test reads. Don't copy driver artefacts into mocks (e.g. `{ '?column?': 1 }` for a `SELECT 1`) — use `[{}]`.
+
 ## Constants vs literals in expectations
 
 - Don't take an *expected output* from the same constant the code under test reads — if the constant's value changes, code and test change together and the test still passes. Assert a literal when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to another service, or shown to the user.

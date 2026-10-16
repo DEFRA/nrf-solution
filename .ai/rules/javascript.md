@@ -6,7 +6,7 @@
 - When the same non-trivial block of logic (not a one-liner) is duplicated across 3 or more modules, extract it into a shared helper rather than copying it again — same principle as the Joi fragment reuse rule in the Validation section. For the quote journey, shared helpers go in `src/server/quote/helpers/<name>/index.js` per the convention below.
 - If there are multiple function params, use an object param instead
 - For functions that accept params that include structured objects, add JSDoc annotations for the entire signature (all params, not just the structured ones) — this applies to all functions, including module-private helpers, not just exported ones. Functions where every param is a primitive don't need JSDoc as the types can be inferred. The JSDoc type must be what callers actually pass: if a function destructures `({ path, query })` from a hapi request and is called with the whole `request`, document `@param {import('@hapi/hapi').Request} request`, not an ad-hoc `{ path, query }` shape. Match sibling functions that take the same thing.
-- All functions should be named, not anonymous, to improve readability in stack traces
+- All functions should be named, not anonymous, to improve readability in stack traces. An arrow function assigned to a `const` or named export (`export const getQuote = async ({ db }) => { ... }`) counts as named. Avoid anonymous default exports and non-trivial inline callbacks (extract those to a named function); short one-liners like `.map((x) => x.id)` are fine
 - Prefer named exports (`export const`, `export function`) over default exports. Default exports are acceptable for page-level single-purpose files where the file name already conveys the identity (e.g. `get-view-model.js`, `form-validation.js`) — but always name the function even then: `export default function getViewModel() { ... }` not `export default function () { ... }`
 
 ## Comments
@@ -68,6 +68,7 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 - validate / sanitize user inputs
 - Every POST route that accepts a request body must have a `options.validate.payload` Joi schema — especially unauthenticated ones. Without it, raw user-supplied values can be used for dynamic dispatch or passed directly to loggers/services
 - Nunjucks `autoescape: true` HTML-encodes output but does NOT prevent JS injection inside `<script>` blocks — any `{{ variable }}` rendered inside a JS string literal must either be validated against a strict allowlist (e.g. `/^GTM-[A-Z0-9]+$/`) or use the `| dump` filter to JSON-encode it safely
+- Don't let an endpoint tell a caller whether a record exists unless they've proved they own it. For example, a redeem endpoint that answers `not_found` for an unknown reference but `invalid` for a real reference with a wrong token lets anyone probe which references exist. Return the same response for both cases unless the caller needs the distinction, and if so say why in the route's OpenAPI description. When reviewing, compare with sibling endpoints: if one returns an identical response whatever went wrong (like `resend-known`), a sibling that distinguishes the cases is a finding
 - Never put PII or sensitive identifiers (Defra ID `sub` claims, emails, names) in URL paths or query strings — they are recorded in access logs, proxy logs, google analytics and browser history. Pass them in the request body or headers instead. If a value must appear in a URL, document and justify that decision in the route's OpenAPI description. When reviewing, check consistency: if one endpoint keeps a value out of the URL, a sibling endpoint exposing the same value in the path is a finding
 
 #### SQL injection (`pg`)
@@ -75,13 +76,14 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 - Pass **values** as parameters, never interpolate them into the SQL string. Use placeholders (`$1`, `$2`, …) with the values array as the second arg to `db.query`: `db.query('... WHERE reference = $1', [reference])`. Never build queries with template literals or `+` containing a value (`` `... WHERE reference = '${reference}'` ``).
 - SQL identifiers (table/column names) can't be parameterized. Avoid interpolating them at all; if a query genuinely needs a dynamic identifier, the value must come from a hard-coded allowlist (a constant map/array in the code), never from request input.
 - Interpolating a **static constant** SQL fragment (e.g. `` `${QUOTE_SELECT_SQL} WHERE q.reference = $1` `` where `QUOTE_SELECT_SQL` is a module constant) is fine — the rule is about dynamic/request-derived data, not constants.
+- Single-use or claim-once operations (redeeming a token, claiming a job) must be one atomic `UPDATE ... WHERE <state column> IS NULL ... RETURNING`, never a read followed by a write. Guard on a state column, not on a clock comparison: `now()` is the transaction start time, so a concurrent `UPDATE` that was blocked on the row lock re-evaluates `expires_at > now()` against its own earlier timestamp and can succeed a second time. Record the claim in its own column (e.g. `redeemed_at`) rather than overwriting `expires_at`, so "used" stays distinguishable from "expired".
 - When reviewing: flag any template literal or string concatenation inside a `.query(...)` call that contains anything other than a static constant. The values must be in the params array.
 
 ### Validation
 
 - if validating any object or response payload, use Joi rather than custom validation
 - favour tighter validation over loose validation eg if accepting a string field in a payload, apply a max length if possible and sanitize
-- always prefer re-using an existing Joi fragment over writing a new inline schema. Before adding a field schema (email, reference, token, etc.) to a controller or route, check `src/server/common/validation/` (and nearby `form-validation.js` files) for one that already covers it. If a suitable fragment exists, import and reuse it; if two or more places need the same field validation, extract a shared fragment into `src/server/common/validation/` rather than duplicating the rules and messages inline. Duplicated field validation is a frequent source of frontend/backend divergence (e.g. one place accepting an address the other rejects)
+- always prefer re-using an existing Joi fragment over writing a new inline schema. Before adding a field schema (email, reference, token, etc.) to a controller or route, check `src/server/common/validation/` (and nearby `form-validation.js` files) for one that already covers it. If a suitable fragment exists, import and reuse it; if two or more places need the same field validation, extract a shared fragment into `src/server/common/validation/` rather than duplicating the rules and messages inline. Duplicated field validation is a frequent source of frontend/backend divergence (e.g. one place accepting an address the other rejects). In the backend, shared fragments live in `src/api/<area>/validation/` (e.g. `src/api/quote/validation/reference-param-schema.js`) — check there before writing an inline schema in a controller
 
 ### HTTP status codes
 
@@ -123,7 +125,7 @@ export const myController = {
 }
 ```
 
-Do not use arrow function syntax for `handler` (`handler: async (request, h) => { ... }`) — method shorthand is consistent with how Hapi documents its API and matches the pattern used across the codebase.
+Do not use arrow function syntax for `handler` (`handler: async (request, h) => { ... }`) — method shorthand is consistent with how Hapi documents its API and matches the pattern used across the codebase. This is a style convention, not a naming rule (the arrow would still be named in stack traces); it applies to Hapi `handler` properties only, and a `const` arrow is fine for helpers.
 
 ### Responses
 
