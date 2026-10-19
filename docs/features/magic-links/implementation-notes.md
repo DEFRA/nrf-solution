@@ -1,9 +1,10 @@
 # Magic links — retrieve a saved quote
 
 How a user gets back to a saved quote from an emailed magic link and continues
-into the request to use journey. Covers NRF2-1256, with the backend resend
-endpoints from NRF2-731 and NRF2-815 at the end. For the visual flows see
-[access-flow.md](access-flow.md) and [resend-flow.md](resend-flow.md).
+into the request to use journey. Covers NRF2-1256. Only the initial send of the
+retrieve your quote email is supported: asking for a new link when one is
+invalid or expired is a later ticket. For the visual flows see
+[access-flow.md](access-flow.md).
 
 ## The link
 
@@ -21,8 +22,8 @@ used token and a timed-out token look the same afterwards. There is no session
 tracking and no record of when a token was redeemed.
 
 Issuing a token (`dbIssueQuoteAccessToken`) expires any still-live token for the
-quote in the same statement, so only the latest link works. This applies to
-every kind of email that carries a token.
+quote in the same statement, so only the latest link works. Only sending the
+retrieve your quote email (`sendRetrieveQuoteLink`) creates a token.
 
 ## Backend endpoints
 
@@ -32,9 +33,15 @@ every kind of email that carries a token.
 | `POST /quotes/{reference}/redeem-token` | Body `{ token }`. Spends the token and responds `200 { accessStatus }` with `valid`, `invalid`, `expired` or `not_found`. The token is in the body so it stays out of access logs                                                                                                                                                                                                                                                                                                                         |
 | `GET /quotes/{reference}`               | A plain read of the quote, or 404. It does not check or spend a token, so the caller must only read a quote after a successful redeem                                                                                                                                                                                                                                                                                                                                                                     |
 
-Requiring both the reference and the email limits enumeration, but unlike the
-resend endpoints `email-quote-link` does reveal whether a quote matched, because
-the user is sent to a different page.
+Requiring both the reference and the email limits enumeration, but
+`email-quote-link` does reveal whether a quote matched, because the user is sent
+to a different page.
+
+`redeem-token` reports `not_found` for an unknown reference and `invalid` for a
+real reference with a wrong token. The frontend treats every status other than
+`valid` the same and redirects to the link expired page, so a user cannot tell
+them apart. The backend is only reachable from the frontend and admin frontend
+with an API key.
 
 ### Redemption is atomic
 
@@ -121,31 +128,22 @@ CDP config does not override them.
 - Requesting a new link from the link expired page (NRF2-1257).
 - Retrying a failed retrieve email (NRF2-1258).
 
-## Resend endpoints (NRF2-815)
+## Notify templates
 
-The backend still has two resend endpoints. The frontend pages that used them
-(the old `/quote/{reference}/{token}` page and its resend routes) were removed
-and will be reapplied for the new flow, so nothing in the frontend calls them
-now. Resend emails still link to `/quote/{reference}/{token}`, which no longer
-exists. Both return a deliberately uninformative shape so a caller cannot
-enumerate quotes or emails.
+| Email               | Template config                     | Personalisation                                                                                                 |
+| ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Retrieve your quote | `NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE` | `retrieveQuoteUrl`                                                                                              |
+| Original quote      | `NOTIFY_TEMPLATE_ID_QUOTE`          | `requestToUseLink`, replacing `quoteAccessLink`: the template must be updated before the backend change deploys |
 
-### `POST /quotes/{reference}/resend-known`
+## Original quote email
 
-Possession of a token issued for the quote — live, expired or already used —
-proves ownership. The new link is emailed to the saved address and the response
-carries a masked email (`ade**@example.com`). A token that does not match
-responds `{ ok: true }` with no email. A Notify failure returns 502.
-
-### `POST /quotes/{reference}/resend-unknown`
-
-A new link is sent only when the email matches the quote owner (case-insensitive).
-The response is identical whether or not it matched. Email validation is shared
-with the frontend (TLDs disabled on both sides) so the two never diverge and leak
-through a `400`.
+The original quote email (`quote_results`) is separate from the retrieve your
+quote email. It links to
+`{frontEndBaseUrl}/request-to-use/enter-nrl-reference?nrlReference={reference}`
+(`buildRequestToUseLink`) with no token, and its Notify variable is
+`requestToUseLink`. The retry job re-sends it the same way. The `resend_quote_link`
+email type is kept in the database constraint for when resending returns.
 
 ## Deferred
 
-- **Rate limiting** was built then removed across the access and resend routes
-  (a product decision), except the browser-logs endpoint.
 - **Scheduled cleanup** of old token rows (NRF2-814, won't-do for now).
