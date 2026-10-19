@@ -24,6 +24,13 @@ run_as_subagent: true
    - **Blocker** — violates a project rule and must be fixed before merge
    - **Suggestion** — improvement that would be good to address but is not a rule violation
 
+6. **Feed findings back into the rules.** Always do this, even when the findings are all Suggestions, and even if the rules loaded in step 1 already seem complete. For each finding, ask: "Would a rule in `.ai/rules/` have prevented this reaching a PR?"
+   - Only capture recurring, generalisable problems. Ignore unique, one-off or edge cases, and anything specific to a single file or feature.
+   - If a finding is a Suggestion or Blocker that no existing rule covers, or an existing rule is too vague/ambiguous to have prevented it, update the relevant file in `.ai/rules/` (`javascript.md`, `tests.md`, `html.md`, `styles.md`), following that file's existing style, section structure and level of detail. Add to or tighten an existing rule rather than duplicating it. Keep each rule short, imperative and checkable, with a brief example only if it removes ambiguity.
+   - If a new rule file is genuinely needed, create it and link it from `.ai/rules/index.md`.
+   - Do not weaken or remove existing rules, and do not add rules for findings you are unsure are real problems.
+   - Make the edits directly in the working tree of the nrf-solution repo (do not commit or push) so the user can review them in the diff.
+
 ## Output format
 
 For each file with findings:
@@ -40,7 +47,16 @@ For each file with findings:
 
 If a file has no findings, omit it from the report.
 
-End with a one-line summary: total files reviewed, total blockers, total suggestions.
+After the per-file findings, if any rules were updated in step 6, add a section:
+
+```
+### Rule updates
+- .ai/rules/javascript.md: added "<short rule summary>" (prevents: <finding>)
+```
+
+If no rule changes were warranted, omit this section.
+
+End with a one-line summary: total files reviewed, total blockers, total suggestions, total rules updated.
 
 ## Posting to GitHub
 
@@ -50,4 +66,4 @@ If a GitHub PR URL was provided, after outputting the report ask the user whethe
 
 ## Subagent behaviour
 
-Return only the structured findings report and the one-line summary to the main agent. Do not include preamble, tool call narration, or explanation of steps taken.
+Return only the structured findings report, the "Rule updates" section (if any) and the one-line summary to the main agent. Do not include preamble, tool call narration, or explanation of steps taken.
