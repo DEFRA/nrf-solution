@@ -2,27 +2,30 @@
 
 Two separate resend journeys, each reached from a different error page.
 
+> **Backend only for now.** The frontend pages that used these endpoints were
+> removed along with the old quote details page and will be reapplied for the
+> retrieve quote flow. The diagrams describe the backend behaviour.
+
 ## One-click resend (known expired link)
 
 Reached from the **"This link is no longer active"** page. The system still holds a
 record of the token, so possession of it is treated as proof of ownership — the user
 just clicks a button, no email entry needed.
 
-The token is only honoured if it is genuinely time-expired (or still live). A
-session-exhausted token is rejected so a user cannot reset their view budget by
-requesting a new link; they are sent to the email-entry flow instead.
+The token is honoured if it was ever issued for the quote (live, expired or
+already used). A token that does not match is sent to the email-entry flow instead.
 
 ```mermaid
 flowchart TD
   knownpage([This link is no longer active]) --> clickbtn[User clicks Send me a new link]
-  clickbtn --> tokencheck{Backend honours token? Time-expired or still live only}
+  clickbtn --> tokencheck{Backend honours token? Issued for this quote}
 
   tokencheck -- yes --> send[Email new link to the quote's saved address - no email entry needed]
   send --> sent{Email sent successfully?}
   sent -- yes --> confirm([New link sent - masked email shown e.g. ade at example.com])
   sent -- no --> err([Something went wrong - email delivery failed])
 
-  tokencheck -- no, session-exhausted or mismatched --> fallback([Sent to the email-entry flow - see below])
+  tokencheck -- no, mismatched --> fallback([Sent to the email-entry flow - see below])
 ```
 
 ## Email-entry resend (invalid token, real quote)

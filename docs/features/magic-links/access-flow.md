@@ -1,46 +1,63 @@
-# Quote access link — complete flow
+# Retrieve a saved quote — flows
 
-How a user reaches their quote details page (or an error) from a magic link email.
-Covers all scenarios: first view, repeat visits, bot detection, expired/invalid/replaced
-tokens, and session budget exhaustion.
+How a user asks for a magic link and then follows it back to their quote
+(NRF2-1256).
+
+## Requesting the email
 
 ```mermaid
 flowchart TD
-  start([User opens /quote/REF/TOKEN]) --> bot{Bot or previewer user-agent?}
+  start([User submits the enter your email address page]) --> hasref{Saved NRL reference in the session?}
+  hasref -- no --> startpage([Start page])
+  hasref -- yes --> call[POST /quotes/email-quote-link with reference and email]
 
-  bot -- yes --> stub([Dataless stub - no view consumed])
+  call --> err{Backend error?}
+  err -- yes --> errorpage([Standard error page])
+  err -- no --> match{Quote exists AND email matches its owner, ignoring case?}
 
-  bot -- no --> cookie{Valid quote_session cookie for this quote?}
+  match -- no --> keep[Keep the answers, save the submitted email]
+  keep --> notmatched([These details do not match our records page])
 
-  cookie -- yes --> read[Read token without consuming a view]
-  read --> readlive{Token still live?}
-  readlive -- yes --> details([Show quote details])
-  readlive -- no --> knownexp([This link is no longer active - one-click resend to saved email])
-
-  cookie -- no --> pattern{Token matches URL pattern?}
-  pattern -- yes --> quotelookup{Quote exists for this REF?}
-
-  quotelookup -- no --> notfound([Invalid quote link - no quote exists, no email form])
-  quotelookup -- yes --> redeem{Atomic redeem - token matches this quote AND not expired AND under session budget?}
-
-  redeem -- yes --> consume[Consume a view - session_count + 1]
-  consume --> setcookie[Set quote_session cookie]
-  setcookie --> details
-
-  redeem -- no, nothing consumed --> tokenrow{Token row exists for this quote?}
-  tokenrow -- yes, expired or exhausted --> knownexp
-  tokenrow -- no, bad or mismatched token --> invalid([The link is invalid - email form to request a new link])
-  pattern -- no --> invalid
+  match -- yes --> token[Issue a 24 hour single-use token, expiring any earlier one]
+  token --> send[Send the retrieve your quote email]
+  send --> clear[Clear the journey sessions, save the submitted email]
+  clear --> confirmation([We have sent you an email page])
 ```
 
-> **Invalid token vs invalid reference:** the email form is offered only when there is a
-> real quote behind the link — i.e. the *token* is bad (malformed, expired, exhausted or
-> belongs to a different quote) but the reference resolves to an existing quote. In that
-> case the user can recover by entering their email. When the *reference itself* matches
-> no quote, there is nothing to recover, so the page is a dead-end ("Invalid quote link")
-> with no email form.
+## Opening the magic link
+
+```mermaid
+flowchart TD
+  open([User opens /request-to-use/retrieve/REF/TOKEN]) --> format{Reference and token well formed?}
+  format -- no --> expired([Link expired page])
+
+  format -- yes --> bot{Link previewer or scanner User-Agent?}
+  bot -- yes --> stub([Empty response - token not spent])
+
+  bot -- no --> redeem[POST /quotes/REF/redeem-token]
+  redeem --> quote{Quote exists for REF?}
+  quote -- no --> expired
+
+  quote -- yes --> atomic{Token matches this quote AND not expired or used?}
+  atomic -- no --> expired
+  atomic -- yes --> spend[Spend the token - expires_at set to now]
+
+  spend --> read[GET /quotes/REF]
+  read --> seed[Reset the session, select the request to use journey and seed quote and requestToUse]
+  seed --> review([Review and amend your quote details page])
+```
+
+> **Notify failures look like success.** If Notify rejects the send, the backend
+> logs it, records the notification without a Notify id for the later retry, and
+> still responds as matched, so an error cannot reveal that a quote matched.
 >
-> **Link replaced after edit:** when a user edits and resubmits their quote, the old
-> token is invalidated and a new one issued. The old link follows the `time-expired`
-> path (the replaced token's expiry is set to the past) and shows "This link is no
-> longer active". The new email link works normally from `start`.
+> **Used and timed-out links look the same.** Redemption sets `expires_at` to now,
+> so a second use of a link, a link older than 24 hours and a link replaced by a
+> newer one all end at the link expired page. A bad or mismatched token ends there
+> too.
+>
+> **Latest link wins.** Issuing a token expires any live token for the quote, so
+> asking for another email makes the earlier link stop working.
+>
+> **Link expired and review pages are not built yet.** Both redirects 404 until
+> NRF2-1257/1264 and NRF2-1259 land.
