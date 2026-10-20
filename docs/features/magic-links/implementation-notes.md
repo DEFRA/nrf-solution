@@ -1,10 +1,9 @@
 # Magic links — retrieve a saved quote
 
 How a user gets back to a saved quote from an emailed magic link and continues
-into the request to use journey. Covers NRF2-1256. Only the initial send of the
-retrieve your quote email is supported: asking for a new link when one is
-invalid or expired is a later ticket. For the visual flows see
-[access-flow.md](access-flow.md).
+into the request to use journey, and how they ask for a new link when theirs has
+been used or has timed out. Covers NRF2-1256 and NRF2-1257. For the visual flows
+see [access-flow.md](access-flow.md).
 
 ## The link
 
@@ -16,39 +15,52 @@ stored (`quote_access_tokens.token_hash`); the raw token lives only in the email
 
 ## Tokens
 
-A token is **single-use** and lives for **24 hours**. `expires_at` is the only
-state: it defaults to `now() + 24 hours` and redemption sets it to `now()`, so a
-used token and a timed-out token look the same afterwards. There is no session
-tracking and no record of when a token was redeemed.
+A token is **single-use** and lives for **24 hours**. `expires_at` defaults to
+`now() + 24 hours` and redemption stamps `redeemed_at`, so a used token stays
+distinguishable from a timed-out one in the database. The API reports both as
+`expired`.
 
 Issuing a token (`dbIssueQuoteAccessToken`) expires any still-live token for the
-quote in the same statement, so only the latest link works. Only sending the
-retrieve your quote email (`sendRetrieveQuoteLink`) creates a token.
+quote in the same statement, so only the latest link works. Sending the retrieve
+your quote email (`sendRetrieveQuoteLink`) creates a token, whether it is the
+first send or a new link requested from the link expired page.
+
+A token row stays after it is spent (cleanup is deferred, see below). That is
+what lets a spent token prove its holder once had the link: see `resend-link`.
 
 ## Backend endpoints
 
-| Endpoint                                | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /quotes/email-quote-link`         | Body `{ reference, email }`. Matches the quote owner's email ignoring case. On a match it issues a token, sends the retrieve your quote email and records a `retrieve_quote_link` notification, returning `{ matched: true }`. Otherwise `{ matched: false }` and nothing is sent. A match where Notify rejects the send still responds `{ matched: true }` (and is logged), because an error only on a match would reveal it; the failed send is recorded without a Notify id for the retry in NRF2-1258 |
-| `POST /quotes/{reference}/redeem-token` | Body `{ token }`. Spends the token and responds `200 { accessStatus }` with `valid`, `invalid`, `expired` or `not_found`. The token is in the body so it stays out of access logs                                                                                                                                                                                                                                                                                                                         |
-| `GET /quotes/{reference}`               | A plain read of the quote, or 404. It does not check or spend a token, so the caller must only read a quote after a successful redeem                                                                                                                                                                                                                                                                                                                                                                     |
+| Endpoint                                | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /quotes/email-quote-link`         | Body `{ reference, email }`. Matches the quote owner's email ignoring case. On a match it issues a token, sends the retrieve your quote email and records a `retrieve_quote_link` notification, returning `{ matched: true }`. Otherwise `{ matched: false }` and nothing is sent. A match where Notify rejects the send still responds `{ matched: true }` (and is logged), because an error only on a match would reveal it; the failed send is recorded without a Notify id for the retry in NRF2-1258                                                                                                |
+| `POST /quotes/{reference}/redeem-token` | Body `{ token }`. Spends the token and responds `200 { accessStatus }` with `valid`, `invalid`, `expired` or `not_found`. The token is in the body so it stays out of access logs                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `POST /quotes/{reference}/resend-link`  | Body `{ token }`, a spent token (used, timed out or replaced) for this quote. On a match it issues a new token, sends the retrieve your quote email and records a `retrieve_quote_link` notification, returning `{ matched: true, email }` where `email` is the address it went to. Otherwise `{ matched: false }` and nothing is sent: an unknown reference, an unknown token, another quote's token and a token that is still live all look the same. A Notify rejection still responds `{ matched: true, email }`, as for `email-quote-link`. The token is in the body so it stays out of access logs |
+| `GET /quotes/{reference}`               | A plain read of the quote, or 404. It does not check or spend a token, so the caller must only read a quote after a successful redeem                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 Requiring both the reference and the email limits enumeration, but
 `email-quote-link` does reveal whether a quote matched, because the user is sent
 to a different page.
 
+`resend-link` is the only place an email address is returned for a reference, and
+it needs a spent token to do so. A reference alone never reveals the address,
+and references are sequential, so returning it without that proof would let
+anyone harvest addresses. Holding the token shows the caller once had the emailed
+link. A token stays good for this for as long as its row exists.
+
 `redeem-token` reports `not_found` for an unknown reference and `invalid` for a
-real reference with a wrong token. The frontend treats every status other than
-`valid` the same and redirects to the link expired page, so a user cannot tell
-them apart. The backend is only reachable from the frontend and admin frontend
-with an API key.
+real reference with a wrong token. The frontend treats both the same, as page not
+found, so a user cannot tell them apart; only `expired` leads to the link expired
+page. The backend is only reachable from the frontend and admin frontend with an
+API key.
 
 ### Redemption is atomic
 
-Redemption is a single `UPDATE … SET expires_at = now() WHERE token_hash = $1
-AND quote_id = $2 AND expires_at > now() RETURNING` (`redeem-quote-access-token.js`).
-On zero rows a follow-up `SELECT` distinguishes `expired` (a row exists for the
-quote) from `invalid` (absent or belongs to a different quote).
+Redemption is a single `UPDATE … SET redeemed_at = now() WHERE token_hash = $1
+AND quote_id = $2 AND redeemed_at IS NULL AND expires_at > now() RETURNING`
+(`redeem-quote-access-token.js`). It guards on `redeemed_at` rather than the
+clock so two concurrent redemptions cannot both succeed. On zero rows a
+follow-up `SELECT` distinguishes `expired` (a row exists for the quote) from
+`invalid` (absent or belongs to a different quote).
 
 ## Email
 
@@ -84,16 +96,47 @@ The POST reads the saved NRL reference from the `retrieveQuote` session and call
 
 `GET /request-to-use/retrieve/{reference}/{token}`:
 
-1. A malformed reference or token redirects to `/request-to-use/link-expired`
-   without calling the backend.
+1. A malformed reference or token shows the page not found page (404) without
+   calling the backend.
 2. A link previewer or scanner (`isPrefetchRequest`, matched on User-Agent) gets
    an empty 200 and the token is not spent. Safari sends no `Sec-Fetch-*`
    headers, so the check uses a list of known bots rather than their absence.
-3. The token is redeemed with `redeemEmailQuoteLinkToken`. Anything other than
-   `valid` redirects to `/request-to-use/link-expired`.
+3. The token is redeemed with `redeemEmailQuoteLinkToken`:
+   - `expired` (used, timed out or replaced): the reference and token are saved
+     in the `expiredLink` session key and the user is redirected (302) to
+     `/request-to-use/link-expired`. The token is not in the redirect URL.
+   - `invalid` or `not_found`: the page not found page (404). Both look the same,
+     so a visitor cannot tell whether a quote exists.
 4. On `valid` the quote is read with the plain `GET`, the session is reset and
    seeded (below), and the user is redirected (302) to
    `/request-to-use/review-quote-details`. The token is not in the redirect URL.
+
+### Requesting a new link (`request-to-use/link-expired`)
+
+`GET /request-to-use/link-expired` tells the user the link has expired. It is only
+reachable straight after opening an expired link: a `pre` handler
+(`requireExpiredLink`) shows the page not found page when the `expiredLink`
+session key is empty, for the GET and the POST.
+
+The "request a new link" action is a POST form with a button styled as a link
+(`app-link-button`), not a GET link: a previewer or prefetching browser following
+a GET link would send an email. `POST /request-to-use/link-expired`:
+
+1. Sends the saved token to `POST /quotes/{reference}/resend-link`.
+2. If the backend matches, clears `expiredLink`, saves the returned address as
+   `retrieveQuote.email` and redirects (303) to the email confirmation page, which
+   shows it. Using the saved token is what lets the backend return the address.
+3. If it does not match, the page not found page. Any other backend error shows
+   the standard error page.
+
+The page has no back link. The user arrives from an email, so there is no
+previous page in the service to go back to (the prototype links to its enter
+email step).
+
+The new link replaces the earlier one, so asking again, or opening the previous
+link, ends up on the link expired page. Each spent token stays valid as proof
+until its row is removed, so the same expired link can be used to ask again after
+a new session starts; there is no throttling yet.
 
 ### Session seeding
 
@@ -122,11 +165,8 @@ CDP config does not override them.
 
 ## Not built yet
 
-- The link expired page (NRF2-1257 and NRF2-1264) and the review and amend page
-  (NRF2-1259). Both redirects target these routes, so they 404 until the pages
-  exist.
-- Requesting a new link from the link expired page (NRF2-1257).
 - Retrying a failed retrieve email (NRF2-1258).
+- Throttling of the enter email and request a new link sends.
 
 ## Notify templates
 
@@ -146,4 +186,6 @@ email type is kept in the database constraint for when resending returns.
 
 ## Deferred
 
-- **Scheduled cleanup** of old token rows (NRF2-814, won't-do for now).
+- **Scheduled cleanup** of old token rows (NRF2-814, won't-do for now). If it is
+  added, a spent token stops being usable to request a new link once its row is
+  gone, and that link then shows page not found.
