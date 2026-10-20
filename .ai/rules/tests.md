@@ -63,8 +63,9 @@
 
 ## Constants vs literals in expectations
 
-- Don't take an *expected output* from the same constant the code under test reads — if the constant's value changes, code and test change together and the test still passes. Assert a literal when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to another service, or shown to the user.
-- Using a constant as *test input* (fixtures, setup) is fine either way: a stale literal input makes the test fail loudly, not pass falsely.
+- Prefer literals over the code's own constants in tests, for both inputs and expected outputs. If a test imports the constant the code under test reads (e.g. `QUOTE_ACCESS_STATUS.expired`), changing the constant's value changes code and test together and the test still passes — a false positive. A literal (`accessStatus: 'expired'`) fails loudly when the contract drifts.
+- This matters most when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to or received from another service (e.g. a backend `accessStatus` in an MSW response), or shown to the user.
+- Constants are fine for values that are not the thing under test and can't drift, e.g. shared fixture data from `src/test-utils/fixtures/`.
 - HTTP status codes are the exception: always `statusCodes.<name>` (see [javascript.md](./javascript.md)), they can't drift.
 
 ## Test performance
