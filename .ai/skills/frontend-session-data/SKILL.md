@@ -1,13 +1,13 @@
 ---
 name: frontend-session-data
 description: >
-  How nrf-frontend stores and clears user answers in the session across the quote and request to use
-  journeys. TRIGGER when reading, reviewing, editing or debugging session-handling code: request.yar,
-  frontend/src/server/common/helpers/journey-session/, session-namespace/, manage-session,
-  retrieve-quote-session, request-to-use-session, expired-link-session, quote-session-cache,
-  form-validation-session, the checkForValid*Session guards, selectJourney, clearJourneySessions,
-  clearAllSessionData, seedSessionFromQuote, or any page/POST controller that reads or saves session data.
-  Load this before starting, whether you are editing code or reviewing it.
+  Use this skill when reading, reviewing, editing or debugging how nrf-frontend stores and clears user
+  answers in the session across the quote and request to use journeys: request.yar, journey-session/,
+  session-namespace/, manage-session, retrieve-quote-session, request-to-use-session,
+  expired-link-session, quote-session-cache, form-validation-session, the checkForValid*Session guards,
+  selectJourney, clearJourneySessions, clearAllSessionData, seedSessionFromQuote — or any page/POST
+  controller that reads or saves session data. Read it before opening these files, even for
+  trivial-looking changes. Not for backend or admin-frontend session code.
 ---
 
 # Frontend session data
