@@ -8,6 +8,7 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 - Before working on an area (reading, reviewing, editing, or debugging), scan the available skills and load any whose trigger matches — skills only auto-load when a user types `/name`, so it's on you to pick them up. This applies to reviews too, not just edits.
 - Run `nvm use` before any npm/node commands (Node >=24, `.nvmrc` checked in).
 - **Never read `.env*`, `compose.override.yml`, or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
+- When writing any Mermaid diagram, use GitHub-safe syntax: double-quote every node label (`id["text"]`, `id{"text"}`, `id(["text"])`), and never use reserved words as node ids (`call`, `end`, `start`, `graph`, `subgraph`, `click`, `style`, `class`, `default`). Validate with `mermaid.parse` before committing, since GitHub fails the whole block silently.
 
 ## Global Behavior Guidelines
 - Be direct and concise: no greetings, filler, or post-text summaries. Show results immediately, keep responses to the length the task needs, and don't repeat points already made.
