@@ -1,6 +1,6 @@
 ---
 name: check-ac-test-coverage
-description: Assess whether every acceptance-criteria scenario in a Jira ticket is covered by unit, integration or journey tests, across all submodules (not just one PR). Uses CodeGraph to locate the implementation and its tests cheaply. TRIGGER when asked to check, audit or map test coverage against a ticket's ACs.
+description: Assess whether every acceptance-criteria scenario in a Jira ticket is covered by unit, integration or journey tests, across all submodules (not just one PR). TRIGGER when asked to check, audit or map test coverage against a ticket's ACs.
 ---
 
 ## Parameters
@@ -13,7 +13,6 @@ This skill is read-only: do not edit tests, code or the ticket.
 
 Prerequisites:
 - `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` set. See [atlassian-credentials.md](../../../docs/ai/atlassian-credentials.md).
-- A CodeGraph index at the repo root (`.codegraph/`). If missing, fall back to Grep and say so in the report. Do not run `codegraph init` — indexing is the user's decision.
 
 ## Steps
 
@@ -25,22 +24,16 @@ List every scenario as `AC1…ACn` with its heading and its Given / When / Then.
 
 ### Step 2 — Locate the implementation
 
-Do not scan test directories. From the ACs, extract the page names, URL paths, error messages, field names and behaviours (e.g. "saves answer", "redirects to…"). Then run **one** CodeGraph query naming them:
-
-```
-codegraph explore "<route path> <controller/handler names> <view model> <page object>"
-```
-
-Use the MCP tool `codegraph_explore` if available, otherwise the shell command. Record from the output:
+Do not scan test directories. From the ACs, extract the page names, URL paths, error messages, field names and behaviours (e.g. "saves answer", "redirects to…"). Search for these (route paths, controller/handler names, view models, page objects) to find the implementation. Use whatever code-navigation tooling is available; otherwise Grep. Record:
 - the implementation symbols and their files (per submodule: `frontend`, `backend`, `admin-frontend`, `impact-assessor`, `journey-tests`)
-- the `tests:` files listed in the blast radius for each symbol
+- any test files that depend on them
 
-If the first query is thin, run one more with different terms (e.g. the URL path). Stop at three queries.
+If the first search is thin, try different terms (e.g. the URL path). Stop at three searches.
 
 ### Step 3 — Build the candidate test list
 
 Candidate tests are the union of:
-1. Test files CodeGraph lists as dependants of the implementation symbols (unit and integration, colocated `*.test.js` / `test_*.py`).
+1. Test files that depend on the implementation symbols (unit and integration, colocated `*.test.js` / `test_*.py`). Grep the implementation file names and symbol names across test files.
 2. Journey tests: Grep `journey-tests/` for the page's URL path and its page-object name. Page objects are shared, so a hit in a spec file that uses the page object counts.
 3. Backend/API tests: Grep `backend/` and `impact-assessor/` test files for the endpoint path.
 
@@ -82,5 +75,5 @@ Rules for applying this:
 
 Finish with:
 1. A one-line count (`n Covered, n Partial, n Not covered, n Manual-only`).
-2. The submodules searched with the branch checked out in each, and the CodeGraph queries used, so the user can rerun them.
-3. A caveat that matching is a judgement from reading assertions, not measured coverage, and that tests not reachable via CodeGraph or the URL/page-object greps may have been missed. Name any AC where you are least sure.
+2. The submodules searched with the branch checked out in each, and the searches or queries used, so the user can rerun them.
+3. A caveat that matching is a judgement from reading assertions, not measured coverage, and that tests not reachable via the searches above may have been missed. Name any AC where you are least sure.
