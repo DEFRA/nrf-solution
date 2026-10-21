@@ -35,7 +35,8 @@ If the first search is thin, try different terms (e.g. the URL path). Stop at th
 Candidate tests are the union of:
 1. Test files that depend on the implementation symbols (unit and integration, colocated `*.test.js` / `test_*.py`). Grep the implementation file names and symbol names across test files.
 2. Journey tests: Grep `journey-tests/` for the page's URL path and its page-object name. Page objects are shared, so a hit in a spec file that uses the page object counts.
-3. Backend/API tests: Grep `backend/` and `impact-assessor/` test files for the endpoint path.
+3. Cross-cutting tests: global hooks, middleware, plugins and shared session helpers that enforce a behaviour the AC relies on (e.g. cache headers for back navigation) are not linked to the page's symbols. Search for them by behaviour, not by page name.
+4. Backend/API tests: Grep `backend/` and `impact-assessor/` test files for the endpoint path.
 
 Use Grep with `output_mode: files_with_matches` first. Do not read test files yet.
 
