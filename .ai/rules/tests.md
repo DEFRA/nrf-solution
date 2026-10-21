@@ -65,7 +65,7 @@
 
 - Don't take an *expected output* from the same constant the code under test reads — if the constant's value changes, code and test change together and the test still passes. Assert a literal when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to another service, or shown to the user.
 - Using a constant as *test input* (fixtures, setup) is fine either way: a stale literal input makes the test fail loudly, not pass falsely.
-- HTTP status codes are the exception: always `statusCodes.<name>` (see [javascript.md](./javascript.md)), they can't drift.
+- Assert literal HTTP status codes and route paths, not constants: `expect(response.statusCode).toBe(302)` and `expect(response.headers.location).toBe('/manage/start-page')`, not `statusCodes.found` or an imported `routePath`. A constant shared with the code under test lets a wrong change pass silently (false positive). Do not flag literal status codes or paths in test expectations in review.
 
 ## Test performance
 
