@@ -9,9 +9,9 @@ How a user asks for a magic link and then follows it back to their quote
 flowchart TD
   begin(["User submits the enter your email address page"]) --> hasref{"Saved NRL reference in the session?"}
   hasref -- no --> startpage(["Start page"])
-  hasref -- yes --> call["POST /quotes/email-quote-link with reference and email"]
+  hasref -- yes --> post["POST /quotes/email-quote-link with reference and email"]
 
-  call --> err{"Backend error?"}
+  post --> err{"Backend error?"}
   err -- yes --> errorpage(["Standard error page"])
   err -- no --> match{"Quote exists AND email matches its owner, ignoring case?"}
 
