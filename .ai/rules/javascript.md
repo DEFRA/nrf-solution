@@ -88,9 +88,8 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 
 ### HTTP status codes
 
-- Always use `statusCodes.<name>` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
-- This applies in test files too: assert `expect(response.statusCode).toBe(statusCodes.redirectAfterPost)` not `.toBe(303)`, and pass constants (not literals) when stubbing response statuses in MSW handlers or fixtures
-- When you rewrite or touch a test block, fix any literal status code in it too, even if the literal was already there — reviewers flag these in changed blocks
+- In source code, always use `statusCodes.<name>` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
+- Test files are the exception: assert literal status codes (`expect(response.statusCode).toBe(303)`), not constants — see [tests.md](./tests.md#constants-vs-literals-in-expectations). Constants are still fine for stubbing response statuses as test input
 - If a needed code is missing from the constants object (e.g. `found: 302`), add it there rather than falling back to a literal
 - Import `statusCodes` from `@defra/cdp-validation-kit` if it is available as a dependency: `import { statusCodes } from '@defra/cdp-validation-kit'`. If not available, use the local `src/server/common/constants/status-codes.js` copy. Do not duplicate status code values inline.
 
