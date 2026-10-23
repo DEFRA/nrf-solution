@@ -32,6 +32,10 @@
 
 - When a test needs a stable session ID (e.g. for rate limiting or any behaviour keyed on session), use `withValidQuoteSession` to prime a real server-side session and obtain a cookie. Pass that cookie to all subsequent `server.inject` calls so Yar reuses the same session ID across requests. Never hand-roll session priming via a `/__test-setup-*` helper route or by mocking session reads — drive the real routes to build session state.
 
+## Signed-in pages
+
+- Tests for pages behind `requireAuth` must use `setupSignedInTestServer` from `src/test-utils/setup-signed-in-test-server.js`, which provides the server and a sign-in function. Don't hand-roll the Defra ID MSW handlers or dynamically import the server or sign-in helpers in the test. If a test needs extra handlers, extend the helper rather than copying its contents.
+
 ## Module-level singletons
 
 - When a module exports a lazy singleton (e.g. a rate limiter, cache client, or DB connection initialised on first call), tests that mutate its config must reset it in `beforeAll`/`afterAll`. Verify a reset/teardown function exists and is called at the appropriate lifecycle hook — otherwise the stale singleton persists across test files and config mutations have no effect.

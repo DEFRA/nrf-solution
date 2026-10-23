@@ -11,11 +11,7 @@ sequenceDiagram
     %% Signed-out GET for a protected route (redirect-to-sign-in.js onPreHandler)
     Browser->>Ctrl: GET /profile (signed out)
     Ctrl->>Yar: set redirectTo = /profile
-    Ctrl-->>Browser: 302 to /login
-
-    %% Login page
-    Browser->>Ctrl: GET /login
-    Ctrl-->>Browser: Render auth/login.njk
+    Ctrl-->>Browser: 302 to /auth/sign-in
 
     %% Start OAuth (hand-rolled authorize redirect)
     Browser->>Ctrl: GET /auth/sign-in
