@@ -41,4 +41,4 @@ Use `<JIRA-KEY> - <short description>` for both, e.g. `NRF2-1186 - Enter NRL ref
 
 ## PR descriptions
 
-Don't include a "Test plan" section in PR descriptions — features are verified against Jira acceptance criteria, not a PR checklist.
+Keep PR descriptions short and easy to read, and don't include a "Test plan" section — features are verified against Jira acceptance criteria, not a PR checklist. The full rules are in the `write-pr-description` skill (`.ai/skills/write-pr-description/SKILL.md`), which AI agents load before raising a PR.
