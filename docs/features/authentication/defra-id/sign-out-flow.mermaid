@@ -5,8 +5,8 @@ sequenceDiagram
     participant Yar as Yar Session Cookie
     participant Cache as Session Cache<br/>(server.app.sessionCache)
 
-    %% User clicks the "Sign out" link on the profile page
-    Browser->>Ctrl: GET /auth/sign-out  (auth: defra-session)
+    %% User clicks the "Sign out" link in the service navigation or on the profile page
+    Browser->>Ctrl: GET /auth/sign-out  (requireAuth)
     alt not authenticated
         Ctrl-->>Browser: 302 to start page
     else authenticated

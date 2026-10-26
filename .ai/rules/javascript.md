@@ -124,6 +124,15 @@ A page's `routes.js` only wires things together: imports, the OpenAPI block, and
 - If a handler is just a `createPostController(...)` or `requestToUseController(...)` call with a few options, that call may stay inline.
 - When reviewing, flag any `async handler(...)`, `handler(...)` or helper function defined in a `routes.js`, and any controller file that carries route `options`.
 
+### Requiring sign-in
+
+- To protect a frontend route with Defra ID, add `rules: { requireAuth: true }` to the route (see `auth/auth-rules.js`). Never set `auth: 'defra-session'` or read `server.app.authEnabled` in a page's routes — the rule handles the auth-disabled case, and a direct strategy reference throws at registration when the strategy isn't registered.
+- Protected pages still need `page.test.js` coverage of both the signed-out redirect to `/auth/sign-in` and the signed-in render.
+
+### Error pages
+
+- A handler that renders an error view (e.g. an authentication failure page) must set a 4xx/5xx status with `.code(statusCodes.<name>)` — `h.view()` alone returns 200, which tells browsers, monitoring and analytics that the request succeeded.
+
 ### Handler method style
 
 Use method shorthand syntax inside controller objects:

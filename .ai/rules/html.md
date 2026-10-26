@@ -13,6 +13,7 @@ All dates displayed to users must use the GOV.UK date format: day month-name yea
 ## Links
 
 - Anchors in page content must carry the `govuk-link` class — a bare `<a href="...">` misses GOV.UK link styling (colour, focus state, visited state)
+- Links that open in a new tab (`target="_blank"`) must also have `rel="noopener noreferrer"` and say "(opens in new tab)" in the link text
 - Link hrefs to other pages in the service come from the view model (e.g. `href="{{ boundaryTypePath }}"`, populated from `routePath` imports), never hard-coded paths — see the Route paths rule in [javascript.md](./javascript.md)
 
 ## GTM / analytics

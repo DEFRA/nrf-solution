@@ -12,14 +12,15 @@ browser only holds an opaque session id.
 
 | File                                                | Responsibility                                                                                                           |
 |-----------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------ |
-| `frontend/src/server/auth/controller.js`            | All 5 route handlers: login page, sign-in redirect, callback, sign-out, sign-out callback                                |
+| `frontend/src/server/auth/controller.js`            | All route handlers: sign-in redirect, callback (and sign-in error page), sign-out, sign-out callback                       |
 | `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
+| `frontend/src/server/auth/auth-rules.js`            | `registerAuthRules()`: the `rules: { requireAuth: true }` route setting that protects a route with `defra-session`      |
 | `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; triggers the one-time user sync to nrf-backend; `createUserSession()`                  |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
 | `frontend/src/server/auth/sync-user-to-backend.js`  | Fire-and-forget PATCH of the signed-in user's profile to nrf-backend (`/users`)                                 |
 | `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.baseUrl` + `defraId.wellKnownPath`, memoised in-process (fetched once per process on first use, not per sign-in) |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
-| `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/login`, remembering the requested path         |
+| `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/auth/sign-in`, remembering the requested path         |
 | `frontend/src/server/common/helpers/session-cache/` | Yar server-side cache (Redis prod / memory local)                                                                        |
 | `frontend/src/config/config.js`                     | `defraId.*` and `session.*` config                                                                                       |
 
@@ -31,10 +32,13 @@ Registered in `defra-identity.js`:
   session from cache, refreshes the token if expired, else returns `unauthenticated`. This is
   the only auth strategy; the sign-in handshake is hand-rolled in the controller (no Bell).
 
-There is **no server-wide default strategy**. Each route opts in explicitly:
-`auth: 'defra-session'` (protected) or `auth: false` (public). If the DEFRA Identity plugin
-fails to register at boot, `server.app.authEnabled` stays `false`, only `/login` is registered,
-and routes fall back to `auth: false` (see `profile/index.js`). The OIDC discovery document is
+`defra-session` is the server default in **`try` mode**, so every page knows whether the user is
+signed in (`request.auth.isAuthenticated`) without being rejected when they aren't. A route
+that must be protected opts in with `rules: { requireAuth: true }` (see `auth/auth-rules.js`);
+never set `auth: 'defra-session'` or read `server.app.authEnabled` in a page's routes. The rule
+resolves to `defra-session` when auth is enabled and to `auth: false` when the DEFRA Identity
+plugin failed to register at boot, so a protected route is left open (rather than throwing at
+registration) and only the auth routes are missing. The OIDC discovery document is
 **not** fetched at boot — it's fetched lazily on the first sign-in/out (then memoised) — so a
 transient Defra outage at startup no longer disables auth.
 
@@ -48,7 +52,7 @@ redirect to sign-in.
 
 When a signed-out user makes a GET request to a protected route (e.g. `/profile`), the
 `redirectToSignIn` `onPreHandler` extension (registered by the DEFRA Identity plugin) stores the
-requested path in the Yar session as `redirectTo` and redirects the user to `/login`. After a
+requested path in the Yar session as `redirectTo` and redirects the user straight to `/auth/sign-in`. After a
 successful sign-in, the OAuth callback (`/login/return`) redirects to that stored path, falling
 back to the start page when none was captured. The value is validated as a relative path
 (`getSafeRedirect`) both before it is stored and before the final redirect, to prevent open
@@ -60,16 +64,15 @@ are captured, and the `/auth/*` routes are excluded so a signed-out request for 
 
 | Route                     | Auth            | Purpose                                                                    |
 | ------------------------- | --------------- | -------------------------------------------------------------------------- |
-| `GET /login`              | `false`         | Render sign-in page (`auth/login.njk`)                                     |
 | `GET /auth/sign-in`       | `false`         | Build authorization URL, store CSRF `state` in Yar, 302 to Defra ID        |
-| `GET /login/return`       | `false`         | OAuth callback: verify `state`, exchange `code` for tokens, create session |
-| `GET /auth/sign-out`      | `defra-session` | Drop session from cache, clear Yar, 302 to Defra ID `end_session_endpoint` with `id_token_hint` |
+| `GET /login/return`       | `false`         | OAuth callback: verify `state`, exchange `code` for tokens, create session. Failures render `auth/sign-in-error.njk` with a 400 (OAuth error, bad state, missing code) or 500 (token exchange failed) |
+| `GET /auth/sign-out`      | `requireAuth`   | Drop session from cache, clear Yar, 302 to Defra ID `end_session_endpoint` with `id_token_hint` |
 | `GET /login/signed-out`   | `false`         | Defra ID post-logout callback: verify `state`, failsafe session clear, 302 home |
 
 ## Signing out
 
 Signing out fully logs the user out of Defra ID (B2C), not just the local session. The
-profile page's "Sign out" is a plain link to `GET /auth/sign-out`. That handler
+"Sign out" link (in the service navigation when signed in, and on the profile page) is a plain link to `GET /auth/sign-out`. That handler
 (`signOutController`) drops the session from the cache, clears Yar, then **302-redirects the
 browser to the OIDC `end_session_endpoint`** (from the discovery document) with three query
 parameters:
@@ -102,14 +105,14 @@ id token is small enough to fit comfortably).
   Once the profile has been synced to nrf-backend, `userSaved: true` is added (see below).
 - **Yar cookie:** server-side backed (`maxCookieSize: 0`), `httpOnly`, `SameSite=Lax`. Stores only
   `sessionId`, plus transient `oauth_state` and `redirectTo`. Default 4h TTL (`session.*` config).
-- **Token refresh:** on every `defra-session` request the access token is decoded and time-checked
+- **Token refresh:** on every request that carries a session (the scheme runs on all routes in `try` mode) the access token is decoded and time-checked
   (60s skew). If expired and `defraId.refreshTokens` is on, a `refresh_token` grant is made and the
   new tokens are persisted transparently. If refresh is off or fails, the session is dropped and the
   user is unauthenticated. See [token-refresh-flow.mermaid](./token-refresh-flow.mermaid).
 
 ## Syncing the user to nrf-backend
 
-On every `defra-session` request, if the cached session has no `userSaved` flag yet, the
+On every request that carries a session, if the cached session has no `userSaved` flag yet, the
 `defra-session` scheme fires a **fire-and-forget** `PATCH /users` to nrf-backend with
 the profile details from the token (`defraId`, `email`, `firstName`, `lastName` and, when
 present, `organisationDefraId`, `organisationName`, `relationshipType`) — the defra id and
@@ -140,7 +143,7 @@ return URL (`/login/return`) and the post sign-out redirect (`/login/signed-out`
 ## Local setup
 
 Run the frontend via `tilt up` from the `nrf-solution` meta-repo — don't run it standalone. Sign
-out from the profile page: http://localhost:3000/profile.
+out from the service navigation, or the profile page: http://localhost:3000/profile.
 
 Locally auth defaults to the **real Defra ID (cpdev) tenant** — the `baseUrl`/`wellKnownPath`
 config defaults are used, so you only need to supply the credentials. Copy the `frontend` auth

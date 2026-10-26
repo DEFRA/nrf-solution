@@ -5,12 +5,12 @@ sequenceDiagram
     participant Cache as Session Cache<br/>(server.app.sessionCache)
     participant DefraID as Defra ID Provider<br/>(token_endpoint)
 
-    Note over Browser,DefraID: Runs on every request to an auth: 'defra-session' route
+    Note over Browser,DefraID: Runs on every request that carries a session (defra-session is the default strategy in try mode)
 
-    Browser->>Scheme: Request protected route
+    Browser->>Scheme: Request any route
     Scheme->>Yar: get sessionId
     alt no sessionId
-        Scheme-->>Browser: unauthenticated (302 by route)
+        Scheme-->>Browser: unauthenticated (requireAuth routes then 302 to sign in)
     end
     Scheme->>Cache: get(sessionId)
     alt session not in cache
