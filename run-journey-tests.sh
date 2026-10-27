@@ -11,6 +11,8 @@
 #   E2E_HEADFUL  true → show the browser window (default: false, headless)
 #   BROWSER      chromium | firefox | webkit (default: chromium)
 #   TAGS         Cucumber tag expression, e.g. "@smoke" (default: all scenarios)
+#   PARALLEL     number of parallel workers; 1 (or 0) runs sequentially
+#                (default: the suite's cucumber.js setting; Tilt defaults to 5)
 #   FEATURE      a single .feature filename to run, or "All"/empty for the whole
 #                suite. The Tilt button builds this list from the feature files.
 set -euo pipefail
@@ -28,6 +30,17 @@ export BROWSER="${BROWSER:-chromium}"
 
 args=()
 [ -n "${TAGS:-}" ] && args+=(--tags "$TAGS")
+
+# Worker count overrides the suite's default. 1 runs scenarios sequentially in
+# the main process (--parallel 0), which is easier to debug.
+if [ -n "${PARALLEL:-}" ]; then
+  if ! [[ "$PARALLEL" =~ ^[0-9]+$ ]]; then
+    echo "PARALLEL must be a whole number, got: $PARALLEL" >&2
+    exit 1
+  fi
+  [ "$PARALLEL" -le 1 ] && PARALLEL=0
+  args+=(--parallel "$PARALLEL")
+fi
 
 # Run a single feature when one is selected. The suite's cucumber.js profile
 # hardcodes `paths`, which overrides any positional path arg — so to target one
@@ -53,10 +66,10 @@ EOF
 fi
 
 if [ "${E2E_HEADFUL:-false}" = "true" ]; then
-  # Use the system Chrome channel headful — it has a real GPU, so the draw-boundary
-  # journey's WebGL map renders (the bundled headless shell shows a fallback).
+  # Headful Playwright Chromium has a real GPU, so the draw-boundary journey's
+  # WebGL map renders (the headless shell shows a fallback). Not the system
+  # Chrome channel: it took ~14s to load the map page here versus <1s.
   export E2E_HEADFUL=true
-  export BROWSER_CHANNEL=chrome
 fi
 
 npm run clean

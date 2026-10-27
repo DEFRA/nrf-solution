@@ -103,15 +103,26 @@ _feature_choices = ['Run all features'] + _feature_files
 
 cmd_button(
     'journey-tests:run',
-    # Always headed, in Chrome — E2E_HEADFUL=true makes run-journey-tests.sh
-    # set BROWSER_CHANNEL=chrome, so BROWSER doesn't need setting separately.
-    argv=['bash', '-c', 'NOTIFY_API_KEY=%s E2E_HEADFUL=true FEATURE="$FEATURE" ./run-journey-tests.sh' % _notify_api_key],
+    # Always headed, in Playwright's bundled Chromium (real GPU, fast map load).
+    argv=['bash', '-c', 'NOTIFY_API_KEY=%s E2E_HEADFUL=true FEATURE="$FEATURE" PARALLEL="$PARALLEL" ./run-journey-tests.sh' % _notify_api_key],
     resource='journey-tests',
     text='Run journey tests',
     icon_name='travel_explore',
     inputs=[
         choice_input('FEATURE', choices=_feature_choices, label=''),
+        text_input('PARALLEL', default='5', label='Tests running in parallel (1 = sequential)'),
     ],
+)
+
+# Tilt has no built-in cancel for a running manual local_resource, so this
+# kills the host-run cucumber-js process and its parallel workers. Playwright
+# closes the browsers it launched when its parent exits.
+cmd_button(
+    'journey-tests:cancel',
+    argv=['bash', '-c', 'pkill -f "journey-tests/node_modules/.bin/cucumber-js|@cucumber/cucumber" || echo "No journey test run in progress"'],
+    resource='journey-tests',
+    text='Cancel journey tests',
+    icon_name='cancel',
 )
 
 # ── SQS / SNS helpers on the localstack card ────────────────────────────────
