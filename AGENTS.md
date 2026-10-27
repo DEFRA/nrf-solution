@@ -50,7 +50,7 @@ When raising a PR on `nrf-solution`, **do not commit submodule pointer updates a
 
 ## Cross-repo PR dependencies & PR descriptions
 
-See [docs/contributing.md](./docs/contributing.md) for `Depends-On` conventions (full PR URL, lines go last) and PR description rules (no "Test plan" section).
+Before running `gh pr create` or `gh pr edit`, load the `write-pr-description` skill: it covers the title format, keeping descriptions short, no "Test plan" section and the `Depends-On` rules. See [docs/contributing.md](./docs/contributing.md) for the cross-repo `Depends-On` background.
 
 ## Symlinks
 

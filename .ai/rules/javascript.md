@@ -13,6 +13,7 @@
 ## Comments
 
 - Don't add comments that explain what the change does or restate what the code already makes clear (e.g. "returns a machine-readable code, not display text" above a function that obviously returns a code). Only comment non-obvious *why* — a constraint, a workaround, an ordering requirement.
+- Never mention a Jira ticket number (e.g. `NRF2-1256`) in a code comment — it's harder to follow than the information itself and goes out of date. Put the rationale inline in the comment instead, concisely
 - Don't reference file paths in comments (e.g. "see frontend/src/server/common/constants/foo.js") — paths move and rot, and the comment goes stale silently. Refer to the module/concept by name instead, or let imports do the pointing.
 
 ## Functional / classes
@@ -62,12 +63,13 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 - The service must wrap `@hapi/wreck` and must inject the tracing header on every outbound request (see the Tracing section above)
 - The canonical example to follow is `nrf-frontend/src/server/common/services/nrf-backend.js` — replicate this pattern for any new service in any frontend app, including `admin-frontend`
 - The base URL for the target service must come from config (a dedicated env var), not be hard-coded or constructed dynamically in the caller
+- This applies to every service call, not just calls to the backend: a frontend call to the impact assessor is wrapped in Wreck too, and a failure is logged with `logger.error(error, message)` then thrown. When the user must see a specific error page whatever the upstream status (Wreck reports a connection failure as a 502, and an upstream 404 or 422 would render the wrong page), throw `Boom.internal(message, error)` rather than rethrowing the Wreck error. Use `fetch` only where the raw `Response` must be streamed straight back to the browser (e.g. the map tile proxy); `fetch` does not throw on a non-2xx status, which makes it easy to log a string instead of an error
 
 ### Security
 
 - Don't expose any secrets or API keys; they should come from env vars which are exposed to the app via the config.js file
 - validate / sanitize user inputs
-- Every POST route that accepts a request body must have a `options.validate.payload` Joi schema — especially unauthenticated ones. Without it, raw user-supplied values can be used for dynamic dispatch or passed directly to loggers/services
+- Every POST route that accepts a request body must have a `options.validate.payload` Joi schema — especially unauthenticated ones. Without it, raw user-supplied values can be used for dynamic dispatch or passed directly to loggers/services. This includes a Continue-only form with no fields (its only input is the CSRF token, which is stripped before validation): use `joi.object({})` so unexpected fields are rejected
 - Nunjucks `autoescape: true` HTML-encodes output but does NOT prevent JS injection inside `<script>` blocks — any `{{ variable }}` rendered inside a JS string literal must either be validated against a strict allowlist (e.g. `/^GTM-[A-Z0-9]+$/`) or use the `| dump` filter to JSON-encode it safely
 - Don't let an endpoint tell a caller whether a record exists unless they've proved they own it. For example, a redeem endpoint that answers `not_found` for an unknown reference but `invalid` for a real reference with a wrong token lets anyone probe which references exist. Return the same response for both cases unless the caller needs the distinction, and if so say why in the route's OpenAPI description. When reviewing, compare with sibling endpoints: if one returns an identical response whatever went wrong (like `resend-known`), a sibling that distinguishes the cases is a finding
 - Never put PII or sensitive identifiers (Defra ID `sub` claims, emails, names) in URL paths or query strings — they are recorded in access logs, proxy logs, google analytics and browser history. Pass them in the request body or headers instead. If a value must appear in a URL, document and justify that decision in the route's OpenAPI description. When reviewing, check consistency: if one endpoint keeps a value out of the URL, a sibling endpoint exposing the same value in the path is a finding
