@@ -259,6 +259,12 @@ services:
       REDIS_PORT: 6379
       USE_SINGLE_INSTANCE_CACHE: 'true'
       NODE_ENV: development
+      # Origin advertised in the stub's OIDC discovery document. *.localhost
+      # resolves to loopback in browsers (no /etc/hosts entry), and the network
+      # alias below makes it resolve to this container for the other services.
+      # It is a different host from localhost:3000, so the stub's cookies don't
+      # overwrite the frontend's.
+      APP_BASE_URL: http://defra-id-stub.localhost:3200
     depends_on:
       redis:
         condition: service_healthy
@@ -268,7 +274,9 @@ services:
       start_period: 5s
       retries: 3
     networks:
-      - cdp-tenant
+      cdp-tenant:
+        aliases:
+          - defra-id-stub.localhost
 
   frontend:
     build:
@@ -298,17 +306,9 @@ services:
 #      DEFRA_ID_WELL_KNOWN_PATH: /idphub/b2c/b2c_1a_cui_cpdev_signupsignin/.well-known/openid-configuration
       # Enable automatic token refresh
       DEFRA_ID_REFRESH_TOKENS: true
-      # Auth defaults to the real Defra ID (cpdev) tenant — DEFRA_ID_BASE_URL and
-      # DEFRA_ID_WELL_KNOWN_PATH fall back to the config.js defaults, and the client
-      # ID/secret/service ID + scopes come from compose.override.yml.
-      #
-      # To use the offline defra-id-stub instead, set these in compose.override.yml
-      # (the stub service is still defined below):
-      #   DEFRA_ID_BASE_URL: http://defra-id-stub:3200
-      #   DEFRA_ID_WELL_KNOWN_PATH: /cdp-defra-id-stub/.well-known/openid-configuration
-      #   DEFRA_ID_CLIENT_ID: client-test
-      #   DEFRA_ID_CLIENT_SECRET: test_value
-      #   DEFRA_ID_SERVICE_ID: service-test
+      # Auth defaults to the real Defra ID tenant; the client ID/secret/service ID
+      # + scopes come from compose.override.yml, which also has the values for
+      # switching to the offline defra-id-stub (see compose.override.template.yml).
       # Browser-facing base URL, used to build the OAuth return and sign-out redirect URLs
       FRONTEND_BASE_URL: http://localhost:3000
       COOKIE_PASSWORD: nrf-frontend-secure-cookie-password-must-be-32-chars-minimum-abc123
