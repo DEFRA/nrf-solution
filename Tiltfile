@@ -11,10 +11,9 @@ dc_resource('frontend',                 labels=['main'])
 dc_resource('admin-frontend',           labels=['main'])
 dc_resource('impact-assessor',          labels=['main'])
 dc_resource('cdp-uploader',             labels=['stubs'])
-# Opt-in: auth defaults to the real Defra ID tenant, so the stub is not started
-# automatically. Start it from the Tilt UI (and point DEFRA_ID_* at it in
-# compose.override.yml) to use offline stubbed auth.
-dc_resource('defra-id-stub',            labels=['stubs'], auto_init=False)
+# Auth defaults to the real Defra ID tenant; the stub only takes effect when
+# DEFRA_ID_* in compose.override.yml point at it.
+dc_resource('defra-id-stub',            labels=['stubs'])
 dc_resource('squid',                    labels=['infra'])
 dc_resource('localstack',               labels=['infra'])
 dc_resource('postgres',                 labels=['infra'])
@@ -71,15 +70,25 @@ cmd_button(
 # NOTIFY_API_KEY is read from compose.override.yml (the backend's own copy of
 # the secret) rather than journey-tests/.env.local, so the key only needs to
 # be set in one place for devs running the suite through Tilt.
+#
+# The Defra ID mode (from DEFRA_ID_BASE_URL) and the test-user password are read
+# from the frontend block of compose.override.yml for the same reason. Compose files escape a literal
+# `$` as `$$`, so undo that here.
 _notify_api_key = ''
+_defra_id_env = {}
 if os.path.exists('./compose.override.yml'):
-    _notify_api_key = read_yaml('./compose.override.yml') \
-        .get('services', {}).get('backend', {}).get('environment', {}).get('NOTIFY_API_KEY', '')
+    _override = read_yaml('./compose.override.yml')
+    _notify_api_key = _override.get('services', {}).get('backend', {}).get('environment', {}).get('NOTIFY_API_KEY', '')
+    _frontend_env = _override.get('services', {}).get('frontend', {}).get('environment', {})
+    if _frontend_env.get('DEFRA_ID_USER_PASSWORD'):
+        _defra_id_env['DEFRA_ID_USER_PASSWORD'] = str(_frontend_env['DEFRA_ID_USER_PASSWORD']).replace('$$', '$')
+    # Stub mode when the frontend is pointed at the defra-id-stub, else real.
+    _defra_id_env['DEFRA_ID_MODE'] = 'stub' if 'defra-id-stub' in str(_frontend_env.get('DEFRA_ID_BASE_URL', '')) else 'real'
 
 local_resource(
     'journey-tests',
     cmd='./run-journey-tests.sh',
-    env={'NOTIFY_API_KEY': _notify_api_key},
+    env=dict({'NOTIFY_API_KEY': _notify_api_key}, **_defra_id_env),
     auto_init=False,
     trigger_mode=TRIGGER_MODE_MANUAL,
     labels=['e2e'],
@@ -104,7 +113,10 @@ _feature_choices = ['Run all features'] + _feature_files
 cmd_button(
     'journey-tests:run',
     # Always headed, in Playwright's bundled Chromium (real GPU, fast map load).
-    argv=['bash', '-c', 'NOTIFY_API_KEY=%s E2E_HEADFUL=true FEATURE="$FEATURE" PARALLEL="$PARALLEL" ./run-journey-tests.sh' % _notify_api_key],
+    argv=['bash', '-c', '%s NOTIFY_API_KEY=%s E2E_HEADFUL=true FEATURE="$FEATURE" PARALLEL="$PARALLEL" ./run-journey-tests.sh' % (
+        ' '.join(['%s=%s' % (k, shlex.quote(v)) for k, v in _defra_id_env.items()]),
+        _notify_api_key,
+    )],
     resource='journey-tests',
     text='Run journey tests',
     icon_name='travel_explore',

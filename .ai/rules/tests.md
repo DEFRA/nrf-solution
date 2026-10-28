@@ -6,6 +6,7 @@
 - **Acceptance** - Acceptance tests should use the inputs and outputs that a user would generate and expect eg send a real request and parse the returned page DOM. See any page.test.js in nrf-frontend for an example. Or for a backend API, send a request and assert on the response.
 - There are also **journey** tests but those are in a different repo (nrf-journey-tests) and should be reserved for very few 'happy path' cases, or functionality that's too complext to test using unit or acceptance tests.
   - Journey tests should not cover form validation errors - these are covered by the page's `page.test.js` in nrf-frontend.
+  - Keep feature files short. A step that acts on a page (answers a question, submits a form) asserts in its step definition that the page is showing (e.g. waits for its heading) before acting, so the feature doesn't need a separate `Then I should see the "..." heading` step just before it. Likewise, assertions that always go together (arriving at a page, its heading and the signed-in user) belong in one step with a name that says the outcome, e.g. `I should be signed in and can enter my address`. Use a standalone heading step only where the heading is the outcome being checked.
 
 ## Location
 
