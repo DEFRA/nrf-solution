@@ -1,13 +1,17 @@
 ---
-name: write-pr-description
-description: Write or edit a pull request title and description in any nrf-* repo. TRIGGER before running `gh pr create` or `gh pr edit`, and whenever asked to raise, open, draft or update a PR. Covers the title format, keeping descriptions short and easy to read, no Test plan section, and Depends-On lines for cross-repo PRs.
+name: manage-pull-requests
+description: Raise, update and stack pull requests in any nrf-* repo. TRIGGER before running `gh pr create`, `gh pr edit` or `gh stack`, and whenever asked to raise, open, draft, update or stack a PR. Covers the title format, keeping descriptions short and easy to read, no Test plan section, Depends-On lines for cross-repo PRs, and creating stacked PRs with `gh stack`.
 ---
 
-# Write a PR description
+# Manage pull requests
 
-Read this before `gh pr create` or `gh pr edit` in any nrf-* repo (frontend, backend, impact-assessor, journey-tests, admin-frontend, performance-tests, nrf-solution).
+Read this before `gh pr create`, `gh pr edit` or `gh stack` in any nrf-* repo (frontend, backend, impact-assessor, journey-tests, admin-frontend, performance-tests, nrf-solution).
 
-## Keep it short and easy to read
+Sections: PR descriptions (below), [Cross-repo PRs](#cross-repo-prs-depends-on), [Stacked PRs](#stacked-prs).
+
+## PR descriptions
+
+### Keep it short and easy to read
 
 The reviewer has the diff open next to the description. Give them what the diff can't: why, and what to watch for.
 
@@ -27,16 +31,16 @@ The reviewer has the diff open next to the description. Give them what the diff 
   - other callers or repos affected, and known gaps or follow-ups
 - Before submitting, delete any line a reviewer could get from the diff or the ticket.
 
-## Title
+### Title
 
 `<JIRA-KEY> - <short description>`, e.g. `NRF2-1186 - Enter NRL reference page`. Use the same format for commit messages.
 
-## Never
+### Never
 
 - Add a "Test plan" section. Features are verified against the Jira acceptance criteria, not a PR checklist.
 - Put anything after the `Depends-On` lines, including a "Generated with…" footer. It goes above them.
 
-## Passing the body
+### Passing the body
 
 Pass the body with a quoted HEREDOC so backticks and newlines survive:
 
@@ -57,7 +61,17 @@ If merging this PR alone would break anything, every PR in the group lists all t
 
 ## Stacked PRs
 
-Say where the PR sits in the stack ("part 1 of 2", "on top of #544") on the first line. Describe only that layer's changes, and say so if an earlier layer alone leaves something half-working.
+Use GitHub's stacked PRs via the `gh stack` extension ([quickstart](https://docs.github.com/en/pull-requests/get-started/stacked-prs-quickstart)), not `gh pr create --base <other-branch>`. Each PR targets the branch below it and reviewers see only that layer's diff. A stack lives within one repo; stacking across repos is not possible, so use `Depends-On` for those.
+
+Needs GitHub CLI 2.90.0+, Git 2.20+ and `gh extension install github/gh-stack`.
+
+- New stack: `gh stack init <first-branch>`, commit, then `gh stack add <next-branch>` for each layer (`gh stack add -Am "message"` stages, commits and branches in one go).
+- Existing branches (including a branch whose PR is already open): `gh stack init <bottom-branch> <next-branch> ...`, listed bottom to top. Existing branches are adopted, missing ones created. Use `--base <branch>` if the bottom of the stack is not the default branch.
+- Check with `gh stack view`.
+- Push and create or update the PRs with `gh stack submit`. It opens an editor for titles and descriptions; `--auto` skips it with generated titles, so prefer the editor or `gh pr edit` afterwards to apply the description rules above.
+- After a lower layer merges or changes, `gh stack sync` fetches, cascade-rebases, pushes and updates the PRs.
+
+In each PR description, say where it sits in the stack ("part 1 of 2", "on top of #544") on the first line. Describe only that layer's changes, and say so if an earlier layer alone leaves something half-working.
 
 ## Examples
 

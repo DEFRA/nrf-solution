@@ -8,7 +8,7 @@ When PRs across repos depend on each other, every PR in the group must reference
 
 **Rule: if merging this PR alone (without the others) would break anything, list all the others.**
 
-The `depends-on` CI action is strict about the format (full PR URL, lines last, nothing after them). The `write-pr-description` skill (`.ai/skills/write-pr-description/SKILL.md`) is the source for those rules and the placeholder-then-edit workflow.
+The `depends-on` CI action is strict about the format (full PR URL, lines last, nothing after them). The `manage-pull-requests` skill (`.ai/skills/manage-pull-requests/SKILL.md`) is the source for those rules and the placeholder-then-edit workflow.
 
 Common cases:
 - A frontend PR that changes the quote journey → `Depends-On` the backend PR and the journey-tests PR
@@ -30,4 +30,4 @@ Use `<JIRA-KEY> - <short description>` for both, e.g. `NRF2-1186 - Enter NRL ref
 
 ## PR descriptions
 
-Keep PR descriptions short and easy to read, and don't include a "Test plan" section — features are verified against Jira acceptance criteria, not a PR checklist. The full rules are in the `write-pr-description` skill (`.ai/skills/write-pr-description/SKILL.md`), which AI agents load before raising a PR.
+Keep PR descriptions short and easy to read, and don't include a "Test plan" section — features are verified against Jira acceptance criteria, not a PR checklist. The full rules are in the `manage-pull-requests` skill (`.ai/skills/manage-pull-requests/SKILL.md`), which AI agents load before raising a PR. For changes that build on an unmerged PR in the same repo, use GitHub's [stacked PRs](https://docs.github.com/en/pull-requests/get-started/stacked-prs-quickstart) (`gh stack`) rather than a PR based on another PR's branch.

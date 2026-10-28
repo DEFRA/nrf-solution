@@ -116,9 +116,11 @@ cmd_button(
 
 # Tilt has no built-in cancel for a running manual local_resource, so this
 # kills the host-run cucumber-js process and its parallel workers. Playwright
-# closes the browsers it launched when its parent exits.
+# closes the browsers it launched when its parent exits. Tilt can't show a
+# button conditionally, so it's always visible. The id is 'stop' not 'cancel'
+# because Tilt orders buttons by id and this must sort after 'run'.
 cmd_button(
-    'journey-tests:cancel',
+    'journey-tests:stop',
     argv=['bash', '-c', 'pkill -f "journey-tests/node_modules/.bin/cucumber-js|@cucumber/cucumber" || echo "No journey test run in progress"'],
     resource='journey-tests',
     text='Cancel journey tests',

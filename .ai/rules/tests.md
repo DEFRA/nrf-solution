@@ -43,6 +43,7 @@
 ## Testing DOM / HTML
 
 - DOM testing library is used for querying the DOM, prefer that to native querySelector as it enables finding elements by ARIA role or associated label so builds in accessibility checks, for free
+- Query by role, label or text (`getByRole`, `getByLabelText`, `getByText`), not by CSS class. Do not use `querySelector('.govuk-...')` to find components such as warning text or inset text: match on their visible text instead.
 - Use `toBeInTheDocument()` (from `@testing-library/jest-dom`) rather than `toBeTruthy()` for DOM presence assertions — `getByTestId` etc. throw when absent, so `toBeTruthy()` is always true for present elements and adds no assertion value
 
 ## Test readability
@@ -69,6 +70,7 @@
 
 - Don't take an *expected output* from the same constant the code under test reads — if the constant's value changes, code and test change together and the test still passes. Assert a literal when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to another service, or shown to the user.
 - Using a constant as *test input* (fixtures, setup) is fine either way: a stale literal input makes the test fail loudly, not pass falsely.
+- **Never import `routePath` (or any route constant) into a test**, including for the page under test, its redirect targets, and lists of guarded paths. Declare the literal path once as a local `const` at the top of the test file (e.g. `const pagePath = '/request-to-use/defra-account-individual'`) so a wrong change to the route fails the test.
 - Assert literal HTTP status codes and route paths, not constants: `expect(response.statusCode).toBe(302)` and `expect(response.headers.location).toBe('/manage/start-page')`, not `statusCodes.found` or an imported `routePath`. A constant shared with the code under test lets a wrong change pass silently (false positive). Do not flag literal status codes or paths in test expectations in review.
 
 ## Test performance
