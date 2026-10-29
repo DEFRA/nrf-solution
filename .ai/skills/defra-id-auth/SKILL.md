@@ -36,6 +36,10 @@ Diagrams it links (same directory):
 - `docs/features/authentication/defra-id/token-refresh-flow.mermaid`
 - `docs/features/authentication/defra-id/sign-out-flow.mermaid`
 
+## Test users
+
+To sign in with a real Defra ID on a deployed non-prod environment (e.g. CDP test), use the accounts on the [Test users (non-prod)](https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298) Confluence page. It has the sign-in link, the shared password and the organisations/individuals available. Don't copy credentials into the repo. The One Login test users sign in with email and password only; the "Authenticator QR" column on that page does not mean a second-factor prompt appears, so don't assume sign-in is blocked without trying it.
+
 ## When working on auth
 
 1. Read `docs/features/authentication/defra-id/index.md` and the relevant diagram.
