@@ -5,6 +5,7 @@
     "allow": [
       "WebFetch(domain:design-system.service.gov.uk)",
       "Bash(npx vitest:*)",
+      "Bash(node .ai/skills/tools/notify/*)",
       "Read(../nrf-prototypes/**)"
     ]
   },

@@ -140,6 +140,14 @@ return URL (`/login/return`) and the post sign-out redirect (`/login/signed-out`
 
 ---
 
+## Test users
+
+For real Defra ID sign-in on deployed non-prod environments (e.g. CDP test), use the accounts on the
+[Test users (non-prod)](https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298) Confluence
+page. Don't copy credentials into the repo.
+
+---
+
 ## Local setup
 
 Run the frontend via `tilt up` from the `nrf-solution` meta-repo — don't run it standalone. Sign

@@ -22,6 +22,11 @@ allowed-tools: Bash, Read, playwright_browser_navigate, playwright_browser_navig
   - **Docker logs:** `docker compose logs <service> --since <duration>` to confirm backend behaviour (e.g. that an email send was triggered, or that one was _not_).
   - **Postgres DB:** `docker compose exec -T postgres psql -U postgres -d <db> -c "<SQL>"` to inspect or set up test state directly (e.g. expiring/exhausting a token to reach a state a user can't reach manually).
   - **Notify API:** emails can be verified against the GOV.UK Notify API (real key locally, not a stub). See `journey-tests/test/support/find-notify-email.js` for how to query notifications by recipient, status, body text, and a `sentAfter` cutoff. Use this to confirm email content (subject/body) or that no email was sent.
+- **Deployed environments (signed-in scenarios):** Real Defra ID sign-in works on deployed non-prod environments. Use the accounts on the [Test users (non-prod)](https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298) Confluence page (sign-in link, shared password and users are there; never copy credentials into the repo or output). Don't mark signed-in scenarios as untestable. Note the sign-in in the results table as a black-box exception.
+  - **No authenticator app is needed:** Despite the "Authenticator QR" column on that page, signing in as a GOV.UK One Login test user is only email then password, with no second-factor prompt. Go to `<base-url>/profile`, choose "Sign in with GOV UK One Login", Continue, Sign in, enter the email, Continue, enter the password, Continue; you land back on `/profile`. Do this with `mcp__playwright__browser_run_code_unsafe`. Never mark a signed-in scenario untestable or Partial on the assumption that MFA blocks you. Only report a blocker after you have actually attempted the sign-in and seen what stopped you.
+- **Deployed environments (request-to-use journey):** The request-to-use pages are only reachable with a real NRL reference and the emailed link. Use the tools in `.ai/skills/tools/notify/` (they read `NOTIFY_API_KEY` from the environment or `compose.override.yml` and never print it). Test emails go to `nrfjourneytests@gmail.com`. Note any use in the results table as a black-box exception.
+  - **Start the journey (about 10s, no browser calls):** `node .ai/skills/tools/notify/seed-request-to-use.mjs <base-url> nrfjourneytests@gmail.com` creates a quote over HTTP, requests the retrieve-quote email, reads it from Notify and prints `{"reference","retrieveUrl"}`. Open `retrieveUrl` in the browser (it is single-use, so each run needs a fresh one and the script never follows it). You land on `/request-to-use/review-quote-details`; Continue, then choose Yes on `accept-levy` to reach the next pages.
+  - **Reading an email:** `find-email.mjs <email> "<text>" <sentAfterISO>` prints the first matching email body (e.g. the quote email, which links to `/request-to-use/enter-nrl-reference?nrlReference=...`).
 - **Playwright console & network:** `mcp__playwright__browser_console_messages` and `mcp__playwright__browser_network_requests` are available to inspect client-side errors and HTTP traffic — see "Error monitoring".
 - **Browser:** Use only the Playwright MCP tools (`mcp__playwright__browser_navigate`, `mcp__playwright__browser_snapshot`, `mcp__playwright__browser_evaluate`, `mcp__playwright__browser_run_code_unsafe`, `mcp__playwright__browser_close`, etc.). Never use Chrome DevTools MCP tools (`mcp__plugin_chrome-devtools-mcp_chrome-devtools__*`). If Playwright MCP tools are not available, stop immediately and report this to the user.
 
@@ -59,6 +64,7 @@ If any acceptance criterion links to a prototype page or prototype error state (
 - For error-state criteria, ask it to capture the error state (its Step 3). The error summary link text is the source of truth for expected error wording.
 - Compare the deployed page against the extracted heading, body content, radio/checkbox labels and values, hints, button text and error wording. The extraction script skips the back link, per-item hints, inset text, warning text, tables and details — check those against the prototype's DOM directly.
 - Differences that don't affect what a user sees (e.g. error summary anchor `href` casing, the back link's route) are not failures; mention them in the Notes column.
+- Never fetch the prototype with `curl` or your own scripts. Use only `browse-prototype`, which drives the browser and logs in with `PROTOTYPE_PASSWORD`. For the items the extractor skips (warning text, details, lists, back link), compare against the prototype page's DOM in the browser.
 - If `browse-prototype` fails (e.g. `PROTOTYPE_PASSWORD` is unset), report the exact error and mark prototype-dependent scenarios ⚠️ Partial, with the reason in Notes. Don't guess the expected content.
 
 ## Progress narration
@@ -76,6 +82,8 @@ Output one short line before every tool call. Announce each scenario by title on
 Restart Claude Code after changing MCP server args for them to take effect.
 
 **Clean state:** Use `mcp__playwright__browser_navigate` to reset state between scenarios. Don't try to clear HttpOnly cookies via JS — it won't work. Don't POST via `fetch` — CSRF will block it. Note any cookie-state limitations in the results table.
+
+**Signed-out scenarios:** If a scenario needs a signed-out user and you land on a signed-in page, there is a "Sign out" link in the header. Select it before testing the scenario.
 
 To fully clear all cookies (including HttpOnly/server-set ones), use Playwright's context API:
 
@@ -127,4 +135,4 @@ After the results table, add a comment to the Jira ticket confirming the browser
 - All scenarios passed: `Browser tested against <url> on <date>: all <N> acceptance criteria passed.`
 - Otherwise: `Browser tested against <url> on <date>: <P> of <N> acceptance criteria passed. Did not pass:` followed by one line per failed or partial scenario, `- Scenario <n> - <title>: <short reason>`.
 
-Post it with `echo "<comment>" | node .ai/skills/tools/jira/add-comment.mjs <ticket> -`. If the script fails, report the exact error and don't retry or call the Jira API directly.
+Always start the comment with `Browser tested against` and post it with `echo "<comment>" | node .ai/skills/tools/jira/add-comment.mjs <ticket> --replace-prefix "Browser tested against" -`. If this is a re-run, that replaces your earlier browser-test comment on the ticket rather than adding another (and removes older duplicates), so the ticket only ever carries the latest result. Don't mention earlier runs in the new comment. If the script fails, report the exact error and don't retry or call the Jira API directly.
