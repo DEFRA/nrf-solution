@@ -50,7 +50,7 @@ When raising a PR on `nrf-solution`, **do not commit submodule pointer updates a
 
 ## Cross-repo PR dependencies & PR descriptions
 
-Before running `gh pr create` or `gh pr edit`, load the `write-pr-description` skill: it covers the title format, keeping descriptions short, no "Test plan" section and the `Depends-On` rules. See [docs/contributing.md](./docs/contributing.md) for the cross-repo `Depends-On` background.
+Before running `gh pr create`, `gh pr edit` or `gh stack`, load the `manage-pull-requests` skill: it covers the title format, keeping descriptions short, no "Test plan" section, the `Depends-On` rules and stacked PRs (use `gh stack`, not `--base`). See [docs/contributing.md](./docs/contributing.md) for the cross-repo `Depends-On` background.
 
 ## Symlinks
 
