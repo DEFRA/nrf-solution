@@ -6,6 +6,7 @@
 - **Acceptance** - Acceptance tests should use the inputs and outputs that a user would generate and expect eg send a real request and parse the returned page DOM. See any page.test.js in nrf-frontend for an example. Or for a backend API, send a request and assert on the response.
 - There are also **journey** tests but those are in a different repo (nrf-journey-tests) and should be reserved for very few 'happy path' cases, or functionality that's too complext to test using unit or acceptance tests.
   - Journey tests should not cover form validation errors - these are covered by the page's `page.test.js` in nrf-frontend.
+  - Keep journey run time and duplication down. Always favour extending an existing scenario (add a step or two to one that already reaches the page) over creating a new one; only add a scenario when the behaviour can't sit in an existing flow. Use the seeding utilities (e.g. the quote and request to use seed scripts) to start a scenario as close as possible to the part of the journey under test, rather than re-running steps that other journey tests already cover.
   - Keep feature files short. A step that acts on a page (answers a question, submits a form) asserts in its step definition that the page is showing (e.g. waits for its heading) before acting, so the feature doesn't need a separate `Then I should see the "..." heading` step just before it. Likewise, assertions that always go together (arriving at a page, its heading and the signed-in user) belong in one step with a name that says the outcome, e.g. `I should be signed in and can enter my address`. Use a standalone heading step only where the heading is the outcome being checked.
 
 ## Location
@@ -32,6 +33,10 @@
 ## Using sessions in tests
 
 - When a test needs a stable session ID (e.g. for rate limiting or any behaviour keyed on session), use `withValidQuoteSession` to prime a real server-side session and obtain a cookie. Pass that cookie to all subsequent `server.inject` calls so Yar reuses the same session ID across requests. Never hand-roll session priming via a `/__test-setup-*` helper route or by mocking session reads — drive the real routes to build session state.
+
+## Session guards
+
+- When a path is added to a session guard's path set, extend that guard helper's own unit test as well as the page test.
 
 ## Signed-in pages
 

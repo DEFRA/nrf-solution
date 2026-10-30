@@ -23,6 +23,10 @@ Fetch the ticket with the `read-jira-ticket` skill (it runs `node .ai/skills/too
 
 Page construction, form validation and navigation, plus the journey-test updates. Session management (saving and re-showing answers, clearing them, guards, and redirects when there is no session) is handled by separate tickets such as NRF2-1270. Do not build it, and do not plan or write tests for it, even if the ticket's acceptance criteria mention it. List any such scenarios in the Stage 1 report as out of scope.
 
+## Prototype access
+
+The prototype is behind a password prompt. Never ask the user for the password: follow Step 1 of the `browse-prototype` skill, which reads it from the `PROTOTYPE_PASSWORD` environment variable (`printenv PROTOTYPE_PASSWORD` via Bash) and types it into the prompt. Only ask the user if that variable is unset. In Stage 1, open the prototype page this way and check its h1 and content against the ticket, rather than reporting it as unread.
+
 ## Required reading (load before stage 1)
 
 - [AGENTS.md](../../AGENTS.md) — high-level architecture of NRF.
@@ -50,7 +54,7 @@ Announce the current stage before starting it. At the end of each stage, summari
 1. Read all required context (above).
 2. Assess and report:
    - **Acceptance criteria**: clear, implementable, testable?
-   - **Page**: page type; this page's route and area; previous and next pages (and whether each already exists in `frontend/src/server`); prototype URL (from the Scenario 1 AC link only) and error state URLs; content links; any session scenarios and the browser-back scenario (out of scope, see Scope).
+   - **Page**: page type; this page's route and area; previous and next pages (and whether each already exists in `frontend/src/server`); prototype URL (from the Scenario 1 AC link only, opened per "Prototype access" to confirm the h1) and error state URLs; content links; any session scenarios and the browser-back scenario (out of scope, see Scope).
    - **Blockers** (listed in Step 0 of the `journey-page` skill): the area folder, `index.js` and `controller-get.js` exist; the target folder doesn't already exist; there is at most one previous page. Report any blocker and do not proceed until it is resolved.
    - **Architecture context**: any gaps in `AGENTS.md` that block this work?
 3. Separate your questions into two categories and present them clearly:
@@ -65,9 +69,10 @@ Only after Stage 1 is approved:
 1. Run `git submodule status`. Only if `frontend` or `journey-tests` is uninitialised (leading `-`), initialise just that one with `git submodule update --init <path>`. Never run `git submodule update` on submodules that are already initialised: they are often ahead of the recorded pointer and it would detach them onto older commits.
 2. For `frontend` and `journey-tests`:
    - Check `git status` and the current branch first. If the feature branch already exists, or the working tree has uncommitted changes, do not discard or overwrite anything: stop and report what is there, and offer to resume by reviewing the existing work against the plan.
-   - Otherwise `git checkout main && git pull`
+   - Otherwise `git fetch origin main && git checkout main && git pull --ff-only`. If a submodule is on a detached HEAD, this checkout is what puts it back on `main`.
    - Create the branch named as in "Branch name" above.
-3. Report which submodules now have feature branches.
+   - Verify the base: `git rev-parse HEAD` must equal `git rev-parse origin/main`. If not, stop and report; do not continue from a stale commit.
+3. Report which submodules now have feature branches, with each one's base commit (short SHA of `origin/main`).
 
 ### Stage 3 — Detailed implementation plan
 
