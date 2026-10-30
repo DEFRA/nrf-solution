@@ -86,4 +86,4 @@
 ## Acceptance tests
 
 - Assert the observable outcome the change delivers, not just the status code. If a change pre-fills an input, assert the input's value; if it shows a message, assert the message. A `200` alone passes when the behaviour is broken.
-- Every page should have a acceptance test file in the same folder, named page.test.js, and a accessibility test, named accessibility.test.js.
+- Every page should have a acceptance test file in the same folder, named page.test.js, and a accessibility test, named accessibility.test.js. A page that renders another page's template (e.g. a request to use page reusing a quote page's view) doesn't need its own accessibility test, as the original page's covers the template.
