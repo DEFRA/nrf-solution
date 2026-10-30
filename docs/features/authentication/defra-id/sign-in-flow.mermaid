@@ -34,7 +34,7 @@ sequenceDiagram
     Ctrl->>DefraID: POST token_endpoint<br/>grant_type=authorization_code<br/>(code, client_id, client_secret, redirect_uri)
     DefraID-->>Ctrl: { access_token, refresh_token, id_token, expires_in }
     Ctrl->>Ctrl: Decode id_token (@hapi/jwt) -> profile
-    Ctrl->>Ctrl: createUserSession() -> { sessionId (uuid),<br/>profile, token, refreshToken, isAuthenticated }
+    Ctrl->>Ctrl: createUserSession() -> { sessionId (uuid),<br/>profile, token, refreshToken, idToken, isAuthenticated }
     Ctrl->>Cache: set(sessionId, userSession)
     Ctrl->>Yar: set sessionId
     Ctrl->>Yar: get + clear redirectTo
