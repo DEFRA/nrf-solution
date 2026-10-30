@@ -1,6 +1,9 @@
 ################################################################################
 # Root compose — used by Tilt to run all three services together.
 #
+# NOTE: journey-tests/compose.yml (used by journey tests and CI) duplicates the
+# shared infra services and app env vars here. When changing those, update it too.
+#
 # Individual compose files in backend/, frontend/, and impact-assessor/ are
 # unchanged and continue to work for standalone development in each directory.
 #

@@ -61,6 +61,7 @@ Before running `gh pr create`, `gh pr edit` or `gh stack`, load the `manage-pull
 - `tilt up` from repo root brings the whole stack up. Hot reload watches `backend/src/`, `frontend/src/`, `impact-assessor/app/`.
 - `compose.yml` + `compose/` define the Docker Compose stack.
 - `create-symlinks.sh` wires sibling submodules into `journey-tests/compose.yml` — only needed for journey tests.
+- `compose.yml` (root, local dev) and `journey-tests/compose.yml` (journey tests, CI) overlap: shared infra services (localstack, redis, mongo, postgres, liquibase, cdp-uploader, defra-id-stub) and app env vars (API keys, Defra ID stub, `IMPACT_ASSESSOR_BASE_URL`). When you change one of these in either file, check whether the other needs the same change.
 - `check-submodules.sh` reports if any submodule is behind its remote `main`.
 - `format.sh` runs formatters for all three code services.
 
