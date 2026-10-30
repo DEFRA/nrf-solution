@@ -13,7 +13,7 @@ browser only holds an opaque session id.
 | File                                                | Responsibility                                                                                                           |
 |-----------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------ |
 | `frontend/src/server/auth/controller.js`            | All route handlers: sign-in redirect, callback (and sign-in error page), sign-out, sign-out callback                       |
-| `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
+| `frontend/src/server/auth/index.js`                 | Registers the auth routes                                                                                                 |
 | `frontend/src/server/auth/auth-rules.js`            | `registerAuthRules()`: the `rules: { requireAuth: true }` route setting that protects a route with `defra-session`      |
 | `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; triggers the one-time user sync to nrf-backend; `createUserSession()`                  |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
@@ -39,10 +39,7 @@ Registered in `defra-identity.js`:
 `defra-session` is the server default in **`try` mode**, so every page knows whether the user is
 signed in (`request.auth.isAuthenticated`) without being rejected when they aren't. A route
 that must be protected opts in with `rules: { requireAuth: true }` (see `auth/auth-rules.js`);
-never set `auth: 'defra-session'` or read `server.app.authEnabled` in a page's routes. The rule
-resolves to `defra-session` when auth is enabled and to `auth: false` when the DEFRA Identity
-plugin failed to register at boot, so a protected route is left open (rather than throwing at
-registration) and only the auth routes are missing. The OIDC discovery document is
+never set `auth: 'defra-session'` in a page's routes. The OIDC discovery document is
 **not** fetched at boot — it's fetched lazily on the first sign-in/out (then memoised) — so a
 transient Defra outage at startup no longer disables auth.
 
@@ -169,12 +166,11 @@ page. Don't copy credentials into the repo.
 Run the frontend via `tilt up` from the `nrf-solution` meta-repo — don't run it standalone. Sign
 out from the service navigation, or the profile page: http://localhost:3000/profile.
 
-Locally auth defaults to the **real Defra ID pre-prod tenant**. `compose.yml` sets
-`DEFRA_ID_BASE_URL` and `DEFRA_ID_WELL_KNOWN_PATH` (a cpdev variant is commented out there), so you
-only need to supply the credentials. Copy the `frontend` auth
-env vars from `compose.override.template.yml` into your `compose.override.yml` in `nrf-solution`
-and fill in the blanks (`DEFRA_ID_CLIENT_ID`, `DEFRA_ID_CLIENT_SECRET`, `DEFRA_ID_SERVICE_ID`,
-`DEFRA_ID_SCOPES`). Get secret values from another dev, or retrieve nrf-frontend test secrets via
+All local `DEFRA_ID_*` config lives in `compose.override.yml`, so you can switch between the real **pre-prod tenant** and the stub in one
+place. Copy the `frontend` auth env vars from `compose.override.template.yml` into your
+`compose.override.yml` in `nrf-solution`, replace the `DEFRA_ID_BASE_URL` placeholder with your
+tenant's host, and fill in the blanks (`DEFRA_ID_CLIENT_ID`, `DEFRA_ID_CLIENT_SECRET`,
+`DEFRA_ID_SERVICE_ID`, `DEFRA_ID_SCOPES`). Get secret values from another dev, or retrieve nrf-frontend test secrets via
 the
 [CDP terminal](https://portal.cdp-int.defra.cloud/documentation/how-to/terminal.md#are-my-service-secrets-available-from-the-terminal-);
 non-secret values are in

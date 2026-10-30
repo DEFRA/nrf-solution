@@ -128,7 +128,7 @@ A page's `routes.js` only wires things together: imports, the OpenAPI block, and
 
 ### Requiring sign-in
 
-- To protect a frontend route with Defra ID, add `rules: { requireAuth: true }` to the route (see `auth/auth-rules.js`). Never set `auth: 'defra-session'` or read `server.app.authEnabled` in a page's routes — the rule handles the auth-disabled case, and a direct strategy reference throws at registration when the strategy isn't registered.
+- To protect a frontend route with Defra ID, add `rules: { requireAuth: true }` to the route (see `auth/auth-rules.js`). Never set `auth: 'defra-session'` in a page's routes.
 - To branch on whether the user is signed in (e.g. skip a page for signed-in users), check `request.auth.credentials`, as `redirect-to-sign-in.js` does. Routes default to auth mode `try`, where `request.auth.isAuthenticated` is true even for a signed-out request, so it must not be used.
 - Protected pages still need `page.test.js` coverage of both the signed-out redirect to `/auth/sign-in` and the signed-in render.
 

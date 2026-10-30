@@ -14,8 +14,11 @@ services:
       OS_API_KEY: key
 
       # ================== DEFRA ID ============================
+      # To switch between using real defra ID and the stub, comment / uncomment the following blocks
 
       # ------------------ Pre-prod ---------------------
+      DEFRA_ID_BASE_URL: https://your-account.pre.cui.defra.gov.uk
+      DEFRA_ID_WELL_KNOWN_PATH: /idphub/b2c/b2c_1a_cui_signupsignin/.well-known/openid-configuration
       DEFRA_ID_SERVICE_ID: a6225dea-ebd2-f011-8544-000d3abc0c59
       DEFRA_ID_CLIENT_ID: c232b174-1c4d-425d-a0cb-388702d1ae26
       DEFRA_ID_CLIENT_SECRET:
