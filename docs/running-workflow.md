@@ -70,18 +70,6 @@ through Squid too — undici's `ProxyAgent` does not read `NO_PROXY`
 automatically. Squid allows them via a private IP range ACL so they are not
 blocked.
 
-### Allowed domains
-
-| Domain | Purpose | Configured in |
-| --------------------------------------- | --------------------------------- | -------------- |
-| `www.gov.uk` | GOV.UK content | CDP default |
-| `login.microsoftonline.com` | Azure App Registrations | CDP default |
-| `api.notifications.service.gov.uk` | GOV.UK Notify (email) | CDP default |
-| `*.amazonaws.com` | AWS services | CDP default |
-| `*.auth.eu-west-2.amazoncognito.com` | Cognito login | CDP default |
-| `*.browserstack.com` | Browser Stack (tests) | CDP default |
-| `api.os.uk` | Ordnance Survey map tiles | NRF-specific |
-
 ### Adding a new domain
 
 1. Add it to `compose/squid.conf` under the `nrf_allowed` ACL.
@@ -153,16 +141,6 @@ docker compose run --rm impact-assessor-migration
 
 ## Scripts
 
-### `create-symlinks.sh`
-
-Creates symlinks so that `journey-tests/compose.yml` can find the sibling
-repositories as `nrf-backend`, `nrf-frontend`, and `nrf-impact-assessor`.
-Only needed if you are running journey tests — not required for `tilt up`.
-
-```sh
-./create-symlinks.sh
-```
-
 ### `check-submodules.sh`
 
 Checks whether each submodule is on the latest commit from its remote main
@@ -214,18 +192,3 @@ docker volume rm nrf-solution_postgres-data
 docker volume rm nrf-solution_mongodb-data
 docker volume rm nrf-solution_localstack-data
 ```
-
----
-
-## Standalone development
-
-Each service can be run independently using its own `compose.yml`:
-
-```sh
-cd backend && docker compose up
-cd frontend && docker compose up
-cd impact-assessor && docker compose up
-```
-
-These use their own isolated infrastructure (separate LocalStack, Postgres, Redis
-instances on different ports) and do not interfere with the root stack.

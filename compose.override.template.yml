@@ -14,29 +14,26 @@ services:
       OS_API_KEY: key
 
       # ================== DEFRA ID ============================
+      # To switch between using real defra ID and the stub, comment / uncomment the following blocks
 
       # ------------------ Pre-prod ---------------------
-#      DEFRA_ID_SERVICE_ID: a6225dea-ebd2-f011-8544-000d3abc0c59
-#      DEFRA_ID_CLIENT_ID: c232b174-1c4d-425d-a0cb-388702d1ae26
-#      DEFRA_ID_CLIENT_SECRET:
-#      DEFRA_ID_SCOPES: openid,offline_access,c232b174-1c4d-425d-a0cb-388702d1ae26
-#      # Same password for all non-prod test accounts - https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298
-#      DEFRA_ID_USER_PASSWORD: P4ssw0rd!$$
-
-      # -------------------- Dev ------------------------
-      # DEFRA_ID_SERVICE_ID: a6225dea-ebd2-f011-8544-000d3abc0c59
-      # DEFRA_ID_CLIENT_ID: 674ecb28-99f7-4434-ad2e-cb4f9090f300
-      # DEFRA_ID_CLIENT_SECRET:
-      # DEFRA_ID_SCOPES: openid,offline_access,674ecb28-99f7-4434-ad2e-cb4f9090f300
+      DEFRA_ID_BASE_URL: https://your-account.pre.cui.defra.gov.uk
+      DEFRA_ID_WELL_KNOWN_PATH: /idphub/b2c/b2c_1a_cui_signupsignin/.well-known/openid-configuration
+      DEFRA_ID_SERVICE_ID: a6225dea-ebd2-f011-8544-000d3abc0c59
+      DEFRA_ID_CLIENT_ID: c232b174-1c4d-425d-a0cb-388702d1ae26
+      DEFRA_ID_CLIENT_SECRET:
+      DEFRA_ID_SCOPES: openid,offline_access,c232b174-1c4d-425d-a0cb-388702d1ae26
+      # Same password for all non-prod test accounts - https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298
+      DEFRA_ID_USER_PASSWORD: P4ssw0rd!$$
 
       # -------------------- Stub ------------------------
-      DEFRA_ID_SERVICE_ID: service-test
-      DEFRA_ID_CLIENT_ID: client-test
-      DEFRA_ID_CLIENT_SECRET: test_value
-      DEFRA_ID_BASE_URL: http://defra-id-stub.localhost:3200
-      DEFRA_ID_WELL_KNOWN_PATH: /cdp-defra-id-stub/.well-known/openid-configuration
-      DEFRA_ID_SCOPES: openid,offline_access
-      DEFRA_ID_REDIRECT_HOSTS: http://defra-id-stub.localhost:3200
+#      DEFRA_ID_SERVICE_ID: service-test
+#      DEFRA_ID_CLIENT_ID: client-test
+#      DEFRA_ID_CLIENT_SECRET: test_value
+#      DEFRA_ID_BASE_URL: http://defra-id-stub.localhost:3200
+#      DEFRA_ID_WELL_KNOWN_PATH: /cdp-defra-id-stub/.well-known/openid-configuration
+#      DEFRA_ID_SCOPES: openid,offline_access
+#      DEFRA_ID_REDIRECT_HOSTS: http://defra-id-stub.localhost:3200
 
       # ================== END OF DEFRA ID ============================
 

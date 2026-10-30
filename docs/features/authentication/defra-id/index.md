@@ -13,11 +13,15 @@ browser only holds an opaque session id.
 | File                                                | Responsibility                                                                                                           |
 |-----------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------ |
 | `frontend/src/server/auth/controller.js`            | All route handlers: sign-in redirect, callback (and sign-in error page), sign-out, sign-out callback                       |
-| `frontend/src/server/auth/index.js`                 | Registers auth routes (only if `server.app.authEnabled`)                                                                 |
+| `frontend/src/server/auth/index.js`                 | Registers the auth routes                                                                                                 |
 | `frontend/src/server/auth/auth-rules.js`            | `registerAuthRules()`: the `rules: { requireAuth: true }` route setting that protects a route with `defra-session`      |
 | `frontend/src/server/plugins/defra-identity.js`     | Registers the `defra-session` custom yar scheme; token validity + refresh logic; triggers the one-time user sync to nrf-backend; `createUserSession()`                  |
 | `frontend/src/server/auth/refresh-tokens.js`        | OAuth `refresh_token` grant call                                                                                         |
 | `frontend/src/server/auth/sync-user-to-backend.js`  | Fire-and-forget PATCH of the signed-in user's profile to nrf-backend (`/users`)                                 |
+| `frontend/src/server/auth/auth-urls.js`             | Auth path constants (`/auth/sign-in`, `/login/return`, ...), the `defra-session` strategy name and the change-organisation query param |
+| `frontend/src/server/auth/change-organisation.js`   | `GET /auth/change-organisation`: stores `redirectTo`, then starts a sign-in that forces the Defra ID organisation picker |
+| `frontend/src/server/auth/get-organisation-from-auth-token.js` | Derives the organisation (id, name) and relationship type (`Employee`, `Agent` or `Citizen`) from the token's `currentRelationshipId` / `relationships` claims |
+| `frontend/src/server/auth/get-defra-account-url.js` | Builds the absolute URL of the user's Defra ID account page on `defraId.baseUrl`                                          |
 | `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.baseUrl` + `defraId.wellKnownPath`, memoised in-process (fetched once per process on first use, not per sign-in) |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
 | `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/auth/sign-in`, remembering the requested path         |
@@ -35,10 +39,7 @@ Registered in `defra-identity.js`:
 `defra-session` is the server default in **`try` mode**, so every page knows whether the user is
 signed in (`request.auth.isAuthenticated`) without being rejected when they aren't. A route
 that must be protected opts in with `rules: { requireAuth: true }` (see `auth/auth-rules.js`);
-never set `auth: 'defra-session'` or read `server.app.authEnabled` in a page's routes. The rule
-resolves to `defra-session` when auth is enabled and to `auth: false` when the DEFRA Identity
-plugin failed to register at boot, so a protected route is left open (rather than throwing at
-registration) and only the auth routes are missing. The OIDC discovery document is
+never set `auth: 'defra-session'` in a page's routes. The OIDC discovery document is
 **not** fetched at boot — it's fetched lazily on the first sign-in/out (then memoised) — so a
 transient Defra outage at startup no longer disables auth.
 
@@ -66,6 +67,7 @@ are captured, and the `/auth/*` routes are excluded so a signed-out request for 
 | ------------------------- | --------------- | -------------------------------------------------------------------------- |
 | `GET /auth/sign-in`       | `false`         | Build authorization URL, store CSRF `state` in Yar, 302 to Defra ID        |
 | `GET /login/return`       | `false`         | OAuth callback: verify `state`, exchange `code` for tokens, create session. Failures render `auth/sign-in-error.njk` with a 400 (OAuth error, bad state, missing code) or 500 (token exchange failed) |
+| `GET /auth/change-organisation` | `false`   | Store the safe `redirectTo` query value in Yar, 302 to `/auth/sign-in?change-organisation=true`. Sign-in then adds `forceReselection=true` so Defra ID shows the organisation picker again |
 | `GET /auth/sign-out`      | `requireAuth`   | Drop session from cache, clear Yar, 302 to Defra ID `end_session_endpoint` with `id_token_hint` |
 | `GET /login/signed-out`   | `false`         | Defra ID post-logout callback: verify `state`, failsafe session clear, 302 home |
 
@@ -90,6 +92,10 @@ which verifies the echoed `state` against `signout_state` (a mismatch is logged 
 blocks), clears any residual session, and redirects home. See
 [sign-out-flow.mermaid](./sign-out-flow.mermaid).
 
+If the `end_session_endpoint` URL can't be built (for example the discovery document is
+unavailable), the handler logs the error and redirects to the start page. The user is then signed
+out locally only, not from Defra ID.
+
 **Why a redirect, not a form POST:** B2C's sign-out bounces through several origins
 (`*.b2clogin.com`, external IdPs) before returning. The CSP `form-action` directive is
 enforced on *every* hop of a form submission, so a `<form>` POST to the `end_session_endpoint`
@@ -102,9 +108,11 @@ id token is small enough to fit comfortably).
 - **Session store:** `server.app.sessionCache` (Catbox, segment `sessions`, 24h TTL). Holds the
   full `userSession`: `{ sessionId (uuid), isAuthenticated, profile, token, refreshToken, idToken, role, scope }`.
   `idToken` is the raw OIDC ID token, kept so it can be sent as the `id_token_hint` when signing out.
+  `profile.organisation` is derived from the token by `getOrganisationFromToken`.
   Once the profile has been synced to nrf-backend, `userSaved: true` is added (see below).
 - **Yar cookie:** server-side backed (`maxCookieSize: 0`), `httpOnly`, `SameSite=Lax`. Stores only
-  `sessionId`, plus transient `oauth_state` and `redirectTo`. Default 4h TTL (`session.*` config).
+  `sessionId`, plus transient `oauth_state`, `signout_state` and `redirectTo`. Default 24h TTL
+  (`session.cookie.ttl`).
 - **Token refresh:** on every request that carries a session (the scheme runs on all routes in `try` mode) the access token is decoded and time-checked
   (60s skew). If expired and `defraId.refreshTokens` is on, a `refresh_token` grant is made and the
   new tokens are persisted transparently. If refresh is off or fails, the session is dropped and the
@@ -119,9 +127,13 @@ present, `organisationDefraId`, `organisationName`, `relationshipType`) — the 
 email both stay in the body so neither appears in URLs or access logs. The call is not awaited, so a
 slow or down nrf-backend never blocks the page; failures are logged and retried on the session's
 next authenticated request. On success, `userSaved: true` is persisted to the cached session so
-the sync happens once per session. The backend upserts `users` (matching by `defra_id`, falling
-back to `email`) and, when an organisation is present, upserts the `organisations` row and the
-`user_organisations` link. See [sign-in-flow.mermaid](./sign-in-flow.mermaid).
+the sync happens once per session.
+
+The backend **updates** the existing `users` row matching `defra_id`. If there is none, it first
+merges an email-only row (created when a quote was started before sign-in) into the Defra ID
+identity. It never creates a user: if neither row exists it returns not found. When an
+organisation is present and the relationship type is not `Citizen`, it upserts the `organisations`
+row and the `user_organisations` link. See [sign-in-flow.mermaid](./sign-in-flow.mermaid).
 
 ## Flow diagrams
 
@@ -132,7 +144,8 @@ back to `email`) and, when an organisation is present, upserts the `organisation
 ## Config (`defraId.*`)
 
 `enabled`, `baseUrl`, `wellKnownPath`, `clientId`, `clientSecret`, `serviceId`,
-`refreshTokens`, `scopes` (default `openid offline_access`). The OIDC discovery document is
+`refreshTokens`, `scopes` (default `openid offline_access`), `cspRedirectHosts`
+(`DEFRA_ID_REDIRECT_HOSTS`, the Defra ID hosts allowed in the CSP `form-action`). The OIDC discovery document is
 fetched from `baseUrl + wellKnownPath`. Separately, the top-level `frontendBaseUrl`
 (`FRONTEND_BASE_URL`) is this frontend's own browser-facing origin, used to build the OAuth
 return URL (`/login/return`) and the post sign-out redirect (`/login/signed-out`). See
@@ -153,11 +166,11 @@ page. Don't copy credentials into the repo.
 Run the frontend via `tilt up` from the `nrf-solution` meta-repo — don't run it standalone. Sign
 out from the service navigation, or the profile page: http://localhost:3000/profile.
 
-Locally auth defaults to the **real Defra ID (cpdev) tenant** — the `baseUrl`/`wellKnownPath`
-config defaults are used, so you only need to supply the credentials. Copy the `frontend` auth
-env vars from `compose.override.template.yml` into your `compose.override.yml` in `nrf-solution`
-and fill in the blanks (`DEFRA_ID_CLIENT_ID`, `DEFRA_ID_CLIENT_SECRET`, `DEFRA_ID_SERVICE_ID`,
-`DEFRA_ID_SCOPES`). Get secret values from another dev, or retrieve nrf-frontend test secrets via
+All local `DEFRA_ID_*` config lives in `compose.override.yml`, so you can switch between the real **pre-prod tenant** and the stub in one
+place. Copy the `frontend` auth env vars from `compose.override.template.yml` into your
+`compose.override.yml` in `nrf-solution`, replace the `DEFRA_ID_BASE_URL` placeholder with your
+tenant's host, and fill in the blanks (`DEFRA_ID_CLIENT_ID`, `DEFRA_ID_CLIENT_SECRET`,
+`DEFRA_ID_SERVICE_ID`, `DEFRA_ID_SCOPES`). Get secret values from another dev, or retrieve nrf-frontend test secrets via
 the
 [CDP terminal](https://portal.cdp-int.defra.cloud/documentation/how-to/terminal.md#are-my-service-secrets-available-from-the-terminal-);
 non-secret values are in
@@ -166,15 +179,18 @@ Note `DEFRA_ID_SCOPES` must be `openid,offline_access,<clientId>` so the access 
 against nrf-backend.
 
 To use the offline `defra-id-stub` instead (no secrets needed), point the `DEFRA_ID_*` env at it
-in `compose.override.yml`:
+in `compose.override.yml` (the commented "Stub" block in `compose.override.template.yml`). The
+base URL must be reachable from the browser as well as the container, hence the `.localhost` host:
 
 ```yaml
 services:
   frontend:
     environment:
-      DEFRA_ID_BASE_URL: http://defra-id-stub:3200
-      DEFRA_ID_WELL_KNOWN_PATH: /cdp-defra-id-stub/.well-known/openid-configuration
+      DEFRA_ID_SERVICE_ID: service-test
       DEFRA_ID_CLIENT_ID: client-test
       DEFRA_ID_CLIENT_SECRET: test_value
-      DEFRA_ID_SERVICE_ID: service-test
+      DEFRA_ID_BASE_URL: http://defra-id-stub.localhost:3200
+      DEFRA_ID_WELL_KNOWN_PATH: /cdp-defra-id-stub/.well-known/openid-configuration
+      DEFRA_ID_SCOPES: openid,offline_access
+      DEFRA_ID_REDIRECT_HOSTS: http://defra-id-stub.localhost:3200
 ```

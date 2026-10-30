@@ -32,7 +32,7 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 
 - All services run in Docker on the `cdp-tenant` network and reach each other by Docker service name (e.g. `http://backend:3001`).
 - Outbound internet calls go through Squid (`HTTP_PROXY=http://squid:3128`) to mirror DEFRA CDP. HTTP clients must be proxy-aware: undici `ProxyAgent` (Node) or `httpx` (Python). A new external domain requires **both** `compose/squid.conf` AND a PR to `cdp-tenant-config` for each environment.
-- Auth locally defaults to the real Defra ID (cpdev) tenant, with secrets supplied via `compose.override.yml`. The `defra-id-stub` service is available as an opt-in offline alternative (point the `DEFRA_ID_*` env at it in `compose.override.yml`).
+- Auth locally defaults to the real Defra ID pre-prod tenant, with secrets supplied via `compose.override.yml`. The `defra-id-stub` service is available as an opt-in offline alternative (point the `DEFRA_ID_*` env at it in `compose.override.yml`).
 - File uploads go via `cdp-uploader`.
 
 ## Data stores
@@ -60,7 +60,8 @@ Before running `gh pr create`, `gh pr edit` or `gh stack`, load the `manage-pull
 
 - `tilt up` from repo root brings the whole stack up. Hot reload watches `backend/src/`, `frontend/src/`, `impact-assessor/app/`.
 - `compose.yml` + `compose/` define the Docker Compose stack.
-- `create-symlinks.sh` wires sibling submodules into `journey-tests/compose.yml` — only needed for journey tests.
+- Journey tests run locally from the Tilt dashboard (`journey-tests` resource, which runs `run-journey-tests.sh`) against the root `compose.yml` stack.
+- `compose.yml` (root, local dev) and `journey-tests/compose.yml` (journey tests, CI) overlap: shared infra services (localstack, redis, mongo, postgres, liquibase, cdp-uploader, defra-id-stub) and app env vars (API keys, Defra ID stub, `IMPACT_ASSESSOR_BASE_URL`). When you change one of these in either file, check whether the other needs the same change.
 - `check-submodules.sh` reports if any submodule is behind its remote `main`.
 - `format.sh` runs formatters for all three code services.
 

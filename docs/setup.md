@@ -11,16 +11,10 @@
 ---
 
 ## Getting started
-
 ```sh
 git clone --recurse-submodules <this-repo-url>
 cd nrf-solution
-cp compose.override.template.yml compose.override.yml
 ```
-
-Edit `compose.override.yml` and replace the placeholder `NOTIFY_API_KEY` with your
-real key from the [GOV.UK Notify dashboard](https://www.notifications.service.gov.uk).
-This file is gitignored so your secrets stay local.
 
 If you cloned without `--recurse-submodules`, initialise the submodules first:
 
@@ -35,3 +29,18 @@ curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/instal
 ```
 
 For alternative installation methods see the [Tilt install docs](https://docs.tilt.dev/install.html).
+
+### Secrets / env vars
+Env vars for all services should be in a file in nrf-solution repo root called compose.override.yml. If you don't have this yet, take a copy of compose.override.template.yml:
+
+```sh
+cp compose.override.template.yml compose.override.yml
+```
+
+This file is gitignored so your secrets stay local. Also Claude and agents are instructed not to read it.
+
+#### Secrets that need adding
+Edit `compose.override.yml` and set the following:
+* `NOTIFY_API_KEY` use the real key from the [GOV.UK Notify dashboard](https://www.notifications.service.gov.uk).
+* `DEFRA_ID_CLIENT_SECRET` for defra ID pre-prod environment - obtain from another team member
+
