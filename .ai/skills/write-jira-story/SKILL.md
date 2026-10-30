@@ -180,14 +180,54 @@ Write a path as given in the spec (e.g. `/request-to-use/start`) and a full URL 
 - **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
 - **Existing ticket key found** (from Step 1 or provided by the user): update the description by piping it to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed using `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Do not call `add-jira-link.mjs` — the link is already on the page.
 
-### Step 5 — Review
+### Step 5 — Self-check, then review
 
-Use the `jira-story-reviewer` skill with the ticket key from Step 4. If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
+First, check the draft against [Rules for every story](#rules-for-every-story) below and fix every miss. Reviewers (`review-jira-story`) fail tickets on these points, so catching them here saves a review cycle.
+
+Then use the `jira-story-reviewer` skill with the ticket key from Step 4. If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
 
 ### Step 6 — Report
 
 Return the ticket key and URL, plus a one-line summary of the reviewer outcome (Pass, or how many findings were fixed).
 
+
+## Rules for every story
+
+These apply to every ticket, including backend, calculation and admin stories that are not a single page. Where a spec describes behaviour rather than a page, apply them in place of the page-type branches. If the spec can't supply what a rule needs, ask the user or list it as an open question to the user — never leave a placeholder, `?` or "to be confirmed" in the ticket.
+
+### Triggers and observability
+- Every scenario's `When` names a user action or a concrete trigger that exists in a ticket (a specific page's Continue, a named endpoint call). If the trigger isn't built by this story or a linked one, don't write the scenario here: move it to the owning story, or ask the user which ticket owns it. Check the Page URLs/triggers list actually contains the trigger.
+- Every `Then` names where a tester sees the result and the concrete value: a page and its content, an endpoint response field, a stored database record and its columns, or an admin page. "Is recalculated", "is held", "is refused" and "is stored" are not enough. Name the output and give an expected value (use a worked example).
+- Where the spec has a calculation or rule table, give each Example concrete inputs and expected outputs, and reference the Example in the matching scenario. Examples must use the same method as the scenarios (for example per-year values if scenarios say per-year, not one combined factor).
+- Every rule stated in Context, Notes or Examples (timing, defaults such as a factor of 1.0000, exclusions such as VAT, which values are returned, which date decides a lookup) has an AC, or is removed from the ticket.
+- `Given` must say how a tester reaches that state, naming the story that creates the data (e.g. "an inflation index has been added through NRF2-XXXX").
+
+### One behaviour, clear wording
+- Never join two pages, triggers or outcomes with "or" in a `Given`, `When` or `Then`. Write one scenario per case.
+- No slashes in place of a word ("calculated/recalculated"), no ambiguous "it" in a `Then` (repeat the noun), no duplicated clauses in one `Then`, no unclosed brackets, no stray attributions ("as quoted by …"), no stray notes inside Examples, no capitalised emphasis ("NOT").
+- A scenario's `When` matches its title and the trigger named in Context. If Context says a behaviour holds "even if the values are unchanged", write an AC for it.
+- Don't write two scenarios that differ only by a case another scenario already covers; merge them or add a distinguishing condition. Don't repeat an AC that another ticket owns; link to that ticket instead.
+- The user-need statement must match what is observable in scope. If display changes are out of scope, don't say the user "sees" the value; say what the service does.
+
+### Terminology
+- Define each domain term once, in a terminology note, and use it identically everywhere in the ticket and in sibling tickets in the same feature. Check Context bullets, ACs, Examples and Out of scope for older or alternative names, and make them match the note.
+
+### Cross-ticket consistency
+- Before drafting, read the linked, referenced and sibling tickets (`read-jira-ticket`; siblings via `node .ai/skills/tools/jira/get-epic-issues.mjs <PARENT_KEY>`). Check for the same condition with a different outcome, duplicated ACs, and two tickets owning the same table, page or behaviour. Resolve each: say which ticket owns it, and add a Context line where two tickets use similar words for different things (e.g. "history of quote answers" versus "history of levy calculations").
+- Every ticket key mentioned anywhere in the description is a Jira link on the ticket, added once only (no duplicates). Strip tracking parameters from Jira and Confluence URLs.
+- Each out-of-scope item that another ticket owns names that ticket's key. A key in the description must refer to a different ticket from the one being written.
+- When a ticket reuses another's endpoint, calculation or table, name it with its key and link it in Context.
+- When a story creates or changes stored data, an AC covers the storage, who made the change where users edit data (audit trail), and either an AC or an explicit linked ticket covers the data catalogue update (see the `data-catalogue` skill). If stored data should be viewable for testing, say which ticket provides the view.
+
+### Pages and prototypes
+- Any story where a user or admin does something in a UI names the page, its route and a dev-ready prototype link (path begins with `/handoffs`) in Page URLs. If the spec lacks one, stop and ask rather than writing "I add an X" with no location.
+- Validation or error scenarios link a prototype error state, and say what counts as a valid value (type, range, format) instead of "valid".
+- Prototype links that redirect (302 when fetched) probably need a sign-in; say they couldn't be checked rather than assuming they load.
+- Every page URL listed is named in an AC; every page an AC names has a URL.
+
+### Metadata
+- Fill in labels where the project uses them, and the parent. Fill every NFR bullet with its guidance-page link; the NFR section is never empty or a bare `?`. Security applies wherever there is user or admin input.
+- Include the Testing notes section as set out above.
 
 ## Non-functional requirements
 
