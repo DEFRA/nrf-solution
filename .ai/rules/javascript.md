@@ -12,7 +12,8 @@
 
 ## Comments
 
-- Don't add comments that explain what the change does or restate what the code already makes clear (e.g. "returns a machine-readable code, not display text" above a function that obviously returns a code). Only comment non-obvious *why* — a constraint, a workaround, an ordering requirement.
+- Be very frugal with comments. Default to none. Add one only to explain the *why* (a constraint, a workaround, an ordering requirement), and only when the code and its names don't already make that clear. Keep it concise, ideally one line.
+- Don't add comments that explain what the change does or restate what the code already makes clear (e.g. "returns a machine-readable code, not display text" above a function that obviously returns a code).
 - Never mention a Jira ticket number (e.g. `NRF2-1256`) in a code comment — it's harder to follow than the information itself and goes out of date. Put the rationale inline in the comment instead, concisely
 - Don't reference file paths in comments (e.g. "see frontend/src/server/common/constants/foo.js") — paths move and rot, and the comment goes stale silently. Refer to the module/concept by name instead, or let imports do the pointing.
 
