@@ -34,6 +34,17 @@ coordinate systems.
 | [outside_edp.kml](test-files/valid/outside_edp.kml) | KML |
 | [outside_edp.zip](test-files/valid/outside_edp.zip) | Shapefile (zip) |
 
+## Valid boundary crossing an EDP edge
+
+A valid boundary that is half inside the Norfolk EDP and half north of its
+outer edge, well clear of any excluded area. Any breach of the EDP's outer
+edge puts the whole site out of the EDP, so it gets the same no-EDP result
+as a site entirely outside one. This uses WGS 84 coordinates.
+
+| Test file | Format |
+|---|---|
+| [edp_boundary_crossing.geojson](test-files/valid/edp_boundary_crossing.geojson) | GeoJSON |
+
 ## Valid boundary in an excluded area
 
 A valid boundary that falls inside an excluded area. These use WGS 84
