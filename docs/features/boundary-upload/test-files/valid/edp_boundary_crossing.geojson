@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Test site crossing the Norfolk EDP outer boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [0.812615, 52.693004],
+            [0.812788, 52.695698],
+            [0.808354, 52.695803],
+            [0.808181, 52.693109],
+            [0.812615, 52.693004]
+          ]
+        ]
+      }
+    }
+  ]
+}
