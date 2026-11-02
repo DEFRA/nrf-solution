@@ -9,8 +9,6 @@ services:
   backend:
     environment:
       NOTIFY_API_KEY: key
-      NOTIFY_STATUS_POLLER_ENABLED: true
-      NOTIFY_STATUS_POLLER_SCHEDULE: '* * * * *'
       # Host-mapped frontend port, so emailed quote links resolve from the host
       # (e.g. journey tests following the magic link).
       FRONTEND_BASE_URL: http://localhost:3000
