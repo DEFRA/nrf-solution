@@ -71,12 +71,15 @@ Status:
 Prefer the lowest layer that can genuinely assert the Then. Check unit tests first, then integration, and look at journey tests only if those do not already assert the Then or the AC is cross-service. Journey tests are slow and expensive, so they are the last resort, not the default.
 
 - **Unit and integration tests (frontend and backend)** — the default home for validation, view models, handlers, session behaviour, redirects, guards, back links and re-shown answers. The frontend and backend test suites run against a real Redis container and use `server.inject`, so redirects, cookies and session state across several requests can be tested realistically. Persistence, API contracts and data belong in backend integration tests.
-- **Journey tests** — only for behaviour that is cross-service (e.g. a frontend request that reaches the real backend, email delivery, the uploader) or genuinely complex multi-step flow that lower layers cannot reproduce.
+- **Journey tests** — only for behaviour that is cross-service (e.g. a frontend request that reaches the real backend, email delivery, the uploader), needs a real browser (history stack, client-side JavaScript such as the map), or is a genuinely complex multi-step flow that lower layers cannot reproduce.
+
+A scenario that traverses several pages (change links, back links, dropout pages) and then checks a saved session value is not automatically a journey test. If it can be written as a chain of `server.inject` requests carrying the session cookie, assert it as one chained integration test. Per-hop tests of each page do not count as covering the chain. Only if the chain is very complex (many requests, branching state, or hard to set up and read) is a journey test justified instead; say that is the reason.
 
 Rules for applying this:
 - A missing journey test is **not** a gap when a unit or integration test already asserts the Then. Mark the AC Covered and cite the lower-layer test. Only a cross-service AC can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
 - Before recommending any new journey test, look for existing lower-layer tests of the same behaviour. Search the page's colocated `*.test.js` files and the shared guard/session helper tests for the same Given / When / Then, not just the same page. Name what you found in the report.
-- Recommend a journey test only if the AC is cross-service or complex, and say which of those reasons applies. If it is neither, recommend the missing unit or integration test instead and say where it belongs.
+- Recommend a journey test only if the AC is cross-service, needs a real browser, or is a very complex chain, and say which of those reasons applies. If it is none of these, recommend the missing unit or integration test instead (a chained `server.inject` test for multi-page session scenarios) and say where it belongs.
+- A multi-page AC whose hops are each asserted but whose chained outcome (e.g. the saved answer after going back) is not asserted anywhere is Partial. Name the missing chained integration test.
 - Do not recommend a journey test that would only repeat an assertion already made at a lower layer, however convincing the end-to-end framing.
 
 Finish with:

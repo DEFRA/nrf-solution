@@ -69,6 +69,7 @@ Needs GitHub CLI 2.90.0+, Git 2.20+ and `gh extension install github/gh-stack`.
 - Existing branches (including a branch whose PR is already open): `gh stack init <bottom-branch> <next-branch> ...`, listed bottom to top. Existing branches are adopted, missing ones created. Use `--base <branch>` if the bottom of the stack is not the default branch.
 - Check with `gh stack view`.
 - Push and create or update the PRs with `gh stack submit`. It opens an editor for titles and descriptions; `--auto` skips it with generated titles, so prefer the editor or `gh pr edit` afterwards to apply the description rules above.
+- Always pass `--open` with `--auto` (`gh stack submit --auto --open`): without it, `--auto` creates new PRs as drafts. Only leave PRs as drafts if the user asks. If some were created as drafts by mistake, run `gh pr ready <n>`.
 - After a lower layer merges or changes, `gh stack sync` fetches, cascade-rebases, pushes and updates the PRs.
 
 In each PR description, say where it sits in the stack ("part 1 of 2", "on top of #544") on the first line. Describe only that layer's changes, and say so if an earlier layer alone leaves something half-working.
