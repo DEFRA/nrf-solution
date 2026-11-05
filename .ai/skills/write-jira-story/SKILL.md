@@ -184,11 +184,16 @@ Write a path as given in the spec (e.g. `/request-to-use/start`) and a full URL 
 
 First, check the draft against [Rules for every story](#rules-for-every-story) below and fix every miss. Reviewers (`review-jira-story`) fail tickets on these points, so catching them here saves a review cycle.
 
-Then use the `jira-story-reviewer` skill with the ticket key from Step 4. If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
+Then review the ticket with the key from Step 4, whether it was just created or updated:
+
+- New-page story (question, dropout or confirmation page): use the `jira-story-reviewer` agent.
+- Any other story (backend, calculation, admin, change to an existing page): use the `review-jira-story` skill.
+
+If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
 
 ### Step 6 — Report
 
-Return the ticket key and URL, plus a one-line summary of the reviewer outcome (Pass, or how many findings were fixed).
+Return the ticket key and URL, plus a one-line summary of the reviewer outcome (Pass, or how many findings were fixed and any that remain).
 
 
 ## Rules for every story
