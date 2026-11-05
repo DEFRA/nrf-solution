@@ -77,8 +77,9 @@ For each AC scenario, flag it if it fails any of these and say why in a few word
 Compare the page URLs section with the pages the ACs and Context actually require, in both directions. If there is no such section, report only pages the ACs name without stating a path. List only:
 
 - URLs to **remove**: not needed to implement or test this ticket (page not named in any AC, or listed for context only).
-- URLs **missing**: a page an AC names with no URL (Blocker, unless the AC states its path directly).
+- URLs **missing**: a page an AC names with no URL in the page URLs subsection (Blocker).
 - Labels that aren't the page's own name, bullets with no route, duplicated routes.
+- **Application page URLs in ACs:** paths/URLs of pages in this application must not appear in ACs. They belong only in the page URLs subsection, with the page title mapped to each URL; ACs then refer to pages by title. Flag any AC containing an application page URL or path and suggest replacing it with the page title (adding the page to the subsection if missing). External links (for example to GOV.UK) and prototype links are fine in ACs and need no entry in the subsection.
 
 #### 5. Redundancy
 
@@ -136,6 +137,7 @@ Compared with: <keys scanned, comma-separated>   (note any skipped or unfetchabl
 
 ### Page URLs
 - Remove: <url> — <why>
+- <Scenario n title> — application URL in AC; use page title "<title>" and keep URL in page URLs only
 - [**Blocker** — ]Missing: <page> — <why needed>
 
 ### Redundancy

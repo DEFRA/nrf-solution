@@ -66,7 +66,9 @@ Use `browse-prototype` with the prototype URL from the spec.
 1. Capture the exact h1 from the confirmation page (used for the ticket summary and the "this page" name in the Page URLs section). Confirm the page has no back link; if it has one, note it for the report.
 2. For each previous page in the spec, open its prototype link (if the spec gives none, stop and alert the user), capture its h1 (the "previous page" name), submit a valid value and follow Continue, and confirm you land on the confirmation page. If you can't reach it, note it for the report — the previous page name is still taken from its h1.
 
-Do not browse to the browser-back redirect destination or look up its page name. Skip the remaining steps below — there is no form, error state or next page.
+3. If the browser-back redirect destination is a path in this application, open the equivalent page in the prototype and capture its h1 (the "browser back redirect" name). If you can't reach it, stop and alert the user rather than guessing. Skip this for an external full URL.
+
+Skip the remaining steps below — there is no form, error state or next page.
 
 **`question page`:** in a single browser session:
 
@@ -107,7 +109,9 @@ Build the `h2. Page URLs` bullets from the routes in the spec's Navigation secti
 
 - `* *<this-page name> (this page):* <route>`
 - `* *<previous-page name> (previous page):* <route>` — one bullet per distinct previous-page destination described in the spec's back-link rules. Omit entirely if the page never has a back link. For a `confirmation page` (which has no back link), use one bullet per `Previous page` in the spec, with that page's route.
-- `* *<next-page name> (next page):* <route>` — one bullet per distinct next-page destination. `question page` only — `dropout page` and `confirmation page` have no next page, so omit these bullets. Do not add the browser-back redirect destination to the Page URLs section.
+- `* *<next-page name> (next page):* <route>` — one bullet per distinct next-page destination. `question page` only — `dropout page` and `confirmation page` have no next page, so omit these bullets.
+- `* *<destination name> (browser back redirect):* <route>` — `confirmation page` only, one bullet for the browser-back redirect when its destination is a path in this application. Omit it for an external full URL.
+- `* *<destination name> (content link):* <route>` — one bullet per content link whose destination is a path in this application, in the order listed. Omit external full URLs.
 
 Do not add parenthetical explanations of when each conditional destination applies (e.g. "shown only when arriving from X") — that detail belongs in the acceptance criteria, not the Page URLs section.
 
@@ -134,13 +138,13 @@ Use the same block format as for a `question page` (see below), but only these s
    *Then* I am taken to the <this-page name> page
    *And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]
    ```
-2. **Browser back** — the confirmation page has no back link, so do not write a back link scenario. Write one block for the spec's `Browser back` redirect. State the destination as a path or full URL exactly as given in the spec (not a page name), and do not repeat the spec's parenthetical about where the user is not sent.
+2. **Browser back** — the confirmation page has no back link, so do not write a back link scenario. Write one block for the spec's `Browser back` redirect. Name an in-application destination by its page name only (the route is in the Page URLs section, don't restate it); state an external destination as the full URL exactly as given in the spec. Do not repeat the spec's parenthetical about where the user is not sent.
 
    ```
    h3. Scenario N - Browser back button redirects
    *Given* I am on the <this-page name> page
    *When* I use the browser back button
-   *Then* I am redirected to <path or full URL from the spec>
+   *Then* I am redirected to the <destination name> page   (or the full external URL from the spec)
    ```
 3. **Content links** (only if the spec has a `Content link` / `Content links` entry) — see [Content link scenarios](#content-link-scenarios).
 
@@ -164,16 +168,16 @@ If a prototype error state couldn't be reached, note this and omit that AC block
 
 #### Content link scenarios
 
-Write one block per content link in the spec (one block for a single `Content link`, one per bullet under `Content links`), in the order listed. Use the spec's link text only to say which link to select, and the spec's path or full URL as the destination — do not browse to the destination to look up a page name, and do not add the destination to the Page URLs section.
+Write one block per content link in the spec (one block for a single `Content link`, one per bullet under `Content links`), in the order listed. Use the spec's link text only to say which link to select, and the spec's destination. If the destination is a path in this application, open the equivalent page in the prototype to capture its h1 (stop and alert the user if you can't reach it), name it by that page name in the scenario, and add it to the Page URLs section. If it is an external full URL, state it in the scenario as a Jira link and do not add it to Page URLs.
 
 ```
 h3. Scenario N - Content link to <short description of the destination>
 *Given* I am on the <this-page name> page
 *When* I select the <spec link text> link
-*Then* I am taken to <path or full URL from the spec>
+*Then* I am taken to the <destination name> page   (or the full external URL as a Jira link)
 ```
 
-Write a path as given in the spec (e.g. `/request-to-use/start`) and a full URL as a Jira link. If the spec's destination is missing for an entry, stop and alert the user rather than guessing.
+Never write an in-application path (e.g. `/request-to-use/start`) in the scenario. If the spec's destination is missing for an entry, stop and alert the user rather than guessing.
 
 ### Step 4 — Create or update the ticket
 
