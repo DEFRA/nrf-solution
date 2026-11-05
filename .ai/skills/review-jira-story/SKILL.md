@@ -14,7 +14,7 @@ Prerequisite: `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set. See [atlassian
 ## Principles
 
 - **Review the main ticket only.** Related tickets are scanned solely to spot major inconsistencies with the main ticket. Never review, grade or list issues in a related ticket's own content.
-- **Be super-concise.** The reader must be able to scan the report in seconds and understand every problem. Report only problems; never list items that pass. One short line per finding, with no filler, preamble, background or restating the ticket. Quote only the few words needed to locate it. Leave out anything that doesn't help the reader fix the ticket.
+- **Be super-concise.** The reader must be able to scan the report in seconds and understand every problem. Report only problems; never list items that pass (except the one-line Prototype links status). One short line per finding, with no filler, preamble, background or restating the ticket. Quote only the few words needed to locate it. Leave out anything that doesn't help the reader fix the ticket.
 - **Be constructive.** Where a fix is obvious, give it in a few words.
 
 ## Steps
@@ -25,11 +25,13 @@ Use `read-jira-ticket` with the ticket key. Work from the raw description text.
 
 **If the ticket has no description, stop and alert the user.**
 
+**If the story is a new question, dropout or confirmation page, stop and tell the user to use `review-jira-story-new-page` instead.**
+
 Note the status, parent key, subtasks and the `Linked Issues` section.
 
 ### Step 2 — Scan related tickets
 
-Fetch with `read-jira-ticket`, in this order, stopping at 8 tickets:
+Fetch with `read-jira-ticket`, in this order, stopping at 8 tickets in total:
 
 1. Linked issues and subtasks.
 2. Ticket keys mentioned in the description.
@@ -47,7 +49,8 @@ Collect every prototype link in the description. Don't fetch or curl them — ju
 
 - If every path begins with `/handoffs`, report one line: "All prototype links are dev-ready." Don't list them.
 - Otherwise list only the links that don't begin with `/handoffs` (not dev-ready) — Blocker.
-- Also flag placeholders or non-full URLs, error-state outcomes (question pages and forms only) not linking to `?preview=1&error=<value>` (`1` empty, `format` invalid format), and links to different prototype versions or folders that look unintended.
+- Also flag placeholders or non-full URLs, and error-state outcomes on any page with a form field not linking to the error preview: `?preview=1&error=1` (empty submission) or `?preview=1&error=format` (invalid format).
+- Flag links whose path prefix (the folder or version segment before the page name) differs from the other links.
 
 #### 2. Testability
 
@@ -66,12 +69,12 @@ For each AC scenario, flag it if it fails any of these and say why in a few word
 
 #### 3. Duplication
 
-- **Context ↔ ACs:** flag Context bullets or Notes that restate something an AC already asserts, or ACs that merely repeat Context. Recommend cutting the Context to what the ACs don't already say. Push for the shortest Context that still gives a reader the background.
+- **Context ↔ ACs:** flag Context bullets or Notes that restate something an AC already asserts, or ACs that merely repeat Context. Recommend cutting the Context to what the ACs don't already say.
 - **Within the description:** the same page, link or rule stated twice (for example a prototype link repeated as a URL, or a rule repeated across scenarios).
 
 #### 4. Page URLs
 
-Compare the page URLs section with the pages the ACs and Context actually require, in both directions. List only:
+Compare the page URLs section with the pages the ACs and Context actually require, in both directions. If there is no such section, report only pages the ACs name without stating a path. List only:
 
 - URLs to **remove**: not needed to implement or test this ticket (page not named in any AC, or listed for context only).
 - URLs **missing**: a page an AC names with no URL (Blocker, unless the AC states its path directly).
@@ -103,7 +106,7 @@ Name the ticket key and the colliding point in one line. Do not report other pro
 Report only if there's a problem, and keep to one line each:
 
 - No user-need statement, no parent, or no `Given`/`When`/`Then` ACs.
-- A `Generated from` Confluence page modified after the ticket's stamped date (possible drift). If the date can't be read, say so.
+- A `Generated from` Confluence page modified after the ticket's stamped date (possible drift). Fetch it with `read-confluence-page`. If the date can't be read, say so.
 - Behaviour in Notes/Context/Out of scope that the story owns but no AC covers, or an AC asserting something stated nowhere else.
 - Out-of-scope items that depend on another ticket but name no ticket or owner.
 - Unresolved questions the ACs depend on (Blocker if the AC can't be tested without the answer).
@@ -126,25 +129,29 @@ Compared with: <keys scanned, comma-separated>   (note any skipped or unfetchabl
 - All prototype links are dev-ready.   (or, if not: <url or label> — <why not dev-ready>)
 
 ### Testability
-- <Scenario n title> — <why, in a few words>. Suggest: <fix>
+- [**Blocker** — ]<Scenario n title> — <why, in a few words>. Suggest: <fix>
 
 ### Duplication
 - <where> — <what repeats>. Suggest: <cut / merge>
 
 ### Page URLs
 - Remove: <url> — <why>
-- Missing: <page> — <why needed>
+- [**Blocker** — ]Missing: <page> — <why needed>
 
 ### Redundancy
 - <section> — remove (<reason>)
 
 ### Consistency with related tickets
-- <KEY> — <inconsistency>
+- [**Blocker** — ]<KEY> — <inconsistency>
 
 ### Other
-- <one-liner>
+- [**Blocker** — ]<one-liner>
 
 Verdict: <Fail (n blockers) | Pass with comments | Pass>. Nothing to report for: <omitted sections>.
 ```
 
-Mark a finding **Blocker** only where a developer or tester cannot work from the story as written. Everything else is untagged. Do not add a summary table, a per-check pass list, or any text beyond this structure. Keep each finding to one line of roughly 20 words or fewer; cut explanations the reader can infer.
+Mark a finding **Blocker** (the bracketed prefix above, in any section) only where a developer or tester cannot work from the story as written, and list blockers first within each section. Everything else is untagged.
+
+Verdict: `Fail` if any blockers; `Pass with comments` if findings but no blockers; `Pass` only if there are no findings other than the Prototype links status line.
+
+Do not add a summary table, a per-check pass list, or any text beyond this structure. Keep each finding to one line of roughly 20 words or fewer; cut explanations the reader can infer. If a section has more than 10 findings, list the 10 most important and add "+N more".
