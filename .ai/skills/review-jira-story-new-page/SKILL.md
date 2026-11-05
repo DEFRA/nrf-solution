@@ -5,16 +5,23 @@ description: Reviews a new-page Jira story (question, dropout or confirmation pa
 
 ## Parameters
 
-`args` is a Jira ticket reference (e.g. `NRF2-1185`) or full URL (e.g. `https://eaflood.atlassian.net/browse/NRF2-1185`). If given a reference, resolve it to `https://eaflood.atlassian.net/browse/<reference>` before proceeding.
+`args` is a Jira ticket reference (e.g. `NRF2-1185`) or full URL (e.g. `https://eaflood.atlassian.net/browse/NRF2-1185`). If given a URL, take the ticket key from it.
 
+This skill is read-only: never edit the ticket, add comments or change links.
+
+Prerequisite: `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set. See [atlassian-credentials.md](../../../docs/ai/atlassian-credentials.md).
+
+Be concise: report only problems, one short line per finding, with no filler or restating the ticket. Where a fix is obvious, give it in a few words.
 
 ## Steps
 
 ### Step 1 — Fetch the ticket
 
-Use `read-jira-ticket` with the ticket ID. Work from the raw description text returned.
+Use `read-jira-ticket` with the ticket key. Work from the raw description text returned.
 
 **If the ticket has no description, stop and alert the user** — do not run the checks against an empty description.
+
+**If the story is not a new question, dropout or confirmation page (its `*Page type*:` line is not one of those), stop and tell the user to use `review-jira-story` instead.**
 
 ### Step 2 — Run all checks
 
@@ -26,7 +33,7 @@ Run every check below in full. Collect all findings before reporting — do not 
 
 The description must contain all of the required sections in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md). Rows marked Optional in that table (e.g. Out of scope) should only be flagged if present but malformed — do not flag them as missing.
 
-Flag any required element that is missing or malformed. Read the ticket's `*Page type*:` line and apply the page-type rules: a `dropout page` is a dead end, so do not flag the absence of next-page bullets, happy-path scenarios, or error-state scenarios. Do flag any of those if they are present on a `dropout page`. A `confirmation page` is also a dead end, and additionally has no back link: do not flag the absence of a back link scenario, and do flag a back link scenario if present. A `confirmation page` should instead have a browser-back scenario whose `Then` step is `I am redirected to <path or URL>` — flag it if missing.
+Flag any required element that is missing or malformed. Read the ticket's `*Page type*:` line and apply the page-type rules: a `dropout page` is a dead end, so do not flag the absence of next-page bullets, happy-path scenarios, or error-state scenarios. Do flag any of those if they are present on a `dropout page`. A `confirmation page` is also a dead end, and additionally has no back link: do not flag the absence of a back link scenario, and do flag a back link scenario if present. A `confirmation page` should instead have a browser-back scenario whose `Then` step is `I am redirected to the <page name> page` (or the full URL when the spec's destination is external) — flag it if missing.
 
 ---
 
@@ -44,7 +51,9 @@ Flag any AC step or other field that:
 
 **Allowed:** the `*User need*:` field containing the full "As a …" statement — this is metadata from the spec, not a UI content string.
 
-**Required for error states:** error outcomes must link to the prototype's error state via a `?preview=1&error=<value>` query string, not to the base prototype URL and not inline text. `<value>` is `1` for an empty/no-value submission, or `format` for an invalid-format value.
+**Allowed:** the page names (the exact h1 captured from the prototype) used as the bullet labels in the `h2. Page URLs` section. The ticket summary is also the page h1 plus "page".
+
+Error-state links are checked in Check C item 5.
 
 ---
 
@@ -52,10 +61,11 @@ Flag any AC step or other field that:
 
 For each scenario, verify:
 
-1. **Starting URL is resolvable** — if the `Given` clause says the user is on a named page, that page's URL must appear under `h2. URLs → *This page*:`, `*Back link*:`, or `*Next page*:`. Flag it if the URL cannot be determined from the URLs section alone.
-2. **Outcome URL is resolvable** — if the `Then` clause says the user is taken to another page, that destination must also appear in the URLs section. Flag any `Then` step that names a destination whose URL is not listed. **Exception:** content-link scenarios (`*When* I select the … link`) and browser-back scenarios on a `confirmation page` (`*Then* I am redirected to …`) state their destination path or URL directly in the `Then` step — that is correct, do not flag it for being absent from the URLs section.
-3. **No ambiguous placeholders** — steps must not contain `[url]`, `[page name]`, `[prototype-url]`, or any other unfilled placeholder. Prototype links must be real URLs.
-4. **Error-state ACs link to the prototype error state** — `Then` steps describing an error outcome must link to the prototype URL with `?preview=1&error=<value>` appended — `error=1` for an empty/no-value submission, `error=format` for an invalid-format value (e.g. `[prototype error state|https://…?preview=1&error=1]`). Flag any error-state `Then` step that quotes error text inline or links to the prototype without the query string.
+1. **Starting URL is resolvable** — if the `Given` clause says the user is on a named page, that page's URL must appear in the `h2. Page URLs` section (this page, previous page, next page, content link or browser back redirect bullet). Flag it if the URL cannot be determined from the URLs section alone.
+2. **Outcome URL is resolvable** — if the `Then` clause says the user is taken to another page, that destination must also appear in the URLs section. Flag any `Then` step that names a destination whose URL is not listed. This applies to content-link scenarios (`*When* I select the … link`) and browser-back scenarios on a `confirmation page` (`*Then* I am redirected to …`) too, when the destination is a page in this application: it must be listed in the URLs section and named by page title, not by path or URL.
+3. **No application page URLs in ACs** — paths and URLs of pages in this application must not appear in `Given`/`When`/`Then` steps. They belong only in the `h2. Page URLs` section, with the page title mapped to each URL; ACs refer to pages by title. Flag any step containing an application page URL or path and suggest replacing it with the page title (adding the page to the URLs section if missing). **Not affected:** external links (for example a content link to a GOV.UK page), which state their full URL directly in the step and need no URLs-section entry, and prototype links.
+4. **No ambiguous placeholders** — steps must not contain `[url]`, `[page name]`, `[prototype-url]`, or any other unfilled placeholder. Prototype links must be real URLs.
+5. **Error-state ACs link to the prototype error state** — `Then` steps describing an error outcome must link to the prototype URL with `?preview=1&error=<value>` appended — `error=1` for an empty/no-value submission, `error=format` for an invalid-format value (e.g. `[prototype error state|https://…?preview=1&error=1]`). Flag any error-state `Then` step that quotes error text inline or links to the prototype without the query string.
 
 ---
 
@@ -80,9 +90,32 @@ When flagging an overlap, quote both scenario headings plus the step(s) that col
 
 ### Step 3 — Report
 
-Return a structured report with one section per check. For each check, list:
+Use exactly this structure. Omit any section with no findings (don't write "Pass" for it) and list the omitted sections on the last line.
 
-- **Pass** — if no issues found
-- **Finding:** [description] — for each issue, with the relevant excerpt from the ticket
+```
+## <KEY> — <summary>
+Page type: <question | dropout | confirmation page>
 
-End with a one-line overall verdict: **Pass** (no findings) or **Fail** (N findings).
+### Required sections
+- [**Blocker** — ]<element> — <missing or malformed, in a few words>. Suggest: <fix>
+
+### Content strings
+- <scenario or field> — <string quoted inline>. Suggest: link to prototype
+
+### Testability
+- [**Blocker** — ]<Scenario n title> — <why, in a few words>. Suggest: <fix>
+
+### NFRs
+- Missing: <category> — no exclusion note
+
+### Distinctness
+- <Scenario n> / <Scenario m> — <colliding step>. Suggest: <merge / distinguishing condition>
+
+Verdict: <Fail (n blockers) | Pass with comments | Pass>. Nothing to report for: <omitted sections>.
+```
+
+Mark a finding **Blocker** only where a developer or tester cannot work from the story as written (a missing required element, a destination page with no entry in Page URLs, a placeholder, an untestable step, a missing error-state link), and list blockers first within each section. Everything else is untagged.
+
+Verdict: `Fail` if any blockers; `Pass with comments` if findings but no blockers; `Pass` only if there are no findings.
+
+Do not add a summary table, a per-check pass list, or any text beyond this structure. Keep each finding to one line of roughly 20 words or fewer. If a section has more than 10 findings, list the 10 most important and add "+N more".
