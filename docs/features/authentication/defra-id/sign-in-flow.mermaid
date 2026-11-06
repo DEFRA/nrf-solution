@@ -5,10 +5,12 @@ sequenceDiagram
     participant Cache as Session Cache<br/>(server.app.sessionCache)
     participant OIDC as OIDC Discovery<br/>(get-oidc-config.js)
     participant DefraID as Defra ID Provider<br/>(External OIDC)
+    participant Strategy as defra-session scheme<br/>(defra-identity.js)
+    participant Backend as nrf-backend
 
     %% Signed-out GET for a protected route (redirect-to-sign-in.js onPreHandler)
-    Browser->>Ctrl: GET /request-to-use/enter-address (signed out)
-    Ctrl->>Yar: set redirectTo = /request-to-use/enter-address
+    Browser->>Ctrl: GET /profile (signed out)
+    Ctrl->>Yar: set redirectTo = /profile
     Ctrl-->>Browser: 302 to /auth/sign-in
 
     %% Start OAuth (hand-rolled authorize redirect)
@@ -37,3 +39,11 @@ sequenceDiagram
     Ctrl->>Yar: set sessionId
     Ctrl->>Yar: get + clear redirectTo
     Ctrl-->>Browser: 302 to getSafeRedirect(redirectTo or start page)
+
+    %% First authenticated request after sign-in (defra-identity.js authenticate)
+    Browser->>Strategy: GET /profile (authenticated)
+    Strategy->>Cache: get(sessionId) -> userSession
+    Note over Strategy,Backend: fire-and-forget (not awaited),<br/>only if userSession.userSaved is not set
+    Strategy->>Backend: PATCH /users<br/>{ defraId, email, firstName, lastName,<br/>organisationDefraId?, organisationName?,<br/>relationshipType? }
+    Backend-->>Strategy: 204 No Content
+    Strategy->>Cache: set(sessionId, userSession with userSaved = true)
