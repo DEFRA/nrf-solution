@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant Browser
+    participant Ctrl as Check your answers POST<br/>(controller-post.js)
+    participant Auth as Auth Controller<br/>(auth/controller.js)
+    participant Yar as Yar Session
+    participant DefraID as Defra ID Provider<br/>(External OIDC)
+
+    Browser->>Ctrl: POST /request-to-use/check-your-answers
+    Ctrl->>Yar: get submitReauth (not verified)
+    Ctrl->>Yar: set submitReauth = pending, redirectTo = /request-to-use/check-your-answers
+    Ctrl-->>Browser: 303 to /auth/sign-in?prompt=none
+
+    Browser->>Auth: GET /auth/sign-in?prompt=none
+    Auth->>Yar: set oauth_state
+    Auth-->>Browser: 302 to authorization_endpoint (prompt=none)
+    Browser->>DefraID: GET authorization_endpoint
+
+    alt "Still signed in to Defra ID"
+        DefraID-->>Browser: 302 to /login/return?code&state
+        Browser->>Auth: GET /login/return
+        Auth->>Yar: submitReauth = verified
+        Auth-->>Browser: 302 to redirectTo (check your answers)
+    else "Signed out of Defra ID elsewhere"
+        DefraID-->>Browser: 302 to /login/return?error=interaction_required&state
+        Browser->>Auth: GET /login/return
+        Auth->>Yar: verify state, clear oauth_state (submitReauth stays pending)
+        Auth-->>Browser: 302 to /auth/sign-in
+        Note over Browser,DefraID: Normal sign-in, then /login/return as above
+    end
+
+    Browser->>Ctrl: POST /request-to-use/check-your-answers
+    Ctrl->>Yar: get + clear submitReauth (verified)
+    Ctrl-->>Browser: 303 to /request-to-use/confirmation

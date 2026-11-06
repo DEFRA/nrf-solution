@@ -24,6 +24,7 @@ browser only holds an opaque session id.
 | `frontend/src/server/auth/get-defra-account-url.js` | Builds the absolute URL of the user's Defra ID account page on `defraId.baseUrl`                                          |
 | `frontend/src/server/auth/get-oidc-config.js`       | Fetches OIDC discovery doc from `defraId.baseUrl` + `defraId.wellKnownPath`, memoised in-process (fetched once per process on first use, not per sign-in) |
 | `frontend/src/server/auth/get-safe-redirect.js`     | Prevents open-redirect on post-login return                                                                              |
+| `frontend/src/server/auth/submit-reauth.js`         | One-shot `submitReauth` Yar flag and helpers for the Defra ID check before a submit (see [Re-checking Defra ID on submit](#re-checking-defra-id-on-submit)) |
 | `frontend/src/server/auth/redirect-to-sign-in.js`   | `onPreHandler` extension: sends signed-out GETs for protected routes to `/auth/sign-in`, remembering the requested path         |
 | `frontend/src/server/common/helpers/session-cache/` | Yar server-side cache (Redis prod / memory local)                                                                        |
 | `frontend/src/config/config.js`                     | `defraId.*` and `session.*` config                                                                                       |
@@ -65,7 +66,7 @@ are captured, and the `/auth/*` routes are excluded so a signed-out request for 
 
 | Route                     | Auth            | Purpose                                                                    |
 | ------------------------- | --------------- | -------------------------------------------------------------------------- |
-| `GET /auth/sign-in`       | `false`         | Build authorization URL, store CSRF `state` in Yar, 302 to Defra ID        |
+| `GET /auth/sign-in`       | `false`         | Build authorization URL, store CSRF `state` in Yar, 302 to Defra ID. `?prompt=none` makes it a silent check that never shows a Defra ID page |
 | `GET /login/return`       | `false`         | OAuth callback: verify `state`, exchange `code` for tokens, create session. Failures render `auth/sign-in-error.njk` with a 400 (OAuth error, bad state, missing code) or 500 (token exchange failed) |
 | `GET /auth/change-organisation` | `false`   | Store the safe `redirectTo` query value in Yar, 302 to `/auth/sign-in?change-organisation=true`. Sign-in then adds `forceReselection=true` so Defra ID shows the organisation picker again |
 | `GET /auth/sign-out`      | `requireAuth`   | Drop session from cache, clear Yar, 302 to Defra ID `end_session_endpoint` with `id_token_hint` |
@@ -74,7 +75,7 @@ are captured, and the `/auth/*` routes are excluded so a signed-out request for 
 ## Signing out
 
 Signing out fully logs the user out of Defra ID (B2C), not just the local session. The
-"Sign out" link (in the service navigation when signed in, and on the profile page) is a plain link to `GET /auth/sign-out`. That handler
+"Sign out" link (in the service navigation when signed in, on the enter address page and the request to use pages after it, not on earlier pages; see `buildNavigation`, and on the profile page) is a plain link to `GET /auth/sign-out`. That handler
 (`signOutController`) drops the session from the cache, clears Yar, then **302-redirects the
 browser to the OIDC `end_session_endpoint`** (from the discovery document) with three query
 parameters:
@@ -103,6 +104,23 @@ is blocked mid-chain. A top-level redirect is not a form submission, so `form-ac
 apply. The trade-off is that `id_token_hint` rides in the URL (B2C supports GET sign-out; the
 id token is small enough to fit comfortably).
 
+## Re-checking Defra ID on submit
+
+A user can sign out of Defra ID in another tab while their local session is still valid, and nothing
+else would notice. So `POST /request-to-use/check-your-answers` confirms with Defra ID before it submits:
+
+1. With no passed check, the POST sets `submitReauth = pending` and `redirectTo` (check your answers) in Yar, then
+   303-redirects to `/auth/sign-in?prompt=none`.
+2. `prompt=none` asks Defra ID to answer without showing a page. If the user is still signed in, `/login/return`
+   gets a code as normal, sets `submitReauth = verified` and returns to check your answers.
+3. If not, Defra ID returns `error=interaction_required` (AADB2C90077). While `submitReauth` is `pending` and the
+   `state` matches, `/login/return` redirects to a normal `/auth/sign-in`, whose successful return also sets `verified` and
+   goes back to check your answers.
+4. The user then submits again. The POST consumes `verified` (one use) and submits.
+
+A second submit repeats the check. Any other OAuth error still shows the sign-in error page. See
+[submit-reauth-flow.mermaid](./submit-reauth-flow.mermaid).
+
 ## Sessions, tokens & cookies
 
 - **Session store:** `server.app.sessionCache` (Catbox, segment `sessions`, 24h TTL). Holds the
@@ -111,7 +129,7 @@ id token is small enough to fit comfortably).
   `profile.organisation` is derived from the token by `getOrganisationFromToken`.
   Once the profile has been synced to nrf-backend, `userSaved: true` is added (see below).
 - **Yar cookie:** server-side backed (`maxCookieSize: 0`), `httpOnly`, `SameSite=Lax`. Stores only
-  `sessionId`, plus transient `oauth_state`, `signout_state` and `redirectTo`. Default 24h TTL
+  `sessionId`, plus transient `oauth_state`, `signout_state`, `redirectTo` and `submitReauth` (`pending` or `verified`, see above). Default 24h TTL
   (`session.cookie.ttl`).
 - **Token refresh:** on every request that carries a session (the scheme runs on all routes in `try` mode) the access token is decoded and time-checked
   (60s skew). If expired and `defraId.refreshTokens` is on, a `refresh_token` grant is made and the
@@ -140,6 +158,7 @@ row and the `user_organisations` link. See [sign-in-flow.mermaid](./sign-in-flow
 - [Sign in flow](./sign-in-flow.mermaid)
 - [Token refresh flow](./token-refresh-flow.mermaid)
 - [Sign out flow](./sign-out-flow.mermaid)
+- [Submit re-check flow](./submit-reauth-flow.mermaid)
 
 ## Config (`defraId.*`)
 
