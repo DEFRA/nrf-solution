@@ -15,9 +15,9 @@ Browser & device compatibility and Page load performance exist in the guidance i
 
 ## Page types
 
-For a `question page` these NFRs apply:
+For a `question page` or `check your answers page` (which posts a form) these NFRs apply:
 - Accessibility
 - Security
 
-For a `dropout page` or `confirmation page` these NFRs apply (no form, so Security is not relevant):
+For a `content page`, `dropout page` or `confirmation page` these NFRs apply (no form, so Security is not relevant):
 - Accessibility
