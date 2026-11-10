@@ -93,7 +93,7 @@ All backend HTTP calls **must** go through a service module — never call `@hap
 
 - In source code, always use `statusCodes.<name>` rather than literal numbers — this applies to all HTTP status codes, including 4xx and 5xx (e.g. `statusCodes.tooManyRequests` not `429`, `statusCodes.notFound` not `404`)
 - Test files are the exception: assert literal status codes (`expect(response.statusCode).toBe(303)`), not constants — see [tests.md](./tests.md#constants-vs-literals-in-expectations). Constants are still fine for stubbing response statuses as test input
-- If a needed code is missing from the constants object (e.g. `found: 302`), add it there rather than falling back to a literal
+- If a needed code is missing from the constants object (e.g. `conflict: 409`), add it to the shared `statusCodes` map in `nrf-library`, bump the library version and update the dependency in each consuming repo. Never add status codes to an individual repo's local constants, as the repos' maps then drift apart
 - Import `statusCodes` from `@defra/cdp-validation-kit` if it is available as a dependency: `import { statusCodes } from '@defra/cdp-validation-kit'`. If not available, use the local `src/server/common/constants/status-codes.js` copy. Do not duplicate status code values inline.
 
 ## Hapi route & controller conventions
