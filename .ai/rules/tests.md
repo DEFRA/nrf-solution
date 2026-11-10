@@ -49,6 +49,7 @@
 ## Testing DOM / HTML
 
 - DOM testing library is used for querying the DOM, prefer that to native querySelector as it enables finding elements by ARIA role or associated label so builds in accessibility checks, for free
+- Never construct a `JSDOM` in a test (`new JSDOM(response.result)`) or parse `response.result` yourself. `loadPage` already returns a `document` you can query with Testing Library, so use it for every UI test. If a test needs something `loadPage` doesn't return, such as the session cookie for a second request, extend `loadPage` (as admin-frontend's `loadPageWithCookie` does) rather than dropping to raw JSDOM. When reviewing, flag any `JSDOM` import in a `*.test.js` file
 - Query by role, label or text (`getByRole`, `getByLabelText`, `getByText`), not by CSS class. Do not use `querySelector('.govuk-...')` to find components such as warning text or inset text: match on their visible text instead.
 - Use `toBeInTheDocument()` (from `@testing-library/jest-dom`) rather than `toBeTruthy()` for DOM presence assertions — `getByTestId` etc. throw when absent, so `toBeTruthy()` is always true for present elements and adds no assertion value
 
