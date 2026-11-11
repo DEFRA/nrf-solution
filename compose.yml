@@ -365,10 +365,12 @@ services:
       SESSION_COOKIE_SECURE: 'false'
       NRF_BACKEND_API_URL: http://backend:3001
       NRF_FRONTEND_API_URL: http://frontend:3000
+      NRF_IMPACT_ASSESSOR_API_URL: http://impact-assessor:8085
       HTTP_PROXY: http://squid:3128
       # Service-to-service API keys (local dev only; real values come from CDP secrets)
       BACKEND_API_KEY: local-dev-backend-key
       FRONTEND_API_KEY: local-dev-frontend-key
+      IMPACT_ASSESSOR_API_KEY: local-dev-impact-assessor-key
       # Auth bypass for local dev — skips OIDC entirely
       DISABLE_AUTH: true
     volumes:
