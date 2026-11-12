@@ -186,7 +186,7 @@ Prototype URLs for related pages follow `.../handoffs/<prototype-name>/latest/<s
 
 ## Create or update the ticket
 
-- **No ticket number:** use `create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the user's, else the epic found on the parent feature page) and `--labels` if given. The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
+- **No ticket number:** use `create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the user's, else the epic found on the parent feature page) and `--labels` if given, and always `--sprint Sausage` (new tickets only; an updated ticket keeps its sprint). The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
 - **Ticket number given:** pipe the description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Keep the existing summary, parent and labels (carry over an existing Feature specification line too). Carry over only Out of scope items, NFRs and ticket links from the old description; everything else it held (Notes, Context, Testing notes, Given/When/Then ACs) is dropped. Name the dropped content in the comment.
 
 If a script fails for any reason, stop and report the exact error; don't work around it.
