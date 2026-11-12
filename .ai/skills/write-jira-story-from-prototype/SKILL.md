@@ -21,6 +21,7 @@ You write a short, scannable Jira story for one journey page, by exploring its l
 1. **Prototype URL** (required) - the prototype page being created or altered.
 2. **Jira ticket number** (optional), e.g. `NRF2-1381` - an existing ticket to update rather than a new one to create.
 3. **Parent key and labels** (optional) - applied when creating a ticket.
+4. **Parent feature Confluence page** (optional second parameter, URL or page ID) - the feature spec the page belongs to. Used to link the ticket and the page to each other, and to find the epic (see [Parent feature page](#parent-feature-page)).
 
 The user may also say what is changing if the story alters an existing page (e.g. "add back links"), and may supply Out of scope items, a confirmation page's browser-back destination, and extra entry points.
 
@@ -35,6 +36,14 @@ The user may also say what is changing if the story alters an existing page (e.g
 5. **Create or update the ticket** (see [Create or update](#create-or-update-the-ticket)).
 6. **Review** the ticket, fixing findings once.
 7. **Report.**
+
+## Parent feature page
+
+Only when a Confluence page was supplied.
+
+1. **Before drafting**, fetch it with `node .ai/skills/tools/confluence/page.mjs PAGE json` and look in the body for a Jira epic link (a `/browse/NRF2-123` URL or a Jira issue macro). If exactly one epic is found, use its key as `--parent` when creating (an explicit parent from the user wins). If none or several are found, don't guess: create without a parent and list it in your report. Use the page only for this; don't mine it for story content.
+2. **Description:** add a final line to the description, after Non-functional requirements: `*Feature specification*: [+<page title>+|<page URL>]` (page URL without tracking parameters). Skip it if the description already links the page.
+3. **After creating or updating the ticket**, write the ticket link onto the page with `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE JIRA_KEY JIRA_URL`, unless the page already links that key. If the script fails, stop and report the exact error.
 
 ## Structure
 
@@ -58,6 +67,8 @@ Sections appear in this order. User story, Acceptance criteria, Page URLs and No
 3. **Page URLs** - always present. `h2. Page URLs`, then a two-column table: page title, URL. No prototype column (prototype links belong in the ACs). The page being created or altered is always the first row, followed by every other page named in an AC. Every page named in an AC appears here; every other row is the current page.
 4. **Out of scope** - leave out by default. It can't be inferred from a prototype. Only include it if the user supplies content (naming the owning ticket's key where another ticket owns an item), or the existing ticket already has it.
 5. **Non-functional requirements** - `h2. Non-functional requirements`, always present, never empty. One bullet per applicable category, linked to its guidance page, using [non-functional requirements](../../../docs/ai/non-functional-requirements.md). Start from the categories mapped to the page type in that doc; skip a category only when it clearly doesn't apply, and mention any you excluded in your report. Never list Browser & device compatibility or Page load performance. Security only where the page posts a form (question and check your answers pages), not for content, dropout or confirmation pages. Don't fetch the guidance pages; the category name is enough.
+
+6. **Feature specification** - only when a parent feature page was supplied (see [Parent feature page](#parent-feature-page)).
 
 Do not add: Testing notes, Notes, Context, "Generated from", a separate Prototype line, or Given/When/Then.
 
@@ -91,6 +102,7 @@ A bare external URL in an AC is written as `[+url+|url]`.
 - Each AC states one behaviour. No "or" joining pages or outcomes, no slashes in place of a word, no ambiguous "it". No blank "valid" - say what valid means if it matters.
 - Every AC names where a tester sees the result (a page, or its content via the prototype link), not just "is handled".
 - Don't write ACs for behaviour that belongs to a different page or ticket. In particular, for a back link, the AC is only the destination; what the destination page then shows (e.g. restoring a saved answer) is out of scope.
+- A link whose prototype href is `#` (a placeholder) still gets its AC, in the normal position for its type. Say the destination is not yet defined, e.g. `*Learn more link:* Not yet defined: the link currently goes nowhere (placeholder `#` in the prototype).` Don't invent a destination. List each one as an open question in your report.
 - Include a prototype link in an AC wherever a tester needs to see the content (page content, error states). Destination pages don't need one just to be navigated to. Never add prototype links to Page URLs.
 - Use one term consistently for each domain concept, matching the prototype.
 
@@ -144,7 +156,7 @@ For an altered page, include only the scenarios that the change affects.
 
 Use `browse-prototype` for navigation and password handling. In one browser session:
 
-1. **This page:** capture the h1 (it names the story and the Page URLs row), and determine the page type. For a check your answers page, list each summary row and its change link. Note every content link in the body, where it sits if that affects finding it (e.g. inside a details component), and its destination. A destination in this application is opened to capture its h1; an external one is recorded as a full URL.
+1. **This page:** capture the h1 (it names the story and the Page URLs row), and determine the page type. For a check your answers page, list each summary row and its change link. Note every content link in the body, including those with a `#` href, where it sits if that affects finding it (e.g. inside a details component), and its destination. A destination in this application is opened to capture its h1; an external one is recorded as a full URL.
 2. **Back link:** (all types except confirmation) if present, click it and capture the h1 of the page you land on. If the page can be reached from several places (the user told you, or the prototype shows it), repeat via each entry point. Never guess an entry point you haven't seen. For a confirmation page, confirm there is no back link and note it in the report if there is.
 3. **Entry points:** (confirmation page) submit a valid value on each page that leads here, and confirm you land on this page.
 4. **Next pages:** (question, content and check your answers pages) for a form, submit a valid value; otherwise just follow Continue/submit; capture the h1. For radios, repeat for every option, returning to the page each time. For checkboxes or conditional reveals, test the combinations that route differently. If a destination redirects to a sign-in, record it as unverified rather than guessing.
@@ -174,8 +186,8 @@ Prototype URLs for related pages follow `.../handoffs/<prototype-name>/latest/<s
 
 ## Create or update the ticket
 
-- **No ticket number:** use `create-jira-ticket` with `--summary` and `--description`, plus `--parent` and `--labels` if the user gave them. The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". There is no Confluence spec to write a link back to.
-- **Ticket number given:** pipe the description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Keep the existing summary, parent and labels. Carry over only Out of scope items, NFRs and ticket links from the old description; everything else it held (Notes, Context, Testing notes, Given/When/Then ACs) is dropped. Name the dropped content in the comment.
+- **No ticket number:** use `create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the user's, else the epic found on the parent feature page) and `--labels` if given. The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
+- **Ticket number given:** pipe the description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Keep the existing summary, parent and labels (carry over an existing Feature specification line too). Carry over only Out of scope items, NFRs and ticket links from the old description; everything else it held (Notes, Context, Testing notes, Given/When/Then ACs) is dropped. Name the dropped content in the comment.
 
 If a script fails for any reason, stop and report the exact error; don't work around it.
 
@@ -190,5 +202,5 @@ Return the ticket key and URL, then in a few short lines:
 - the reviewer outcome (Pass, or how many findings were fixed and any that remain);
 - routes that were defaulted from the prototype;
 - assumptions made (user story, Show saved selection);
-- anything you couldn't verify (unreached error states, unchecked entry points, links needing sign-in, links that don't open in a new tab), and open questions (e.g. a confirmation page's browser-back destination);
+- anything you couldn't verify (unreached error states, unchecked entry points, links needing sign-in, links that don't open in a new tab), and open questions (e.g. a confirmation page's browser-back destination, links with a `#` placeholder href, an epic that couldn't be determined from the parent feature page);
 - NFR categories you excluded.
