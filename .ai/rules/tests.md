@@ -34,6 +34,8 @@
 
 - When a test needs a stable session ID (e.g. for rate limiting or any behaviour keyed on session), use `withValidQuoteSession` to prime a real server-side session and obtain a cookie. Pass that cookie to all subsequent `server.inject` calls so Yar reuses the same session ID across requests. Never hand-roll session priming via a `/__test-setup-*` helper route or by mocking session reads — drive the real routes to build session state.
 
+- To seed the request to use session on a `setupTestServer` server (e.g. to test both the seeded and the no-session paths in one file), use `seedRequestToUseSessionWith` from `src/test-utils/setup-seeded-request-to-use-server.js`. Don't register a hand-rolled `onPostHandler` in each test file.
+
 ## Session guards
 
 - When a path is added to a session guard's path set, extend that guard helper's own unit test as well as the page test.
@@ -51,6 +53,7 @@
 - DOM testing library is used for querying the DOM, prefer that to native querySelector as it enables finding elements by ARIA role or associated label so builds in accessibility checks, for free
 - Never construct a `JSDOM` in a test (`new JSDOM(response.result)`) or parse `response.result` yourself. `loadPage` already returns a `document` you can query with Testing Library, so use it for every UI test. If a test needs something `loadPage` doesn't return, such as the session cookie for a second request, extend `loadPage` (as admin-frontend's `loadPageWithCookie` does) rather than dropping to raw JSDOM. When reviewing, flag any `JSDOM` import in a `*.test.js` file
 - Query by role, label or text (`getByRole`, `getByLabelText`, `getByText`), not by CSS class. Do not use `querySelector('.govuk-...')` to find components such as warning text or inset text: match on their visible text instead.
+- Component tests: `renderComponent` returns a cheerio object, which the DOM testing library can't query. Wrap its output (`new JSDOM($.html()).window.document.body`) and query it with `within(...)` rather than cheerio selectors like `:contains`
 - Use `toBeInTheDocument()` (from `@testing-library/jest-dom`) rather than `toBeTruthy()` for DOM presence assertions — `getByTestId` etc. throw when absent, so `toBeTruthy()` is always true for present elements and adds no assertion value
 
 ## Test readability
@@ -78,7 +81,12 @@
 - Don't take an *expected output* from the same constant the code under test reads — if the constant's value changes, code and test change together and the test still passes. Assert a literal when the value is a contract that outlives the code: something persisted (session values like the `whatWouldYouLikeToDo` journey), sent to another service, or shown to the user.
 - Using a constant as *test input* (fixtures, setup) is fine either way: a stale literal input makes the test fail loudly, not pass falsely.
 - **Never import `routePath` (or any route constant) into a test**, including for the page under test, its redirect targets, and lists of guarded paths. Declare the literal path once as a local `const` at the top of the test file (e.g. `const pagePath = '/request-to-use/defra-account-individual'`) so a wrong change to the route fails the test.
+- In an acceptance test (`page.test.js`), never import the page's own `getViewModel` (or any code under test) to compute the expected heading, title or link. Assert the literal text the user sees; otherwise a wrong change to the view model passes silently.
 - Assert literal HTTP status codes and route paths, not constants: `expect(response.statusCode).toBe(302)` and `expect(response.headers.location).toBe('/manage/start-page')`, not `statusCodes.found` or an imported `routePath`. A constant shared with the code under test lets a wrong change pass silently (false positive). Do not flag literal status codes or paths in test expectations in review.
+
+## Dates and times in tests
+
+- Don't hard-code an expected clock time that depends on the machine's timezone (e.g. `15:30` for `14:30Z` because of BST). The npm test scripts run with `TZ=UTC`, so a local-time filter renders the UTC time. Run the test via its npm script (with that `TZ`) before reporting it passing.
 
 ## Test performance
 
