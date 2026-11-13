@@ -118,6 +118,13 @@ id token is small enough to fit comfortably).
   new tokens are persisted transparently. If refresh is off or fails, the session is dropped and the
   user is unauthenticated. See [token-refresh-flow.mermaid](./token-refresh-flow.mermaid).
 
+## Switching organisation
+
+`GET /auth/change-organisation` runs a normal sign-in with `forceReselection=true`. In the callback, if the
+previous session's `currentRelationshipId` differs from the new token's, the request to use `address`,
+`signin.organisation` and `signin.actualUserType` and the validation flash are cleared (`signin.intendedUserType`
+is kept). Choosing the same account clears nothing. The previous session is dropped from the cache either way.
+
 ## Syncing the user to nrf-backend
 
 On every request that carries a session, if the cached session has no `userSaved` flag yet, the
