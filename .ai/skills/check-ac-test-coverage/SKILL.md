@@ -1,11 +1,16 @@
 ---
 name: check-ac-test-coverage
-description: Assess whether every acceptance-criteria scenario in a Jira ticket is covered by unit, integration or journey tests, across all submodules (not just one PR). TRIGGER when asked to check, audit or map test coverage against a ticket's ACs.
+description: Assess whether every acceptance-criteria scenario in a Jira ticket (or every story in a Jira epic) is covered by unit, integration or journey tests, across all submodules (not just one PR). TRIGGER when asked to check, audit or map test coverage against a ticket's ACs.
 ---
 
 ## Parameters
 
-`args` is a Jira ticket reference (e.g. `NRF2-1259`) or full URL. If given a URL, take the key from it. Use only the ACs of that ticket; ignore sub-tasks and linked tickets.
+`args` is a Jira ticket or epic reference (e.g. `NRF2-1259`) or full URL. If given a URL, take the key from it.
+
+- **Ticket:** use only the ACs of that ticket; ignore sub-tasks and linked tickets.
+- **Epic:** assess every story in the epic, each against its own ACs, and report one table per story. Ignore sub-tasks and linked tickets of those stories.
+
+Decide which it is in Step 1.
 
 This skill is read-only: do not edit tests, code or the ticket.
 
@@ -18,7 +23,14 @@ Prerequisites:
 
 ### Step 1 — Fetch the ACs
 
-Use `read-jira-ticket`. If there is no `Acceptance criteria` section, stop and tell the user.
+Use `read-jira-ticket` for the reference. If its issue type is `Epic`:
+
+1. Run `node .ai/skills/tools/jira/get-epic-issues.mjs <epic>` to list the child issues. If it fails, stop and report the error.
+2. Skip children that are sub-tasks or epics. Run `read-jira-ticket` on each remaining story.
+3. Run Steps 2–5 once per story. Share implementation searches between stories where they overlap, but keep each story's ACs, evidence and table separate.
+4. A story with no `Acceptance criteria` section is not a reason to stop: list it in the final summary as "no ACs" and move on.
+
+Otherwise it is a single ticket. If there is no `Acceptance criteria` section, stop and tell the user.
 
 List every scenario as `AC1…ACn` with its heading and its Given / When / Then. Treat each distinct `Then` assertion as something to cover.
 
@@ -52,12 +64,15 @@ Read about 3 tests per AC, more if the AC has several distinct Thens (about 3 pe
 
 ### Step 5 — Report
 
-Write the report in the chat; do not create a file. A matrix, one row per AC:
+Write the report in the chat; do not create a file. For an epic, give each story its own heading (`### NRF2-123 — summary`) and its own table, and put the count line under each table. A matrix, one row per AC:
 
 | AC | Scenario | Status | Evidence (`file:line`, layer) | Gap / note | Confidence |
 |----|----------|--------|-------------------------------|------------|------------|
 
-- Evidence: list every test that asserts a Then, separated by semicolons, each as `file:line (layer)`.
+- Evidence: list every test that asserts a Then, separated by semicolons, each as `repo/path/to/file:line (level)`.
+  - Prefix the path with the repo it belongs to: `frontend`, `backend`, `admin-frontend`, `impact-assessor` or `journey-tests`.
+  - `level` is one of `unit`, `integration` or `journey`. Use it as the only annotation: no explanation in brackets or after the file name. Put any explanation in Gap / note.
+  - Example: `frontend/src/server/quote/email/controller.test.js:42 (integration); journey-tests/specs/quote/email.spec.js:15 (journey)`
 - Confidence: High, Medium or Low. Use Low where matching relied on inference or the read cap, and say why in Gap / note.
 
 Status:
@@ -82,7 +97,9 @@ Rules for applying this:
 - A multi-page AC whose hops are each asserted but whose chained outcome (e.g. the saved answer after going back) is not asserted anywhere is Partial. Name the missing chained integration test.
 - Do not recommend a journey test that would only repeat an assertion already made at a lower layer, however convincing the end-to-end framing.
 
-Finish with:
+Finish each table (each story, for an epic) with:
 1. A one-line count (`n Covered, n Partial, n Not covered, n Manual-only`).
 2. The submodules searched with the branch checked out in each, and the searches or queries used, so the user can rerun them.
 3. A caveat that matching is a judgement from reading assertions, not measured coverage, and that tests not reachable via the searches above may have been missed. Name every AC with Low confidence.
+
+For an epic, end with a one-line-per-story summary (story key, counts, or "no ACs"), then one combined set of items 2 and 3 rather than repeating them per story.
