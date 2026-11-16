@@ -105,8 +105,6 @@ If an AC is about landing on another page (e.g. "I am taken to the enter email p
 
 This only covers the destination page's existence. Content, errors and other behaviour on the destination page are still tested when the page loads, and a URL that doesn't match the AC is still a fail.
 
-Don't list these in the Jira comment as not passing, since they count as passed.
-
 ## Error monitoring
 
 After each scenario, check for client-side errors using `mcp__playwright__browser_console_messages` and `mcp__playwright__browser_network_requests`. Flag in the Notes column:
@@ -125,14 +123,3 @@ Results table only — no preamble. List bugs/gaps below the table.
 | Scenario | Description | Result                                            | Notes |
 | -------- | ----------- | ------------------------------------------------- | ----- |
 | 1        | ...         | ✅ Pass / ❌ Fail / ⚠️ Partial / 🔍 Code-verified | ...   |
-
-## Jira comment
-
-Only add a Jira comment if the starting URL is a deployed environment. If it is `localhost` (local development), skip this section and don't post anything to the ticket.
-
-After the results table, add a comment to the Jira ticket confirming the browser test was run. Keep it concise: plain text, no table, no per-scenario detail for passing scenarios.
-
-- All scenarios passed: `Browser tested against <url> on <date>: all <N> acceptance criteria passed.`
-- Otherwise: `Browser tested against <url> on <date>: <P> of <N> acceptance criteria passed. Did not pass:` followed by one line per failed or partial scenario, `- Scenario <n> - <title>: <short reason>`.
-
-Always start the comment with `Browser tested against` and post it with `echo "<comment>" | node .ai/skills/tools/jira/add-comment.mjs <ticket> --replace-prefix "Browser tested against" -`. If this is a re-run, that replaces your earlier browser-test comment on the ticket rather than adding another (and removes older duplicates), so the ticket only ever carries the latest result. Don't mention earlier runs in the new comment. If the script fails, report the exact error and don't retry or call the Jira API directly.
