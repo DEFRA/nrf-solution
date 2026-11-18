@@ -134,8 +134,8 @@ A page's `routes.js` only wires things together: imports, the OpenAPI block, and
 - To protect a frontend route with Defra ID, add `rules: { requireAuth: true }` to the route (see `auth/auth-rules.js`). Never set `auth: 'defra-session'` in a page's routes.
 - To branch on whether the user is signed in (e.g. skip a page for signed-in users), check `request.auth.credentials`, as `redirect-to-sign-in.js` does. Routes default to auth mode `try`, where `request.auth.isAuthenticated` is true even for a signed-out request, so it must not be used.
 - Protected pages still need `page.test.js` coverage of both the signed-out redirect to `/auth/sign-in` and the signed-in render.
-- A POST route that requires sign-in must be covered by the signed-out redirect too: `redirectToSignIn` sends a signed-out POST to `/auth/sign-in` (303), and the page returns to its own path as a GET, so the form and its GET page must share a path.
-- Every request to use page from the enter address page onwards must be added to `signOutPaths` in `src/config/nunjucks/context/build-navigation.js`, with a case in its test, so the sign out link shows on it. Pages are easy to leave out because the list is maintained by hand. When adding a page to the journey, check every page between enter address and confirmation (review quote details, accept levy, delete quote), not just the one you are adding. Pages under `/request-to-use/change/` are covered by a prefix check, so need no entry.
+- A POST route that requires sign-in must be covered by the signed-out redirect too: `redirectToSignIn` sends a signed-out POST to `/auth/sign-in` (303), and the page returns to its own path as a GET, so the form and its GET page must share a path. The page's own `page.test.js` must assert the signed-out POST returns 303 to `/auth/sign-in`.
+- The sign out link shows only on the enter address page and the request to use pages after it. When adding a page at or after the enter address page, add it to `signOutPaths` in `src/config/nunjucks/context/build-navigation.js`, with a case in its test. Pages before the enter address page must not be added.
 
 ### Error pages
 
