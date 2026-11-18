@@ -4,9 +4,9 @@ description: EXPERIMENTAL. Creates or updates a concise Jira story (single-line 
 allowed-tools: Read, Bash
 model: inherit
 skills:
-  - browse-prototype
-  - read-jira-ticket
-  - create-jira-ticket
+  - util-browse-prototype
+  - util-read-jira-ticket
+  - util-create-jira-ticket
   - review-jira-story-from-prototype
 ---
 
@@ -29,7 +29,7 @@ The user may also say what is changing if the story alters an existing page (e.g
 
 ## Workflow
 
-1. **Read the ticket** (only with a ticket number): use `read-jira-ticket` on that ticket alone. Treat the story as self-contained: do not read linked, referenced or sibling tickets.
+1. **Read the ticket** (only with a ticket number): use `util-read-jira-ticket` on that ticket alone. Treat the story as self-contained: do not read linked, referenced or sibling tickets.
 2. **Explore the prototype** (see [Exploring the prototype](#exploring-the-prototype)).
 3. **Draft the description** in Jira wiki markup (see [Structure](#structure) and [Jira markup](#jira-markup)).
 4. **Self-check** (see [Self-check](#self-check-before-creating-or-updating)).
@@ -155,7 +155,7 @@ For an altered page, include only the scenarios that the change affects.
 
 ## Exploring the prototype
 
-Use `browse-prototype` for navigation and password handling. In one browser session:
+Use `util-browse-prototype` for navigation and password handling. In one browser session:
 
 1. **This page:** capture the h1 (it names the story and the Page URLs row), and determine the page type. For a check your answers page, list each summary row and its change link. Note every content link in the body, including those with a `#` href, where it sits if that affects finding it (e.g. inside a details component), and its destination. A destination in this application is opened to capture its h1; an external one is recorded as a full URL.
 2. **Back link:** (all types except confirmation) if present, click it and capture the h1 of the page you land on. If the page can be reached from several places (the user told you, or the prototype shows it), repeat via each entry point. Never guess an entry point you haven't seen. For a confirmation page, confirm there is no back link and note it in the report if there is.
@@ -188,7 +188,7 @@ Prototype URLs for related pages follow `.../handoffs/<prototype-name>/latest/<s
 
 ## Create or update the ticket
 
-- **No ticket number:** use `create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the user's, else the epic found on the parent feature page) and `--labels` if given, and always `--sprint Sausage` (new tickets only; an updated ticket keeps its sprint). The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
+- **No ticket number:** use `util-create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the user's, else the epic found on the parent feature page) and `--labels` if given, and always `--sprint Sausage` (new tickets only; an updated ticket keeps its sprint). The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
 - **Ticket number given:** pipe the description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Keep the existing summary, parent and labels (carry over an existing Feature specification line too). Carry over only Out of scope items, NFRs and ticket links from the old description; everything else it held (Notes, Context, Testing notes, Given/When/Then ACs) is dropped. Name the dropped content in the comment.
 
 If a script fails for any reason, stop and report the exact error; don't work around it.

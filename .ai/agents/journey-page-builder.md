@@ -17,7 +17,7 @@ You do not keep agent memory. Anything worth carrying forward to future page bui
 
 One parameter: the **Jira ticket key** of a page story, e.g. `NRF2-1262`. If it is missing, stop and ask.
 
-Fetch the ticket with the `read-jira-ticket` skill (it runs `node .ai/skills/tools/jira/ticket.mjs <KEY>`). A ticket is a **page story** if its description has a `*Page type*:` line (`question page`, `dropout page` or `confirmation page` — the `journey-page` skill doesn't yet build a `content page` or `check your answers page`; see the Structure section of [write-jira-story-from-prototype](../skills/write-jira-story-from-prototype/SKILL.md)). **If it is not a page story, stop and tell the user this agent only builds journey pages.** If the ACs use Given/When/Then, stop and ask the user to convert the story with `write-jira-story-from-prototype`. The ticket's acceptance criteria (single-line bold-label numbered items, with the prefixes in [jira-story-structure.md](../../docs/ai/jira-story-structure.md)) and its prototype links are the spec.
+Fetch the ticket with the `util-read-jira-ticket` skill (it runs `node .ai/skills/tools/jira/ticket.mjs <KEY>`). A ticket is a **page story** if its description has a `*Page type*:` line (`question page`, `dropout page` or `confirmation page` — the `journey-page` skill doesn't yet build a `content page` or `check your answers page`; see the Structure section of [write-jira-story-from-prototype](../skills/write-jira-story-from-prototype/SKILL.md)). **If it is not a page story, stop and tell the user this agent only builds journey pages.** If the ACs use Given/When/Then, stop and ask the user to convert the story with `write-jira-story-from-prototype`. The ticket's acceptance criteria (single-line bold-label numbered items, with the prefixes in [jira-story-structure.md](../../docs/ai/jira-story-structure.md)) and its prototype links are the spec.
 
 ## Scope
 
@@ -25,7 +25,7 @@ Page construction, form validation and navigation, plus the journey-test updates
 
 ## Prototype access
 
-The prototype is behind a password prompt. Never ask the user for the password: follow Step 1 of the `browse-prototype` skill, which reads it from the `PROTOTYPE_PASSWORD` environment variable (`printenv PROTOTYPE_PASSWORD` via Bash) and types it into the prompt. Only ask the user if that variable is unset. In Stage 1, open the prototype page this way and check its h1 and content against the ticket, rather than reporting it as unread.
+The prototype is behind a password prompt. Never ask the user for the password: follow Step 1 of the `util-browse-prototype` skill, which reads it from the `PROTOTYPE_PASSWORD` environment variable (`printenv PROTOTYPE_PASSWORD` via Bash) and types it into the prompt. Only ask the user if that variable is unset. In Stage 1, open the prototype page this way and check its h1 and content against the ticket, rather than reporting it as unread.
 
 ## Required reading (load before stage 1)
 
@@ -52,15 +52,16 @@ Announce the current stage before starting it. At the end of each stage, summari
 ### Stage 1 — Confirm requirements
 
 1. Read all required context (above).
-2. Assess and report:
+2. **Testability gate (strict).** Before anything else, run the `review-jira-story-from-prototype` skill on the ticket, which applies [ac-testability.md](../../docs/ai/ac-testability.md) to every AC. If it returns any Blocker or any testability finding (untestable, mixed or overlapping ACs, a content or error AC with no prototype link, a page named in an AC with no Page URLs row, no Testing notes for a page behind sign-in), stop and report the findings. Ask the user to fix the ticket first; don't continue to the assessment below, and don't build from a story that fails.
+3. Assess and report:
    - **Acceptance criteria**: clear, implementable, testable? Report any AC whose prefix isn't in the prefix table, as unclassified.
    - **Page**: page type; this page's route and area; previous and next pages (and whether each already exists in `frontend/src/server`); prototype URL (from the `Page content` AC link only, opened per "Prototype access" to confirm the h1) and error state URLs; content links; the `Show saved selection` AC and the `Browser back` AC (out of scope, see Scope).
    - **Blockers** (listed in Step 0 of the `journey-page` skill): the area folder, `index.js` and `controller-get.js` exist; the target folder doesn't already exist; there is at most one previous page. Report any blocker and do not proceed until it is resolved.
    - **Architecture context**: any gaps in `AGENTS.md` that block this work?
-3. Separate your questions into two categories and present them clearly:
+4. Separate your questions into two categories and present them clearly:
    - **Jira ticket gaps** — user-facing behaviour not specified in the ACs. For each, ask the user whether the Jira ticket should be updated to capture the answer before proceeding.
    - **Implementation questions** — technical decisions the ticket and skill don't settle. These do not need to go back to the ticket.
-4. Do not proceed until the user confirms.
+5. Do not proceed until the user confirms.
 
 ### Stage 2 — Prepare branches
 

@@ -1,6 +1,6 @@
 ---
-name: read-confluence-page
-description: Fetch a Confluence page's details (title, space, version, labels, body HTML) by page ID or URL. Use whenever another skill or task needs to read a Confluence page.
+name: util-read-confluence-page
+description: Fetch a Confluence page's details (title, space, version, labels, body HTML) by page ID or URL. Utility skill, designed to be called by other skills; it does no review or other follow-up. Use whenever another skill or task needs to read a Confluence page.
 ---
 
 ## Parameters

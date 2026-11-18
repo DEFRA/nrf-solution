@@ -4,10 +4,10 @@ description: Creates and updates a Jira story for backend, calculation or admin 
 allowed-tools: Read, Bash
 model: inherit
 skills:
-  - read-jira-ticket
-  - create-jira-ticket
-  - read-confluence-page
-  - browse-prototype
+  - util-read-jira-ticket
+  - util-create-jira-ticket
+  - util-read-confluence-page
+  - util-browse-prototype
   - review-jira-story
 ---
 
@@ -33,7 +33,7 @@ Only Confluence pages are supported as a source format. Figma files, Service Blu
 
 ### Step 1 — Read the Confluence spec
 
-Use `read-confluence-page` on the provided URL. Extract:
+Use `util-read-confluence-page` on the provided URL. Extract:
 
 - Feature (link), User need (three lines: "*As a* <user type> / *I want* … / *So that* …")
 - The triggers and behaviour the ticket owns: calculations, defaults, exclusions, timing rules, which values are returned, which date decides a lookup
@@ -47,7 +47,7 @@ Use `read-confluence-page` on the provided URL. Extract:
 
 ### Step 2 — Confirm UI references
 
-Only when the spec names a page or admin screen that an AC will reference. Use `browse-prototype` to:
+Only when the spec names a page or admin screen that an AC will reference. Use `util-browse-prototype` to:
 
 - Confirm its prototype URL path begins with `/handoffs`. If not, stop and alert the user, listing the offending URL — do not draft a ticket against a prototype that isn't dev-ready.
 - Capture its exact h1 — used as the page title in ACs and the Page URLs section, never the spec's wording for it.
@@ -93,7 +93,7 @@ Only when an AC names a page. `h2. Page URLs`, a two-column table (page title, r
 
 ### Step 4 — Create or update the ticket
 
-- **No existing ticket:** use `create-jira-ticket` with `--summary` and `--description`. Then run `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
+- **No existing ticket:** use `util-create-jira-ticket` with `--summary` and `--description`. Then run `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
 - **Existing ticket key found** (from Step 1 or provided by the user): update the description by piping it to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed using `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Do not call `add-jira-link.mjs` — the link is already on the page.
 
 ### Step 5 — Self-check, then review
@@ -129,7 +129,7 @@ Apply these to every ticket.
 - Define each domain term once, in a terminology note, and use it identically everywhere in the ticket and in sibling tickets in the same feature. Check Context bullets, ACs, examples and Out of scope for older or alternative names, and make them match the note.
 
 ### Cross-ticket consistency
-- Before drafting, read the linked, referenced and sibling tickets (`read-jira-ticket`; siblings via `node .ai/skills/tools/jira/get-epic-issues.mjs <PARENT_KEY>`). Check for the same condition with a different outcome, duplicated ACs, and two tickets owning the same table, page or behaviour. Resolve each: say which ticket owns it, and add a Context line where two tickets use similar words for different things (e.g. "history of quote answers" versus "history of levy calculations").
+- Before drafting, read the linked, referenced and sibling tickets (`util-read-jira-ticket`; siblings via `node .ai/skills/tools/jira/get-epic-issues.mjs <PARENT_KEY>`). Check for the same condition with a different outcome, duplicated ACs, and two tickets owning the same table, page or behaviour. Resolve each: say which ticket owns it, and add a Context line where two tickets use similar words for different things (e.g. "history of quote answers" versus "history of levy calculations").
 - Every ticket key mentioned anywhere in the description is a Jira link on the ticket, added once only (no duplicates). Strip tracking parameters from Jira and Confluence URLs.
 - Each out-of-scope item that another ticket owns names that ticket's key. A key in the description must refer to a different ticket from the one being written.
 - When a ticket reuses another's endpoint, calculation or table, name it with its key and link it in Context.
@@ -155,7 +155,7 @@ Steps:
 
 1. Work from the cached category list above — do **not** fetch the guidance index or child pages on every run. The category name is enough to judge relevance in almost every case (Accessibility and Security are self-explanatory for a page with form input). Never list Browser & device compatibility or Page load performance, even if the guidance index shows them.
 2. For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply. Briefly note any category you deliberately excluded so the user can push back.
-3. If a category name is genuinely ambiguous for the ticket in front of you, fetch that one child page via `read-confluence-page` to read the guidance — but do not paste the guidance into the ticket.
+3. If a category name is genuinely ambiguous for the ticket in front of you, fetch that one child page via `util-read-confluence-page` to read the guidance — but do not paste the guidance into the ticket.
 4. In the ticket's `h2. Non-functional requirements` section, list each applicable category as a bullet linking to its Confluence page. Use Jira wiki-markup link syntax, e.g. `* [+Accessibility+|https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6538166273/Page-level+accessibility+guidance]`.
 5. Append any NFRs listed in the spec's own NFRs section as additional bullets. Spec-listed NFRs are additive — they extend the guidance baseline, they don't override it. Include the spec's wording as text (there is no guidance-page link to reference).
 6. List **all** relevant NFRs explicitly in the ticket. Don't skip any on the assumption that "the team always does this" — being explicit is the whole point.

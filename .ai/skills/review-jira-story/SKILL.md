@@ -21,17 +21,17 @@ Prerequisite: `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set. See [atlassian
 
 ### Step 1 — Fetch the ticket
 
-Use `read-jira-ticket` with the ticket key. Work from the raw description text.
+Use `util-read-jira-ticket` with the ticket key. Work from the raw description text.
 
 **If the ticket has no description, stop and alert the user.**
 
-**If the story has a `*Page type*:` line (it's a single journey page), stop and tell the user to use `review-jira-story-from-prototype` instead.**
+**If the story has a `*Page type*:` line (it's a single journey page written from the prototype), don't run these checks: run the `review-jira-story-from-prototype` skill on the same ticket instead, return its report as yours, and stop.**
 
 Note the status, parent key, subtasks and the `Linked Issues` section.
 
 ### Step 2 — Scan related tickets
 
-Fetch with `read-jira-ticket`, in this order, stopping at 8 tickets in total:
+Fetch with `util-read-jira-ticket`, in this order, stopping at 8 tickets in total:
 
 1. Linked issues and subtasks.
 2. Ticket keys mentioned in the description.
@@ -101,7 +101,7 @@ Name the ticket key and the colliding point in one line. Do not report other pro
 Report only if there's a problem, and keep to one line each:
 
 - No user-need statement, no parent, or no numbered bold-label ACs.
-- A `Generated from` Confluence page modified after the ticket's stamped date (possible drift). Fetch it with `read-confluence-page`. If the date can't be read, say so.
+- A `Generated from` Confluence page modified after the ticket's stamped date (possible drift). Fetch it with `util-read-confluence-page`. If the date can't be read, say so.
 - Behaviour in Notes/Context/Out of scope that the story owns but no AC covers, or an AC asserting something stated nowhere else.
 - Out-of-scope items that depend on another ticket but name no ticket or owner.
 - Unresolved questions the ACs depend on (Blocker if the AC can't be tested without the answer).
