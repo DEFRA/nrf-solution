@@ -120,7 +120,7 @@ Close the browser with `mcp__playwright__browser_close` after all scenarios.
 
 ## Output format
 
-Results table only — no preamble. List bugs/gaps below the table.
+In the session output, give the results table only — no preamble. List bugs/gaps below the table. This is separate from the Jira comment below.
 
 | Scenario | Description | Result                                            | Notes |
 | -------- | ----------- | ------------------------------------------------- | ----- |
