@@ -32,9 +32,9 @@ Use `read-jira-ticket` for the reference. If its issue type is `Epic`:
 
 Otherwise it is a single ticket. If there is no `Acceptance criteria` section, stop and tell the user.
 
-List every scenario as `AC1…ACn` with its heading and its Given / When / Then. Treat each distinct `Then` assertion as something to cover.
+List every AC as `AC1…ACn`. Current tickets use the simplified format — a single-line bold-label numbered item (`# *<Prefix>:* <sentence>`) — so the whole sentence is the one assertion to cover; treat the prefix as the heading. Older tickets may still use Given/When/Then: for those, use the heading and the `Then` line(s) as the assertion(s) to cover instead, and treat each distinct `Then` separately.
 
-Mark an AC **manual-only** (not a gap) only if its Then cannot be asserted in code: copy matching a prototype, visual layout, or content taken from a design link. A Then that states concrete content (e.g. "the page shows the heading 'Enter your email'") is automatable, so it is not manual-only.
+Mark an AC **manual-only** (not a gap) only if its assertion cannot be checked in code: copy matching a prototype, visual layout, or content taken from a design link. An assertion that states concrete content (e.g. "the page shows the heading 'Enter your email'") is automatable, so it is not manual-only.
 
 ### Step 2 — Locate the implementation
 
@@ -58,9 +58,9 @@ Use Grep with `output_mode: files_with_matches` first. Do not read test files ye
 
 For each candidate test file, Grep with `output_mode: content` and line numbers for `describe(|it(|test(|def test_` to get titles cheaply. Shortlist titles that plausibly match an AC.
 
-For each shortlisted test, Read only that test's body (use the line number from the Grep as `offset`, with a `limit`); never read whole test files. Judge from the **assertions**, not the title: does it set up the Given, perform the When, and assert the Then? A title that claims coverage with no matching assertion is not coverage.
+For each shortlisted test, Read only that test's body (use the line number from the Grep as `offset`, with a `limit`); never read whole test files. Judge from the **assertions**, not the title: does it set up the trigger and assert the AC's sentence (or, for a Given/When/Then AC, the `Then`)? A title that claims coverage with no matching assertion is not coverage.
 
-Read about 3 tests per AC, more if the AC has several distinct Thens (about 3 per Then). If the cap stops you before every Then is verified, mark the AC Partial and say which Thens were not checked. If more tests exist than the cap allows, pick the one per layer that best matches. Follow the layer order in Test pyramid below.
+Read about 3 tests per AC, more if the AC has several distinct assertions (about 3 per assertion). If the cap stops you before every assertion is verified, mark the AC Partial and say which were not checked. If more tests exist than the cap allows, pick the one per layer that best matches. Follow the layer order in Test pyramid below.
 
 ### Step 5 — Report
 
@@ -69,21 +69,21 @@ Write the report in the chat; do not create a file. For an epic, give each story
 | AC | Scenario | Status | Evidence (`repo/path/to/file:line`, layer) | Gap / note | Confidence |
 |----|----------|--------|-------------------------------|------------|------------|
 
-- Evidence: list every test that asserts a Then, separated by semicolons, each as `repo/path/to/file:line (layer)`.
+- Evidence: list every test that asserts the AC, separated by semicolons, each as `repo/path/to/file:line (layer)`.
   - Prefix the path with the repo it belongs to: `frontend`, `backend`, `admin-frontend`, `impact-assessor` or `journey-tests`.
   - `layer` is one of `unit`, `integration` or `journey`. Use it as the only annotation: no explanation in brackets or after the file name. Put any explanation in Gap / note.
   - Example: `frontend/src/server/quote/email/controller.test.js:42 (integration); journey-tests/specs/quote/email.spec.js:15 (journey)`
 - Confidence: High, Medium or Low. Use Low where matching relied on inference or the read cap, and say why in Gap / note.
 
 Status:
-- **Covered** — each Then is asserted by at least one test.
-- **Partial** — some Thens asserted, or the AC is cross-service and is asserted only with the other service mocked and no journey test (see Test pyramid). Say which part is missing.
+- **Covered** — each assertion is asserted by at least one test.
+- **Partial** — some assertions asserted, or the AC is cross-service and is asserted only with the other service mocked and no journey test (see Test pyramid). Say which part is missing.
 - **Not covered** — no test asserts it.
 - **Manual-only** — not automatable; say why.
 
 #### Test pyramid
 
-Prefer the lowest layer that can genuinely assert the Then. Check unit tests first, then integration, and look at journey tests only if those do not already assert the Then or the AC is cross-service. Journey tests are slow and expensive, so they are the last resort, not the default.
+Prefer the lowest layer that can genuinely assert the AC. Check unit tests first, then integration, and look at journey tests only if those do not already assert the AC or the AC is cross-service. Journey tests are slow and expensive, so they are the last resort, not the default.
 
 - **Unit and integration tests (frontend and backend)** — the default home for validation, view models, handlers, session behaviour, redirects, guards, back links and re-shown answers. The frontend and backend test suites run against a real Redis container and use `server.inject`, so redirects, cookies and session state across several requests can be tested realistically. Persistence, API contracts and data belong in backend integration tests.
 - **Journey tests** — only for behaviour that is cross-service (e.g. a frontend request that reaches the real backend, email delivery, the uploader), needs a real browser (history stack, client-side JavaScript such as the map), or is a genuinely complex multi-step flow that lower layers cannot reproduce.
@@ -91,8 +91,8 @@ Prefer the lowest layer that can genuinely assert the Then. Check unit tests fir
 A scenario that traverses several pages (change links, back links, dropout pages) and then checks a saved session value is not automatically a journey test. If it can be written as a chain of `server.inject` requests carrying the session cookie, assert it as one chained integration test. Per-hop tests of each page do not count as covering the chain. Only if the chain is very complex (many requests, branching state, or hard to set up and read) is a journey test justified instead; say that is the reason.
 
 Rules for applying this:
-- A missing journey test is **not** a gap when a unit or integration test already asserts the Then. Mark the AC Covered and cite the lower-layer test. Only a cross-service AC can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
-- Before recommending any new journey test, look for existing lower-layer tests of the same behaviour. Search the page's colocated `*.test.js` files and the shared guard/session helper tests for the same Given / When / Then, not just the same page. Name what you found in the report.
+- A missing journey test is **not** a gap when a unit or integration test already asserts the AC. Mark the AC Covered and cite the lower-layer test. Only a cross-service AC can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
+- Before recommending any new journey test, look for existing lower-layer tests of the same behaviour. Search the page's colocated `*.test.js` files and the shared guard/session helper tests for the same trigger and outcome, not just the same page. Name what you found in the report.
 - Recommend a journey test only if the AC is cross-service, needs a real browser, or is a very complex chain, and say which of those reasons applies. If it is none of these, recommend the missing unit or integration test instead (a chained `server.inject` test for multi-page session scenarios) and say where it belongs.
 - A multi-page AC whose hops are each asserted but whose chained outcome (e.g. the saved answer after going back) is not asserted anywhere is Partial. Name the missing chained integration test.
 - Do not recommend a journey test that would only repeat an assertion already made at a lower layer, however convincing the end-to-end framing.

@@ -21,8 +21,8 @@ Do not commit, push, open PRs, or edit the Jira ticket.
 
 ## Terms
 
-- 'page story' - a Jira ticket whose description has a `Page type:` line.
-- 'page type' - one of `question page`, `dropout page`, `confirmation page`.
+- 'page story' - a Jira ticket whose description has a `*Page type*:` line. Acceptance criteria are single-line bold-label numbered items (`# *<Prefix>:* <sentence>`, written by `write-jira-story-from-prototype`), not Given/When/Then.
+- 'page type' - this skill builds `question page`, `dropout page` or `confirmation page`. A story for a `content page` or `check your answers page` isn't supported yet — stop and tell the user.
 - 'area' - the first segment of the page's route, e.g. `quote` for `/quote/planning-type`. It maps to a folder and Hapi plugin under `frontend/src/server/`.
 - 'route ID' - the last segment of the page's route, e.g. `planning-type`. It is also the target folder name.
 - 'target folder' - `frontend/src/server/<area>/<route ID>`.
@@ -31,13 +31,16 @@ Do not commit, push, open PRs, or edit the Jira ticket.
 
 1. Use the `read-jira-ticket` skill with the ticket key. Its output is HTML (`<b>`, `<h3>`, `<a href>`), not Jira wiki markup.
 2. Extract, from the description:
-   - **Page type**. If it is missing or not one of the three supported types, stop and tell the user.
-   - **Page URLs section**: the route of 'this page', the name and route of each previous page, and the name and route of each next page. Names are the exact h1s of those pages.
-   - **Prototype URL**: the link in the Scenario 1 line `the main page heading and content should match the prototype`. Use links inside the acceptance criteria only; ignore any prototype link outside the AC section. If Scenario 1 has no such link, stop and tell the user.
-   - **Error state URLs** (`question page` only): the `prototype error state` links in the Missing value / Invalid format scenarios.
-   - **Content link scenarios**: for each `Content link to ...` scenario, the link text named in the `When` line and the destination in the `Then` line (a path, or a full URL).
-   - **Happy path scenarios** (`question page` only): which option or value leads to which next page.
-   - **Session scenarios** (for example an answer being re-shown, answers being cleared, or being redirected to the start page when visiting directly) and the **browser back scenario** (`confirmation page`): out of scope (see Scope); list them in the final report.
+   - **Page type**. If it is missing, stop and tell the user. If it is `content page` or `check your answers page`, stop and tell the user this skill doesn't support that page type yet.
+   - **Page URLs section**: the route of 'this page' (the first row), and the route of every other page named by title in an AC.
+   - **Prototype URL**: the link in the `Page content` AC. Use links inside the acceptance criteria only; ignore any prototype link outside the AC section. If there is no `Page content` AC or it has no link, stop and tell the user.
+   - **Back link**: the destination page named in the `Back link` AC (one AC, or one per entry point if it varies — the entry point is named in the prefix, e.g. `Back link (from X)`).
+   - **Error state URLs** (`question page` only): the prototype links in the `Form validation (missing value)` / `Form validation (invalid format)` ACs.
+   - **Content link ACs**: each AC whose prefix names a link (e.g. `Learn more link`, anything ending " link" other than `Back link`) — the link name is the prefix, the destination is the sentence: a page title in italics (in-app) or a full URL stated to open in a new tab (external).
+   - **Next page ACs** (`question page` only): one per `Next page` / `Next page (if <option> selected)` prefix — which option or value leads to which next page (by title).
+   - **Entry point ACs** (`confirmation page` only): one per `Entry point (from X)` prefix — the previous page that submits to this one.
+   - **Show saved selection AC** (`question page` only): confirms the field is re-shown on return — out of scope (see Scope), note it in the final report.
+   - **Browser back AC** (`confirmation page` only): out of scope (see Scope); note its destination in the final report.
 3. Derive the area and route ID from the route of 'this page'. The area decides the target folder, the GET and POST controllers (see Controllers in [conventions.md](./conventions.md)) and the `index.js` the routes are registered in. Stop and tell the user, rather than creating anything, if the area folder, its `index.js` or its `controller-get.js` does not exist.
 4. Check which of the previous and next pages already exist in `frontend/src/server/` (a folder with `route-path.js`, or a legacy page without one). Record this: it decides between importing a `routePath` and using a literal route string, and which neighbouring pages need updating in Step 2.
 5. Check the target folder does not already exist. If it does, stop and ask the user, offering to resume by reviewing the existing files against this skill, the ticket and the prototype instead of overwriting them.
@@ -71,15 +74,15 @@ Do not commit, push, open PRs, or edit the Jira ticket.
 Create each file in the target folder following [conventions.md](./conventions.md), with these values taken from the ticket and prototype:
 
 - **`index.njk`**: generated from the `<main>` HTML captured in Step 1 (everything outside `<main>` is handled by the layout). The heading becomes `{{pageHeading}}`; recognised components become macros.
-  - **Links:** for each content link in the ticket, find the link whose text matches the link text named in the scenario and set its `href` to the ticket's destination. Replace every other `href` with `#` (except `mailto:`, kept as-is). Keep `target` / `rel` attributes and "(opens in new tab)" text exactly as in the prototype. If a content link from the ticket can't be found in the page, don't guess; list it in the final report.
+  - **Links:** for each content link AC, find the link whose text matches the link name named in the prefix and set its `href` to the ticket's destination. Replace every other `href` with `#` (except `mailto:`, kept as-is). Keep `target` / `rel` attributes and "(opens in new tab)" text exactly as in the prototype. If a content link from the ticket can't be found in the page, don't guess; list it in the final report.
   - **Form fields:** field names come from the prototype `name` attributes, and radio/checkbox values from the prototype `value` attributes.
 - **`options.js`** (radios/checkboxes only): the items (`value`, `text`, `hint`) captured from the prototype. The template, view model and `form-validation.js` all use this file, so the items are not written inline in `index.njk`.
 - **`get-view-model.js`**: `pageHeading` is the prototype h1; `backLinkPath` is the previous page's route (see Page types).
-- **`form-validation.js`**: error messages are the error summary link text read from the prototype error state pages. Map the Missing value scenario to `'any.required'` (and `'any.only'` for radios/checkboxes, `'string.empty'` for text inputs), and the Invalid format scenario to the format key such as `'string.email'`.
-- **`get-next-page.js`**: based on the ticket's happy path scenarios and next-page routes. With several next pages, branch on the submitted value, matching the option named in each scenario to the radio `value`. Pages that don't exist yet get a literal route string, listed in the final report.
+- **`form-validation.js`**: error messages are the error summary link text read from the prototype error state pages. Map the `Form validation (missing value)` AC to `'any.required'` (and `'any.only'` for radios/checkboxes, `'string.empty'` for text inputs), and the `Form validation (invalid format)` AC to the format key such as `'string.email'`.
+- **`get-next-page.js`**: based on the ticket's `Next page` ACs. With several next pages, branch on the submitted value, matching the option named in each AC's prefix to the radio `value`. Pages that don't exist yet get a literal route string, listed in the final report.
 - **`routes.js` / `route-path.js`**: register the routes in the area's `index.js`.
 - **Neighbouring pages**: if the ticket's previous or next pages already exist, update them as described in conventions.md, and list them in the final report.
-- **Tests**: one or more per acceptance criteria scenario in the ticket (except the out-of-scope ones): entry point (heading and title), back link, content links, and for a question page each happy path outcome and the error states, plus the form validation unit tests and the accessibility test.
+- **Tests**: one or more per acceptance criterion in the ticket (except the out-of-scope ones): entry point (heading and title), back link, content links, and for a question page each next-page outcome and the error states, plus the form validation unit tests and the accessibility test.
 
 ## Finish
 

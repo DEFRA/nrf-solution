@@ -1,6 +1,6 @@
 ---
 name: write-jira-story
-description: Creates and updates a Jira story using a feature specification in Confluence. Use when the user shares a Confluence link and asks for a ticket, story, or backlog item.
+description: Creates and updates a Jira story for backend, calculation or admin work (not a single journey page) using a feature specification in Confluence, with single-line bold-label numbered acceptance criteria. For a journey page story (question, content, check your answers, dropout or confirmation page) use write-jira-story-from-prototype instead.
 allowed-tools: Read, Bash
 model: inherit
 skills:
@@ -8,16 +8,18 @@ skills:
   - create-jira-ticket
   - read-confluence-page
   - browse-prototype
-  - jira-story-reviewer
+  - review-jira-story
 ---
 
-You produce clear, testable Jira tickets, using feature specifications written in Confluence.
-
+You produce clear, testable Jira tickets for backend, calculation, admin and other work that isn't
+a single journey page, using feature specifications written in Confluence. Acceptance criteria are
+single-line bold-label numbered items (`# *<Prefix>:* <sentence>`), not Given/When/Then. See
+[ac-testability.md](../../../docs/ai/ac-testability.md) for what makes one testable and distinct —
+apply it while drafting, not just at review time.
 
 ## Prerequisites
 
 `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` environment variables must be set before running. See [docs/ai/atlassian-credentials.md](../../../docs/ai/atlassian-credentials.md) for setup instructions.
-
 
 ## Input - feature specification
 
@@ -25,15 +27,7 @@ You'll be given a feature specification in Confluence as an input parameter (exa
 
 Only Confluence pages are supported as a source format. Figma files, Service Blueprints, and transcripts are out of scope.
 
-### Page type
-Supported page types:
-
-- **question page** — a standard gov.uk form page: has form validation and an onward journey.
-- **dropout page** — a dead-end page shown when the user can't continue (e.g. they're not eligible). No form, no validation, no onward journey. Has a back link.
-- **confirmation page** — a dead-end page shown after the user submits a form, confirming what has happened (e.g. an email has been sent). No form, no validation, no onward journey. No back link — if the user uses the browser back button, they are redirected to a URL given in the spec.
-
-Read the `Page type` from the spec and follow the matching branch in the steps below. If the page type is missing or is anything else, stop and alert the user.
-
+**If the spec has a `Page type:` line** (`question page`, `content page`, `check your answers page`, `dropout page` or `confirmation page`), it describes a single journey page — stop and tell the user to use `write-jira-story-from-prototype` instead, passing the spec's prototype URL and, optionally, this Confluence page as its second parameter.
 
 ## Workflow
 
@@ -41,143 +35,61 @@ Read the `Page type` from the spec and follow the matching branch in the steps b
 
 Use `read-confluence-page` on the provided URL. Extract:
 
-- Feature (link), User need (three lines: "*As a* <user type> / *I want* … / *So that* …"), Page type, Prototype URL
-- Navigation: route, all entry points and back link rules (every distinct previous-page destination); for a `question page` also next page route(s) (every distinct next-page destination if routing is conditional)
-- Navigation, `confirmation page` only: route, each `Previous page` (route and, if given, a prototype link — this is the entry point, the page whose form submission leads here), and the `Browser back` redirect destination (a path or full URL). There is no back link and no next page. If the spec has no previous page or no browser back redirect, stop and alert the user rather than guessing
-- Content links (if present, any page type): a single link appears inline as `Content link: <text> - <destination>`; multiple links appear under a `Content links:` heading as a bulleted list. Each link gives all or part of the link text as it appears in the page content, and the path or full URL the link goes to
-- Form validation (`question page` only): field validations, whether the user's entry is saved and re-shown on return
+- Feature (link), User need (three lines: "*As a* <user type> / *I want* … / *So that* …")
+- The triggers and behaviour the ticket owns: calculations, defaults, exclusions, timing rules, which values are returned, which date decides a lookup
+- Any page or admin screen the ticket's ACs will reference: its route, and (if the spec gives one) a prototype link
 - Out of scope (only if present in the spec — omit from the ticket if the spec has none)
 - NFRs (if present — additive to the guidance-page baseline)
 
 **If the spec has no user-need statement, stop immediately and alert the user** — do not draft a ticket without one.
 
-**Check every prototype URL path begins with `/handoffs`:** this covers the spec's Prototype URL and any prototype link given for a previous page. A prototype URL whose path doesn't begin with `/handoffs` means the prototype page isn't ready for dev. If any prototype URL in the spec fails this check, **stop immediately and alert the user**, listing each offending URL — do not browse the prototype or draft a ticket.
-
 **Check for an existing Jira story link:** look for a `Jira story:` line in the page body (format: `<strong>Jira story</strong>: <a href="...">NRF2-XXXX</a>`). If found, extract the ticket key — this is an existing ticket and Step 4 must update it rather than create a new one.
 
-### Step 2 — Browse the prototype
+### Step 2 — Confirm UI references
 
-Use `browse-prototype` with the prototype URL from the spec.
+Only when the spec names a page or admin screen that an AC will reference. Use `browse-prototype` to:
 
-**`dropout page`:** in a single browser session, capture the exact h1 from the page (used for the ticket summary and the "this page" name in the Page URLs section). Then, for each distinct previous-page destination in the spec's back-link rules, reach the dropout page via the corresponding entry point, click the back link, and capture the h1 of the page you land on (the "previous page" name). Skip the remaining steps below — there is no form, error state or next page.
+- Confirm its prototype URL path begins with `/handoffs`. If not, stop and alert the user, listing the offending URL — do not draft a ticket against a prototype that isn't dev-ready.
+- Capture its exact h1 — used as the page title in ACs and the Page URLs section, never the spec's wording for it.
 
-**`confirmation page`:** in a single browser session:
-
-1. Capture the exact h1 from the confirmation page (used for the ticket summary and the "this page" name in the Page URLs section). Confirm the page has no back link; if it has one, note it for the report.
-2. For each previous page in the spec, open its prototype link (if the spec gives none, stop and alert the user), capture its h1 (the "previous page" name), submit a valid value and follow Continue, and confirm you land on the confirmation page. If you can't reach it, note it for the report — the previous page name is still taken from its h1.
-
-3. If the browser-back redirect destination is a path in this application, open the equivalent page in the prototype and capture its h1 (the "browser back redirect" name). If you can't reach it, stop and alert the user rather than guessing. Skip this for an external full URL.
-
-Skip the remaining steps below — there is no form, error state or next page.
-
-**`question page`:** in a single browser session:
-
-1. Capture the exact h1 heading from the happy-path page (used for the ticket summary, and as the "this page" name in the Page URLs section).
-2. Submit a valid value and follow Continue to reach the next page; capture its h1 (the "next page" name). If the spec's Navigation section describes more than one possible next page, repeat for each distinct destination.
-3. Return to the happy-path page. If it has a back link, click it to reach the previous page and capture its h1 (the "previous page" name). If the spec's back-link rules describe more than one possible previous page, repeat for each distinct destination — re-enter the happy-path page via each entry point described in the spec to reach the corresponding back-link target.
-4. Submit the form empty — and with an invalid value where the spec lists a format rule — to confirm each error state is reachable. You do not need to capture the error text; ACs link directly to the prototype error state by appending `?preview=1&error=1` to the prototype URL.
-
-If the spec lists content links, confirm in the same session that each one appears in the page content of the happy-path page (or, for a `dropout page` or `confirmation page`, of the page itself) (match on the link text from the spec). If one can't be found, note it for the report and omit its AC block — do not guess.
-
-Page names must come from the prototype, never from spec wording — you only need each page's h1 and confirmation that each error state and content link is reachable, not the full JSON output of the extraction script.
+Skip this step entirely for a spec with no UI surface (pure backend or calculation work).
 
 ### Step 3 — Draft the ticket description
 
-Use the structure in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md)
+Sections, in order: User story; `h2. Acceptance criteria`; `h2. Page URLs` (only if any AC names a page); `h2. Out of scope` (only if it has content); `h2. Non-functional requirements`; `h2. Testing notes` (only if a page or journey test is affected).
 
-**Ticket summary:** use the exact h1 from the prototype (step 2), suffixed with "page" — e.g. "Enter your NRL reference page".
+**Ticket summary:** a short plain-text description of the behaviour, e.g. "Apply inflation index to stored quotes".
 
 **Generated from timestamp:** include both date and time in the `*Generated from*:` line — e.g. `on 21 Sep 2026 at 14:30`.
 
-**Journey tests note:** end every description (any page type, create or update) with the `h2. Testing notes` section from the structure doc, containing the bullet `* Update the journey tests to include the new page`. It comes after the `h2. Non-functional requirements` section and nothing follows it.
+**Journey tests note:** only when the ticket changes a journey page or its behaviour. End the description with `h2. Testing notes` containing a bullet naming what needs updating, e.g. `* Update the journey tests to cover the new validation rule`. It comes after `h2. Non-functional requirements` and nothing follows it. Omit the section entirely for backend/calculation work with no journey-test impact.
 
 #### Content strings and prototype links
 
-Never copy content strings from the prototype into the ticket description — link to the prototype instead, which is the single source of truth for all wording. This covers hint text, button labels, error messages, and any body copy.
+Never copy content strings from a prototype into the ticket description — link to the prototype instead, which is the single source of truth for all wording. This covers hint text, button labels, error messages, and any body copy.
 
 Exceptions:
-- The h1 is used verbatim as the ticket summary (see above).
-- Page names may appear in Given/When/Then clauses as navigational references (e.g. "Given I am on the enter NRL reference page") — do not put them in quotes.
-- Page names captured in Step 2 are used verbatim as the bullet labels in the Page URLs section (see below) — these come from the prototype, not the spec, so they aren't a copy of spec wording.
-- The link text given in the spec's content link(s) may appear in the content-link AC (e.g. "the get a quote link") — it is only there to identify which link to select. Do not put it in quotes, and do not add the rest of the link text from the prototype.
+- A page name may appear in an AC as a navigational reference, in italics (e.g. "_Enter your NRL reference_ page") — never in quotes, never as a route or URL.
+- Page names captured in Step 2 are used verbatim as the bullet labels in the Page URLs section — these come from the prototype, not the spec.
 
-For error states (`question page` only), link directly to the prototype error state. Use the prototype URL from the spec's form validation section if one is provided (e.g. `?preview=1&error=format`). Fall back to appending `?preview=1&error=1` only when the spec does not give a specific error URL for that validation.
+For an error-state AC, link directly to the prototype error state (e.g. `?preview=1&error=format`) rather than quoting the error text.
+
+#### Acceptance criteria
+
+Use Jira wiki markup, not Markdown: `# *<Prefix>:* <sentence>.` — one numbered item per scenario, numbered items only for ACs (NFRs stay as bullets).
+
+- The bold prefix succinctly names the scenario; the sentence doesn't repeat it.
+- Name the trigger (a user action, a specific endpoint call, a scheduled job, a named ticket's behaviour) and the observable outcome with a concrete value: a page and its content, an endpoint response field, a stored record and its columns, an admin page. "Is recalculated", "is held", "is refused" and "is stored" are not enough — name the output and give an expected value, using a worked example where there's a calculation or rule.
+- One behaviour per AC: no "or" joining two triggers, pages or outcomes; no slashes in place of a word ("calculated/recalculated"); no ambiguous "it" — repeat the noun.
+- Refer to pages by title, in italics, exactly as the h1 appears in the prototype — never by route. Routes live in the Page URLs section only.
+- Validation or error ACs name the validation in brackets (e.g. `*Form validation (missing value):*`) and link the prototype error state, instead of saying "valid".
+- Don't write an AC for behaviour another ticket owns — link to that ticket's key instead.
+- Don't write two ACs that differ only by a case another AC already covers; merge them or add a distinguishing condition.
+- See [ac-testability.md](../../../docs/ai/ac-testability.md) for the full testability and distinctness checklist.
 
 #### Page URLs section
 
-Build the `h2. Page URLs` bullets from the routes in the spec's Navigation section and the page names captured in Step 2:
-
-- `* *<this-page name> (this page):* <route>`
-- `* *<previous-page name> (previous page):* <route>` — one bullet per distinct previous-page destination described in the spec's back-link rules. Omit entirely if the page never has a back link. For a `confirmation page` (which has no back link), use one bullet per `Previous page` in the spec, with that page's route.
-- `* *<next-page name> (next page):* <route>` — one bullet per distinct next-page destination. `question page` only — `dropout page` and `confirmation page` have no next page, so omit these bullets.
-- `* *<destination name> (browser back redirect):* <route>` — `confirmation page` only, one bullet for the browser-back redirect when its destination is a path in this application. Omit it for an external full URL.
-- `* *<destination name> (content link):* <route>` — one bullet per content link whose destination is a path in this application, in the order listed. Omit external full URLs.
-
-Do not add parenthetical explanations of when each conditional destination applies (e.g. "shown only when arriving from X") — that detail belongs in the acceptance criteria, not the Page URLs section.
-
-#### Acceptance criteria — dropout page
-
-Use the same block format as for a `question page` (see below), but only these scenarios, in this order:
-
-1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section). Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`.
-2. **Back link** — same rules as for a `question page`: one block if the destination is always the same, otherwise one block per distinct case naming the entry point in the `Given` clause. Refer to the destination by its page name only.
-3. **Content links** (only if the spec has a `Content link` / `Content links` entry) — see [Content link scenarios](#content-link-scenarios).
-
-Do not write happy path, missing value, invalid format or entry-is-re-shown scenarios — a dropout page has no form and no onward journey. Do not add a scenario for the absence of a Continue button or form; the prototype link in the entry-point scenario already covers page content.
-
-#### Acceptance criteria — confirmation page
-
-Use the same block format as for a `question page` (see below), but only these scenarios, in this order:
-
-1. **Entry point → page loads** — one block per `Previous page` in the spec. Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`.
-
-   ```
-   h3. Scenario N - Entry point from the <previous-page name> page
-   *Given* I am on the <previous-page name> page
-   *When* I submit valid details and continue
-   *Then* I am taken to the <this-page name> page
-   *And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]
-   ```
-2. **Browser back** — the confirmation page has no back link, so do not write a back link scenario. Write one block for the spec's `Browser back` redirect. Name an in-application destination by its page name only (the route is in the Page URLs section, don't restate it); state an external destination as the full URL exactly as given in the spec. Do not repeat the spec's parenthetical about where the user is not sent.
-
-   ```
-   h3. Scenario N - Browser back button redirects
-   *Given* I am on the <this-page name> page
-   *When* I use the browser back button
-   *Then* I am redirected to the <destination name> page   (or the full external URL from the spec)
-   ```
-3. **Content links** (only if the spec has a `Content link` / `Content links` entry) — see [Content link scenarios](#content-link-scenarios).
-
-Do not write happy path, missing value, invalid format, back link or entry-is-re-shown scenarios — a confirmation page has no form, no back link and no onward journey.
-
-#### Acceptance criteria — question page
-
-Write one scenario per block. Each block's `h3.` heading is `Scenario N - <summary>` — the number, a hyphen, then a short plain-text phrase (no markup) stating what the scenario tests, all on the same line. The step lines start on the next line. Example: `h3. Scenario 1 - Entry point from the previous page`. Use Jira wiki-markup bold for the step keywords: `*Given*`, `*When*`, `*Then*`. Order:
-
-1. **Each entry point → page loads** — one block per distinct route into the page (from the spec's Navigation > Entry points section). Each block must end with `*And* the main page heading and content should match the [+prototype+|PROTOTYPE_URL]`, where `PROTOTYPE_URL` is the prototype URL from the spec.
-2. **Back link** — if the back link destination is always the same regardless of how the user arrived, write one block. If it varies by entry point (e.g. shown on some routes, hidden on others, or pointing to different pages), write one block per distinct case and name the entry point in the `Given` clause. Refer to the destination by its page name only (e.g. "I am taken to the have NRL reference page") — the route is already in the Page URLs section, don't restate it.
-3. **Content links** (only if the spec has a `Content link` / `Content links` entry) — see [Content link scenarios](#content-link-scenarios).
-4. **Happy path** — valid input → next page. Refer to the destination by its page name only (e.g. "I am taken to the enter email page") — the route is already in the Page URLs section, don't restate it.
-5. **Missing value** — empty submission → error summary as shown on the [prototype error state|prototype-url?preview=1&error=1]. Always include this block for a `question page`: empty-submission validation is standard GOV.UK form behaviour even when the spec does not mention it explicitly.
-6. **Invalid format** (only if the spec lists a format rule) — bad value → error summary as shown on the [prototype error state|prototype-url?preview=1&error=1]
-7. **Entry is re-shown** (only if the spec says the user's previously entered value is restored when they navigate back within the same session) — user navigates back to the page and sees their previously entered value
-
-No blank lines within a block. One blank line between the last step of a block and the next `h3.` heading.
-
-If a prototype error state couldn't be reached, note this and omit that AC block — do not use spec wording as a substitute.
-
-#### Content link scenarios
-
-Write one block per content link in the spec (one block for a single `Content link`, one per bullet under `Content links`), in the order listed. Use the spec's link text only to say which link to select, and the spec's destination. If the destination is a path in this application, open the equivalent page in the prototype to capture its h1 (stop and alert the user if you can't reach it), name it by that page name in the scenario, and add it to the Page URLs section. If it is an external full URL, state it in the scenario as a Jira link and do not add it to Page URLs.
-
-```
-h3. Scenario N - Content link to <short description of the destination>
-*Given* I am on the <this-page name> page
-*When* I select the <spec link text> link
-*Then* I am taken to the <destination name> page   (or the full external URL as a Jira link)
-```
-
-Never write an in-application path (e.g. `/request-to-use/start`) in the scenario. If the spec's destination is missing for an entry, stop and alert the user rather than guessing.
+Only when an AC names a page. `h2. Page URLs`, a two-column table (page title, route): one row per page named in an AC, using the exact h1 captured in Step 2. Every row is named in an AC; every page an AC names has a row.
 
 ### Step 4 — Create or update the ticket
 
@@ -186,14 +98,9 @@ Never write an in-application path (e.g. `/request-to-use/start`) in the scenari
 
 ### Step 5 — Self-check, then review
 
-First, check the draft against [Rules for every story](#rules-for-every-story) below and fix every miss. Reviewers (`review-jira-story`) fail tickets on these points, so catching them here saves a review cycle.
+First, check the draft against [Rules for every story](#rules-for-every-story) below and fix every miss. `review-jira-story` fails tickets on these points, so catching them here saves a review cycle.
 
-Then review the ticket with the key from Step 4, whether it was just created or updated:
-
-- New-page story (question, dropout or confirmation page): use the `jira-story-reviewer` agent.
-- Any other story (backend, calculation, admin, change to an existing page): use the `review-jira-story` skill.
-
-If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
+Then review the ticket with the key from Step 4, whether it was just created or updated, using the `review-jira-story` skill. If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
 
 ### Step 6 — Report
 
@@ -202,24 +109,24 @@ Return the ticket key and URL, plus a one-line summary of the reviewer outcome (
 
 ## Rules for every story
 
-These apply to every ticket, including backend, calculation and admin stories that are not a single page. Where a spec describes behaviour rather than a page, apply them in place of the page-type branches. If the spec can't supply what a rule needs, ask the user or list it as an open question to the user — never leave a placeholder, `?` or "to be confirmed" in the ticket.
+Apply these to every ticket.
 
 ### Triggers and observability
-- Every scenario's `When` names a user action or a concrete trigger that exists in a ticket (a specific page's Continue, a named endpoint call). If the trigger isn't built by this story or a linked one, don't write the scenario here: move it to the owning story, or ask the user which ticket owns it. Check the Page URLs/triggers list actually contains the trigger.
-- Every `Then` names where a tester sees the result and the concrete value: a page and its content, an endpoint response field, a stored database record and its columns, or an admin page. "Is recalculated", "is held", "is refused" and "is stored" are not enough. Name the output and give an expected value (use a worked example).
-- Where the spec has a calculation or rule table, give each Example concrete inputs and expected outputs, and reference the Example in the matching scenario. Examples must use the same method as the scenarios (for example per-year values if scenarios say per-year, not one combined factor).
+- Every AC names a trigger that exists and is built by this story or a linked one: a specific page's Continue, a named endpoint call, a scheduled job. If the trigger isn't built here, don't write the AC here: move it to the owning story, or ask the user which ticket owns it.
+- Every AC names where a tester sees the result and the concrete value: a page and its content, an endpoint response field, a stored database record and its columns, or an admin page.
+- Where the spec has a calculation or rule table, give each example concrete inputs and expected outputs, and reference the example in the matching AC. Examples must use the same method as the ACs (for example per-year values if the ACs say per-year, not one combined factor).
 - Every rule stated in Context, Notes or Examples (timing, defaults such as a factor of 1.0000, exclusions such as VAT, which values are returned, which date decides a lookup) has an AC, or is removed from the ticket.
-- `Given` must say how a tester reaches that state, naming the story that creates the data (e.g. "an inflation index has been added through NRF2-XXXX").
+- Where an AC needs a prior state, say how a tester reaches it, naming the story that creates the data (e.g. "an inflation index has been added through NRF2-XXXX").
 
 ### One behaviour, clear wording
-- Never join two pages, triggers or outcomes with "or" in a `Given`, `When` or `Then`. Write one scenario per case.
-- No slashes in place of a word ("calculated/recalculated"), no ambiguous "it" in a `Then` (repeat the noun), no duplicated clauses in one `Then`, no unclosed brackets, no stray attributions ("as quoted by …"), no stray notes inside Examples, no capitalised emphasis ("NOT").
-- A scenario's `When` matches its title and the trigger named in Context. If Context says a behaviour holds "even if the values are unchanged", write an AC for it.
-- Don't write two scenarios that differ only by a case another scenario already covers; merge them or add a distinguishing condition. Don't repeat an AC that another ticket owns; link to that ticket instead.
+- Never join two triggers, pages or outcomes with "or" in one AC. Write one AC per case.
+- No slashes in place of a word, no ambiguous "it" (repeat the noun), no duplicated clauses, no unclosed brackets, no stray attributions ("as quoted by …"), no stray notes inside examples, no capitalised emphasis ("NOT").
+- An AC's bold prefix matches its sentence and the trigger named in Context. If Context says a behaviour holds "even if the values are unchanged", write an AC for it.
+- Don't write two ACs that differ only by a case another AC already covers; merge them or add a distinguishing condition. Don't repeat an AC that another ticket owns; link to that ticket instead.
 - The user-need statement must match what is observable in scope. If display changes are out of scope, don't say the user "sees" the value; say what the service does.
 
 ### Terminology
-- Define each domain term once, in a terminology note, and use it identically everywhere in the ticket and in sibling tickets in the same feature. Check Context bullets, ACs, Examples and Out of scope for older or alternative names, and make them match the note.
+- Define each domain term once, in a terminology note, and use it identically everywhere in the ticket and in sibling tickets in the same feature. Check Context bullets, ACs, examples and Out of scope for older or alternative names, and make them match the note.
 
 ### Cross-ticket consistency
 - Before drafting, read the linked, referenced and sibling tickets (`read-jira-ticket`; siblings via `node .ai/skills/tools/jira/get-epic-issues.mjs <PARENT_KEY>`). Check for the same condition with a different outcome, duplicated ACs, and two tickets owning the same table, page or behaviour. Resolve each: say which ticket owns it, and add a Context line where two tickets use similar words for different things (e.g. "history of quote answers" versus "history of levy calculations").
@@ -230,13 +137,13 @@ These apply to every ticket, including backend, calculation and admin stories th
 
 ### Pages and prototypes
 - Any story where a user or admin does something in a UI names the page, its route and a dev-ready prototype link (path begins with `/handoffs`) in Page URLs. If the spec lacks one, stop and ask rather than writing "I add an X" with no location.
-- Validation or error scenarios link a prototype error state, and say what counts as a valid value (type, range, format) instead of "valid".
+- Validation or error ACs link a prototype error state, and say what counts as a valid value (type, range, format) instead of "valid".
 - Prototype links that redirect (302 when fetched) probably need a sign-in; say they couldn't be checked rather than assuming they load.
 - Every page URL listed is named in an AC; every page an AC names has a URL.
 
 ### Metadata
 - Fill in labels where the project uses them, and the parent. Fill every NFR bullet with its guidance-page link; the NFR section is never empty or a bare `?`. Security applies wherever there is user or admin input.
-- Include the Testing notes section as set out above.
+- Include the Testing notes section where it applies (see Step 3).
 
 ## Non-functional requirements
 
@@ -246,8 +153,8 @@ Use the mapping in [non-functional requirements](../../../docs/ai/non-functional
 
 Steps:
 
-1. Work from the cached category list above — do **not** fetch the guidance index or child pages on every run. The category name is enough to judge relevance in almost every case (Accessibility and Security are self-explanatory for a `question page`). Never list Browser & device compatibility or Page load performance, even if the guidance index shows them.
-2. Start from the categories mapped to the ticket's page type in the page-types table of the NFR doc (a `dropout page` or `confirmation page` has no form, so Security is not included). For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply. Briefly note any category you deliberately excluded so the user can push back.
+1. Work from the cached category list above — do **not** fetch the guidance index or child pages on every run. The category name is enough to judge relevance in almost every case (Accessibility and Security are self-explanatory for a page with form input). Never list Browser & device compatibility or Page load performance, even if the guidance index shows them.
+2. For each category, decide whether it applies given the specifics of the feature spec. Skip a category only when it clearly doesn't apply. Briefly note any category you deliberately excluded so the user can push back.
 3. If a category name is genuinely ambiguous for the ticket in front of you, fetch that one child page via `read-confluence-page` to read the guidance — but do not paste the guidance into the ticket.
 4. In the ticket's `h2. Non-functional requirements` section, list each applicable category as a bullet linking to its Confluence page. Use Jira wiki-markup link syntax, e.g. `* [+Accessibility+|https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6538166273/Page-level+accessibility+guidance]`.
 5. Append any NFRs listed in the spec's own NFRs section as additional bullets. Spec-listed NFRs are additive — they extend the guidance baseline, they don't override it. Include the spec's wording as text (there is no guidance-page link to reference).
