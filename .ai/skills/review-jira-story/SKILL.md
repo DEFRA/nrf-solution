@@ -1,6 +1,6 @@
 ---
 name: review-jira-story
-description: Reviews a feature Jira story for dev-readiness — dev-ready prototype links, testable ACs, duplication, needed page URLs, redundant sections, and major inconsistencies with linked tickets. Returns a short, structured report. TRIGGER automatically, without being asked, after creating a new Jira story or making a significant update to an existing one (new or changed ACs, scope, context or links) — whether or not write-jira-story was used — and whenever asked to review, check or sanity-check a story. For a new-page story (question, dropout or confirmation page) use review-jira-story-new-page instead.
+description: Reviews a feature Jira story for dev-readiness — dev-ready prototype links, testable ACs, duplication, needed page URLs, redundant sections, and major inconsistencies with linked tickets. Returns a short, structured report. TRIGGER automatically, without being asked, after creating a new Jira story or making a significant update to an existing one (new or changed ACs, scope, context or links) — whether or not write-jira-story was used — and whenever asked to review, check or sanity-check a story. For a single journey page story (question, content, check your answers, dropout or confirmation page) use review-jira-story-from-prototype instead.
 ---
 
 ## Parameters
@@ -25,7 +25,7 @@ Use `read-jira-ticket` with the ticket key. Work from the raw description text.
 
 **If the ticket has no description, stop and alert the user.**
 
-**If the story is a new question, dropout or confirmation page, stop and tell the user to use `review-jira-story-new-page` instead.**
+**If the story has a `*Page type*:` line (it's a single journey page), stop and tell the user to use `review-jira-story-from-prototype` instead.**
 
 Note the status, parent key, subtasks and the `Linked Issues` section.
 
@@ -54,23 +54,15 @@ Collect every prototype link in the description. Don't fetch or curl them — ju
 
 #### 2. Testability
 
-For each AC scenario, flag it if it fails any of these and say why in a few words, with a suggested fix where obvious:
+ACs are single-line bold-label numbered items (`# *<Prefix>:* <sentence>`), not Given/When/Then. Apply the full checklist in [ac-testability.md](../../../docs/ai/ac-testability.md) (testability and distinctness) to every AC. Also flag:
 
-- Steps too generic to give one pass/fail condition (`correct behaviour occurs`, `an appropriate error`).
-- Outcome not observable in the UI, network, an email or the database.
-- `When`/`Then` joins distinct triggers or outcomes with `or` — suggest the split.
-- `Given` needs a state the story never explains how to reach.
-- Placeholders or unfilled template text (`[url]`, `TBD`, `TODO`).
-- Visible UI or email copy quoted inline rather than linked to a prototype/design.
-- Indirect reference that forces the reader elsewhere (`the fields listed in the Context`) — move the detail into the AC.
-- Two scenarios whose steps wouldn't show which one failed (same `Then`, or one broad scenario already covering another) — suggest merge or a distinguishing condition.
-- An empty or untitled scenario heading.
-- Implementation detail in the steps (database or table names, which service or store holds data, endpoints, field or column names, code-level behaviour) unless a tester needs it to verify the outcome. Suggest rewording to the observable behaviour and moving any needed detail to Notes or the dev task.
+- An empty or untitled AC, or one still numbered with a placeholder prefix.
+- A bold prefix that repeats the sentence, or a sentence that repeats the prefix instead of adding the concrete detail.
 
 #### 3. Duplication
 
 - **Context ↔ ACs:** flag Context bullets or Notes that restate something an AC already asserts, or ACs that merely repeat Context. Recommend cutting the Context to what the ACs don't already say.
-- **Within the description:** the same page, link or rule stated twice (for example a prototype link repeated as a URL, or a rule repeated across scenarios).
+- **Within the description:** the same page, link or rule stated twice (for example a prototype link repeated as a URL, or a rule repeated across ACs).
 
 #### 4. Page URLs
 
@@ -86,7 +78,7 @@ Compare the page URLs section with the pages the ACs and Context actually requir
 Flag sections or headings that add no information, and recommend removing them:
 
 - Sections containing only `TBC`, `TBD`, `?`, `N/A`, `None` or similar (for example an empty NFRs or Notes section).
-- Empty headings, empty scenario stubs, stray template text.
+- Empty headings, empty AC stubs, stray template text.
 - Terminology or glossary lists with undefined or truncated entries.
 - NFR categories that don't apply (Browser & device compatibility and Page load performance should not be listed).
 
@@ -106,7 +98,7 @@ Name the ticket key and the colliding point in one line. Do not report other pro
 
 Report only if there's a problem, and keep to one line each:
 
-- No user-need statement, no parent, or no `Given`/`When`/`Then` ACs.
+- No user-need statement, no parent, or no numbered bold-label ACs.
 - A `Generated from` Confluence page modified after the ticket's stamped date (possible drift). Fetch it with `read-confluence-page`. If the date can't be read, say so.
 - Behaviour in Notes/Context/Out of scope that the story owns but no AC covers, or an AC asserting something stated nowhere else.
 - Out-of-scope items that depend on another ticket but name no ticket or owner.
@@ -130,14 +122,14 @@ Compared with: <keys scanned, comma-separated>   (note any skipped or unfetchabl
 - All prototype links are dev-ready.   (or, if not: <url or label> — <why not dev-ready>)
 
 ### Testability
-- [**Blocker** — ]<Scenario n title> — <why, in a few words>. Suggest: <fix>
+- [**Blocker** — ]<AC prefix> — <why, in a few words>. Suggest: <fix>
 
 ### Duplication
 - <where> — <what repeats>. Suggest: <cut / merge>
 
 ### Page URLs
 - Remove: <url> — <why>
-- <Scenario n title> — application URL in AC; use page title "<title>" and keep URL in page URLs only
+- <AC prefix> — application URL in AC; use page title "<title>" and keep URL in page URLs only
 - [**Blocker** — ]Missing: <page> — <why needed>
 
 ### Redundancy

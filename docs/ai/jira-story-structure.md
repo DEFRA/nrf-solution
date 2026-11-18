@@ -1,71 +1,64 @@
-# Jira story structure
+# Jira page story structure
 
-For user interface development stories:
+The authoritative structure for any Jira story about a single journey page (`question page`, `content page`, `check your answers page`, `dropout page` or `confirmation page`), however it was written. `write-jira-story-from-prototype` produces it, `review-jira-story-from-prototype` checks it and `journey-page` / `journey-page-builder` parse it, so keep them in step with this file.
 
-| Element             | Expected                                                                          |
-|---------------------|-----------------------------------------------------------------------------------|
-| Generated from      | `*Generated from*:` followed by a `[+…+\|url]` link to the Confluence source page |
-| User need           | Three lines: `*As a* [user type]`, `*I want* …`, `*So that* …` — no `*User need*:` prefix |
-| Page type           | `*Page type*:` line — `question page`, `dropout page` or `confirmation page`       |
-| Prototype link      | A bare `[+Prototype+\|url]` line                                                  |
-| Page URLs section   | `h2. Page URLs` with one bullet per page: `* *<page name> (this page):*`, `* *<page name> (previous page):*` (one per distinct previous-page destination; omit entirely if the page never has a back link), `* *<page name> (next page):*` (one per distinct next-page destination; omit for a `dropout page` or `confirmation page`, which are dead ends). A `confirmation page` has no back link, so its previous-page bullet is the page the user submits from (the entry point). A destination reached by a content link or the browser-back redirect that is a page in this application also gets a bullet: `* *<page name> (content link):*` or `* *<page name> (browser back redirect):*`. External destinations (full URLs to other sites) get no bullet. `<page name>` is the exact h1 captured from the prototype for that page |
-| Acceptance criteria | `h2. Acceptance criteria`                                                         |
-| Scenarios           | At least one `h3. Scenario N - <summary>` heading under the AC section, where `<summary>` is a short plain-text phrase (no markup) on the same line |
-| Step keywords       | Every scenario uses `*Given*`, `*When*`, `*Then*` (Jira bold markup)              |
-| Content links       | Only if the spec has a `Content link` (single) or `Content links` (bulleted list) entry: one scenario per link (`Given` on this page, `When` I select the link, `Then` I am taken to the <page name> page). A destination in this application is named by its page title and listed in Page URLs, never written as a path in the scenario. An external destination is stated in the scenario as the full URL from the spec, and not added to Page URLs |
-| Dropout page        | Only entry-point, back-link and content-link scenarios — no happy path or error scenarios, no next-page bullet, no Security NFR |
-| Confirmation page   | Only entry-point, browser-back and content-link scenarios — no back link scenario, no happy path or error scenarios, no next-page bullet, no Security NFR. The browser-back scenario's `Then` is `I am redirected to the <page name> page`, and the destination is listed in Page URLs. If the spec's destination is an external full URL, the `Then` states that URL directly and it is not added to Page URLs |
-| Out of scope        | Optional, if anything was defined in the confluence page                          |
-| NFRs                | `h2. Non-functional requirements` with at least one bullet                        |
-| Journey tests note  | Final element of the description, after the NFRs: `h2. Testing notes` followed by the bullet `* Update the journey tests to include the new page`. Always present, for every page type |
+Stories using Given/When/Then are not supported. Ask the user to convert them to this format (for example by running `write-jira-story-from-prototype` on the story's prototype URL).
 
+## Description
 
-```
-*Generated from*: [+Confluence page title+|url] on [date] at [time]
+Jira wiki markup, in this order. Omitted sections are omitted, not empty.
 
-----
+| Element             | Expected                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User story          | Three lines: `*As a*`, `*I want*`, `*So that*`                                                                                                       |
+| Page type           | Directly below the user story: `*Page type*: question page`. Always bold label and a colon                                                           |
+| Acceptance criteria | `h2. Acceptance criteria`, then a numbered list (`#`) of single-line items: `# *<Prefix>:* <one sentence>.`                                          |
+| Page URLs           | `h2. Page URLs`, a two-column table (page title, URL). This page is the first row, followed by every other page named in an AC. No prototype column |
+| Out of scope        | `h2. Out of scope`, only if it has content                                                                                                           |
+| NFRs                | `h2. Non-functional requirements`, at least one bullet                                                                                               |
+| Feature specification | Optional final line, `*Feature specification*: [+<title>+\|<url>]`                                                                                 |
 
-*As a* [user type]
-*I want* …
-*So that* …
+No Testing notes, Notes, Context, "Generated from", separate Prototype line or Given/When/Then.
 
-*Page type*: question page | dropout page | confirmation page
+## AC prefixes
 
-[+Prototype+|url]
+The bold prefix is the only thing parsers and reviewers rely on, so use exactly these forms. `<option>`, `<page title>`, `<row label>` and `<link name>` are filled in; everything else is literal.
 
-----
+| Prefix                                  | Page types                              | Meaning                                                                                                   |
+| --------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Page content`                          | all                                     | Heading and content match the prototype (the AC links it)                                                 |
+| `Back link`                             | all except confirmation                 | Destination of the back link                                                                              |
+| `Back link (from <entry point>)`        | as above                                | One per entry point, when the destination varies                                                          |
+| `<link name> link`                      | all                                     | A content link in the page body, e.g. `Learn more link`. Always ends ` link`; never `Back link` or `Change link` |
+| `Next page`                             | question, content, check your answers   | The only destination after Continue / submit                                                              |
+| `Next page (if <option> selected)`      | question                                | One per distinct outcome of radios, checkboxes or conditional routing                                     |
+| `Form validation (missing value)`       | question                                | Empty submission; links the `?preview=1&error=1` prototype state                                          |
+| `Form validation (invalid format)`      | question, text input                    | The value is in the wrong format; links `?preview=1&error=format`                                         |
+| `Form validation (<other validation>)`  | question                                | Any other reachable error, named in lower case, e.g. `(too long)`, `(out of range)`                       |
+| `Show saved selection`                  | question                                | Returning to the page re-shows the saved answer                                                           |
+| `Change link (<row label>)`             | check your answers                      | One per summary row, in page order                                                                        |
+| `Entry point (from <page title>)`       | confirmation                            | One per page whose submission leads here                                                                  |
+| `Browser back`                          | confirmation                            | Where the browser back button redirects                                                                   |
 
-h2. Page URLs
+Do not invent other spellings (`Form validation (empty)`, `Back-link`, `Next page - Yes`). A scenario with no matching prefix is a wording finding in review, and a builder reports it as unclassified.
 
-* *[This page h1] (this page):* /route/from/spec
-* *[Previous page h1] (previous page):* /back-link/destination
-* *[Next page h1] (next page):* /route/of/next/page
+## Scenarios per page type
 
-----
+| Page type            | Scenarios, in order                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| question page        | Page content, Back link, content links, Next page, Form validation, Show saved selection                         |
+| content page         | Page content, Back link, content links, Next page                                                                |
+| check your answers   | Page content, Back link, Change links, content links, Next page                                                  |
+| dropout page         | Page content, Back link, content links                                                                           |
+| confirmation page    | Page content, Entry points, Browser back, content links                                                          |
 
-h2. Out of scope
+An altered page includes only the scenarios the change affects.
 
-* …
+## Rules for every AC
 
-----
+- Name other pages by title in italics (`_Title_`), exactly as the h1 appears in the prototype. Never use routes in an AC; routes live in Page URLs.
+- Don't copy content strings (headings, hints, labels, error text) from the prototype; link to it. Page titles are the exception.
+- One behaviour per AC, and each AC names where a tester sees the result.
+- External destinations are a full link, open in a new tab (say so), and are not in Page URLs.
 
-h2. Acceptance criteria
-
-h3. Scenario 1 - [summary of what this scenario tests]
-
-*Given* …
-*When* …
-*Then* …
-
-----
-
-h2. Non-functional requirements
-
-[NFR bullets]
-
-----
-
-h2. Testing notes
-
-* Update the journey tests to include the new page
-```
+The writer's full workflow is in [write-jira-story-from-prototype](../../.ai/skills/write-jira-story-from-prototype/SKILL.md); testability rules are in [ac-testability.md](ac-testability.md).
