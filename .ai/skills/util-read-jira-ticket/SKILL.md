@@ -1,6 +1,6 @@
 ---
-name: read-jira-ticket
-description: Fetch a Jira ticket's details (summary, description, acceptance criteria, testing notes) by ticket ID. Use whenever another skill or task needs to read a Jira ticket.
+name: util-read-jira-ticket
+description: Fetch a Jira ticket's details (summary, description, acceptance criteria, testing notes) by ticket ID. Utility skill, designed to be called by other skills; it does no review or other follow-up. Use whenever another skill or task needs to read a Jira ticket.
 ---
 
 ## Parameters

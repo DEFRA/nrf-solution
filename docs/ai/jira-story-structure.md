@@ -16,9 +16,10 @@ Jira wiki markup, in this order. Omitted sections are omitted, not empty.
 | Page URLs           | `h2. Page URLs`, a two-column table (page title, URL). This page is the first row, followed by every other page named in an AC. No prototype column |
 | Out of scope        | `h2. Out of scope`, only if it has content                                                                                                           |
 | NFRs                | `h2. Non-functional requirements`, at least one bullet                                                                                               |
+| Testing notes       | Optional `h2. Testing notes` after the NFRs: test users and data, how to reach a state, how to test what a browser can't. See [ac-testability.md](ac-testability.md) |
 | Feature specification | Optional final line, `*Feature specification*: [+<title>+\|<url>]`                                                                                 |
 
-No Testing notes, Notes, Context, "Generated from", separate Prototype line or Given/When/Then.
+No Notes, Context, "Generated from", separate Prototype line or Given/When/Then.
 
 ## AC prefixes
 
@@ -32,7 +33,7 @@ The bold prefix is the only thing parsers and reviewers rely on, so use exactly 
 | `<link name> link`                      | all                                     | A content link in the page body, e.g. `Learn more link`. Always ends ` link`; never `Back link` or `Change link` |
 | `Next page`                             | question, content, check your answers   | The only destination after Continue / submit                                                              |
 | `Next page (if <option> selected)`      | question                                | One per distinct outcome of radios, checkboxes or conditional routing                                     |
-| `Form validation (missing value)`       | question                                | Empty submission; links the `?preview=1&error=1` prototype state                                          |
+| `Form validation (missing value)`       | question, check your answers            | Empty submission; links the `?preview=1&error=1` prototype state. A descriptive name for the same case, e.g. `(checkbox not ticked)` or `(no option selected)`, is equivalent and allowed |
 | `Form validation (invalid format)`      | question, text input                    | The value is in the wrong format; links `?preview=1&error=format`                                         |
 | `Form validation (<other validation>)`  | question                                | Any other reachable error, named in lower case, e.g. `(too long)`, `(out of range)`                       |
 | `Show saved selection`                  | question                                | Returning to the page re-shows the saved answer                                                           |

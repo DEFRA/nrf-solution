@@ -38,7 +38,7 @@ Exceptions are limited to cases where the AC genuinely can't be verified from th
 
 - Things physically unobservable in a browser (e.g. `HttpOnly` / `Secure` cookie flags, server-set cookie expiry).
 - Named implementation details the AC depends on (e.g. specific cookie names to assert presence/absence of, a policy version field, a config flag or env var used to simulate a state a user can't reach).
-- Test hooks the implementer has provided to make an AC testable — prefer using these over skipping the scenario. The ticket's testing notes are the expected channel for the implementer to surface these; check there first before reading code.
+- Test hooks the implementer has provided to make an AC testable — prefer using these over skipping the scenario. The ticket's `h2. Testing notes` section is the expected channel for these, and for test users, test data and how to test changes a browser can't exercise (see [ac-testability.md](../../../docs/ai/ac-testability.md)); check there first before reading code. If an AC needs something the notes don't give, report it as a gap rather than guessing.
 
 When you rely on code-derived knowledge, mark the row as "code-verified" in the results table and note exactly what you looked up. Every code read must be visible in the output.
 
@@ -48,24 +48,24 @@ Confirm the Playwright MCP server is configured with a real-browser user agent b
 
 Do steps 1 and 2 **in parallel** — issue both calls in the same message so the browser is already loaded by the time Jira is read:
 
-1. Invoke the `read-jira-ticket` skill with the ticket ID to fetch the ticket's details.
+1. Invoke the `util-read-jira-ticket` skill with the ticket ID to fetch the ticket's details.
 
 2. Navigate to the test URL with `mcp__playwright__browser_navigate`.
 
 Once both complete: confirm the correct page loaded via `mcp__playwright__browser_snapshot`, then extract every scenario as a numbered checklist before proceeding.
 
-**If any scenario or acceptance criterion is unclear, ambiguous, or untestable** (e.g. missing expected values, vague assertions, or steps that can't be verified in a browser), flag it to the user before testing that scenario. Ask for clarification rather than guessing. Note any assumptions you had to make in the results table. A password prompt on a prototype link is not a reason to flag or skip — use the `browse-prototype` skill (see "Prototype comparison").
+**Testability gate (strict).** Before testing anything, check every AC against [ac-testability.md](../../../docs/ai/ac-testability.md). If any AC fails, stop and list the failing ACs with the reason for each; don't test any scenario until the user fixes the ticket or explicitly tells you to proceed without those ACs, in which case mark them ⚠️ Partial in the results. Don't guess missing expected values. Note any assumptions you do make in the results table. A password prompt on a prototype link is not a reason to flag or skip — use the `util-browse-prototype` skill (see "Prototype comparison").
 
 ## Prototype comparison
 
-If any acceptance criterion links to a prototype page or prototype error state (e.g. "content should match the prototype", "error summary as shown on the prototype error state"), **use the `browse-prototype` skill to get the expected content. Do not navigate to prototype URLs yourself.** The prototype is password-protected; `browse-prototype` handles the password prompt using the `PROTOTYPE_PASSWORD` env var and extracts the page with the project's extraction script. Never ask the user for the password or paste it into the conversation.
+If any acceptance criterion links to a prototype page or prototype error state (e.g. "content should match the prototype", "error summary as shown on the prototype error state"), **use the `util-browse-prototype` skill to get the expected content. Do not navigate to prototype URLs yourself.** The prototype is password-protected; `util-browse-prototype` handles the password prompt using the `PROTOTYPE_PASSWORD` env var and extracts the page with the project's extraction script. Never ask the user for the password or paste it into the conversation.
 
 - Run it once per linked prototype URL during Setup, before testing scenarios, because it drives the same Playwright browser. Hold the extracted JSON in memory, then navigate back to the test URL.
 - For error-state criteria, ask it to capture the error state (its Step 3). The error summary link text is the source of truth for expected error wording.
 - Compare the deployed page against the extracted heading, body content, radio/checkbox labels and values, hints, button text and error wording. The extraction script skips the back link, per-item hints, inset text, warning text, tables and details — check those against the prototype's DOM directly.
 - Differences that don't affect what a user sees (e.g. error summary anchor `href` casing, the back link's route) are not failures; mention them in the Notes column.
-- Never fetch the prototype with `curl` or your own scripts. Use only `browse-prototype`, which drives the browser and logs in with `PROTOTYPE_PASSWORD`. For the items the extractor skips (warning text, details, lists, back link), compare against the prototype page's DOM in the browser.
-- If `browse-prototype` fails (e.g. `PROTOTYPE_PASSWORD` is unset), report the exact error and mark prototype-dependent scenarios ⚠️ Partial, with the reason in Notes. Don't guess the expected content.
+- Never fetch the prototype with `curl` or your own scripts. Use only `util-browse-prototype`, which drives the browser and logs in with `PROTOTYPE_PASSWORD`. For the items the extractor skips (warning text, details, lists, back link), compare against the prototype page's DOM in the browser.
+- If `util-browse-prototype` fails (e.g. `PROTOTYPE_PASSWORD` is unset), report the exact error and mark prototype-dependent scenarios ⚠️ Partial, with the reason in Notes. Don't guess the expected content.
 
 ## Progress narration
 

@@ -1,6 +1,6 @@
 ---
-name: create-jira-ticket
-description: Create a new Jira ticket in the NRF2 project. Use whenever a skill or task needs to create a Jira story or sub-task.
+name: util-create-jira-ticket
+description: Create a new Jira ticket in the NRF2 project. Utility skill, designed to be called by other skills; it does no review or other follow-up. Use whenever a skill or task needs to create a Jira story or sub-task.
 ---
 
 ## Parameters

@@ -23,10 +23,10 @@ Prerequisites:
 
 ### Step 1 — Fetch the ACs
 
-Use `read-jira-ticket` for the reference. If its issue type is `Epic`:
+Use `util-read-jira-ticket` for the reference. If its issue type is `Epic`:
 
 1. Run `node .ai/skills/tools/jira/get-epic-issues.mjs <epic>` to list the child issues. If it fails, stop and report the error.
-2. Skip children that are sub-tasks or epics. Run `read-jira-ticket` on each remaining story.
+2. Skip children that are sub-tasks or epics. Run `util-read-jira-ticket` on each remaining story.
 3. Run Steps 2–5 once per story. Share implementation searches between stories where they overlap, but keep each story's ACs, evidence and table separate.
 4. A story with no `Acceptance criteria` section is not a reason to stop: list it in the final summary as "no ACs" and move on.
 

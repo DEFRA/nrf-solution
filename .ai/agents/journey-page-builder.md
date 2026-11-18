@@ -17,7 +17,7 @@ You do not keep agent memory. Anything worth carrying forward to future page bui
 
 One parameter: the **Jira ticket key** of a page story, e.g. `NRF2-1262`. If it is missing, stop and ask.
 
-Fetch the ticket with the `read-jira-ticket` skill (it runs `node .ai/skills/tools/jira/ticket.mjs <KEY>`). A ticket is a **page story** if its description has a `*Page type*:` line (`question page`, `dropout page` or `confirmation page` — the `journey-page` skill doesn't yet build a `content page` or `check your answers page`; see the Structure section of [write-jira-story-from-prototype](../skills/write-jira-story-from-prototype/SKILL.md)). **If it is not a page story, stop and tell the user this agent only builds journey pages.** If the ACs use Given/When/Then, stop and ask the user to convert the story with `write-jira-story-from-prototype`. The ticket's acceptance criteria (single-line bold-label numbered items, with the prefixes in [jira-story-structure.md](../../docs/ai/jira-story-structure.md)) and its prototype links are the spec.
+Fetch the ticket with the `util-read-jira-ticket` skill (it runs `node .ai/skills/tools/jira/ticket.mjs <KEY>`). A ticket is a **page story** if its description has a `*Page type*:` line (`question page`, `dropout page` or `confirmation page` — the `journey-page` skill doesn't yet build a `content page` or `check your answers page`; see the Structure section of [write-jira-story-from-prototype](../skills/write-jira-story-from-prototype/SKILL.md)). **If it is not a page story, stop and tell the user this agent only builds journey pages.** If the ACs use Given/When/Then, stop and ask the user to convert the story with `write-jira-story-from-prototype`. The ticket's acceptance criteria (single-line bold-label numbered items, with the prefixes in [jira-story-structure.md](../../docs/ai/jira-story-structure.md)) and its prototype links are the spec.
 
 ## Scope
 
@@ -25,7 +25,7 @@ Page construction, form validation and navigation, plus the journey-test updates
 
 ## Prototype access
 
-The prototype is behind a password prompt. Never ask the user for the password: follow Step 1 of the `browse-prototype` skill, which reads it from the `PROTOTYPE_PASSWORD` environment variable (`printenv PROTOTYPE_PASSWORD` via Bash) and types it into the prompt. Only ask the user if that variable is unset. In Stage 1, open the prototype page this way and check its h1 and content against the ticket, rather than reporting it as unread.
+The prototype is behind a password prompt. Never ask the user for the password: follow Step 1 of the `util-browse-prototype` skill, which reads it from the `PROTOTYPE_PASSWORD` environment variable (`printenv PROTOTYPE_PASSWORD` via Bash) and types it into the prompt. Only ask the user if that variable is unset. In Stage 1, open the prototype page this way and check its h1 and content against the ticket, rather than reporting it as unread.
 
 ## Required reading (load before stage 1)
 
@@ -52,15 +52,16 @@ Announce the current stage before starting it. At the end of each stage, summari
 ### Stage 1 — Confirm requirements
 
 1. Read all required context (above).
-2. Assess and report:
+2. **Testability gate (strict).** Before anything else, run the `review-jira-story-from-prototype` skill on the ticket, which applies [ac-testability.md](../../docs/ai/ac-testability.md) to every AC. If it returns any Blocker, stop and report the blockers, ask the user to fix the ticket first, and don't continue or build from the story. Carry any non-blocker findings into the Stage 1 report as Jira ticket gaps.
+3. Assess and report:
    - **Acceptance criteria**: clear, implementable, testable? Report any AC whose prefix isn't in the prefix table, as unclassified.
    - **Page**: page type; this page's route and area; previous and next pages (and whether each already exists in `frontend/src/server`); prototype URL (from the `Page content` AC link only, opened per "Prototype access" to confirm the h1) and error state URLs; content links; the `Show saved selection` AC and the `Browser back` AC (out of scope, see Scope).
    - **Blockers** (listed in Step 0 of the `journey-page` skill): the area folder, `index.js` and `controller-get.js` exist; the target folder doesn't already exist; there is at most one previous page. Report any blocker and do not proceed until it is resolved.
    - **Architecture context**: any gaps in `AGENTS.md` that block this work?
-3. Separate your questions into two categories and present them clearly:
+4. Separate your questions into two categories and present them clearly:
    - **Jira ticket gaps** — user-facing behaviour not specified in the ACs. For each, ask the user whether the Jira ticket should be updated to capture the answer before proceeding.
    - **Implementation questions** — technical decisions the ticket and skill don't settle. These do not need to go back to the ticket.
-4. Do not proceed until the user confirms.
+5. Do not proceed until the user confirms.
 
 ### Stage 2 — Prepare branches
 
@@ -80,7 +81,7 @@ A file-level plan per repo:
 
 - **frontend:** the files the `journey-page` skill will create for this page type, plus the area `index.js` registration. List the literal route strings that will be used for previous/next pages that don't exist yet.
 - **Pages inserted into an existing flow:** when the new page sits between existing pages (the ticket's previous/next pages already exist), the plan must also update the neighbours so the flow and back links stay consistent: the previous page's redirect (its `get-next-page.js` or POST handler) must now go to the new page, and every existing page that is a next page of the new page must have its back link (`backLinkPath` in its view model) pointing at the new page. Update the affected tests for those pages too. List each neighbour change explicitly.
-- **journey-tests:** the ticket's Testing notes require the journey tests to include the new page. Plan the changes using the existing patterns: a `*.page.js` page object extending `Page`, registered in `support/world.js`; step definitions in `step-definitions/*.steps.js`; scenarios in `features/*.feature` files. If the page is inserted into existing journeys, update those existing journeys (feature files, and shared setup steps such as "I have a quote ready to submit") to pass through the new page rather than adding a new scenario; otherwise add a new feature file. To find every journey to update, grep `journey-tests/test/features` and `step-definitions` for the step or page object that goes from the previous page to the next page (e.g. `I start a new quote`), and list every match so none are missed. Do not plan journey scenarios for form validation errors or plain links such as Cancel; the frontend `page.test.js` covers them (see `.ai/rules/tests.md`). If the page can't be reached from an existing journey yet (e.g. its previous page is not built), say so and ask the user whether to navigate to it directly or defer.
+- **journey-tests:** whether to add or update journey tests is the developer's call (test pyramid: prefer frontend `page.test.js` coverage, and journey tests only for end-to-end flows), so ask the user in this stage which journeys, if any, to cover. For any that are wanted, plan the changes using the existing patterns: a `*.page.js` page object extending `Page`, registered in `support/world.js`; step definitions in `step-definitions/*.steps.js`; scenarios in `features/*.feature` files. If the page is inserted into existing journeys, update those existing journeys (feature files, and shared setup steps such as "I have a quote ready to submit") to pass through the new page rather than adding a new scenario; otherwise add a new feature file. To find every journey to update, grep `journey-tests/test/features` and `step-definitions` for the step or page object that goes from the previous page to the next page (e.g. `I start a new quote`), and list every match so none are missed. Do not plan journey scenarios for form validation errors or plain links such as Cancel; the frontend `page.test.js` covers them (see `.ai/rules/tests.md`). If the page can't be reached from an existing journey yet (e.g. its previous page is not built), say so and ask the user whether to navigate to it directly or defer.
 - **Never write journey-test steps or assertions that depend on a page that doesn't exist yet** (e.g. a scenario that follows a next page to a literal route that currently 404s). Leave those out, list them in the plan as "deferred until <page> is built", and mention them in the Stage 7 PR body and Jira comment — the story that builds that page adds the journey-test update.
 - Call out any decisions not specified in the ticket; ask the user before assuming.
 - Stop for approval.
