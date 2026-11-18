@@ -68,9 +68,10 @@ Sections appear in this order. User story, Acceptance criteria, Page URLs and No
 4. **Out of scope** - leave out by default. It can't be inferred from a prototype. Only include it if the user supplies content (naming the owning ticket's key where another ticket owns an item), or the existing ticket already has it.
 5. **Non-functional requirements** - `h2. Non-functional requirements`, always present, never empty. One bullet per applicable category, linked to its guidance page, using [non-functional requirements](../../../docs/ai/non-functional-requirements.md). Start from the categories mapped to the page type in that doc; skip a category only when it clearly doesn't apply, and mention any you excluded in your report. Never list Browser & device compatibility or Page load performance. Security only where the page posts a form (question and check your answers pages), not for content, dropout or confirmation pages. Don't fetch the guidance pages; the category name is enough.
 
-6. **Feature specification** - only when a parent feature page was supplied (see [Parent feature page](#parent-feature-page)).
+6. **Testing notes** - `h2. Testing notes`, after the NFRs, only when an AC needs something a tester can't get from the ACs: a Defra ID test user for a page behind sign-in, test data, or how to reach a state. Bullets only, no secrets (point to where credentials are kept). See [ac-testability.md](../../../docs/ai/ac-testability.md). Omit it otherwise.
+7. **Feature specification** - only when a parent feature page was supplied (see [Parent feature page](#parent-feature-page)).
 
-Do not add: Testing notes, Notes, Context, "Generated from", a separate Prototype line, or Given/When/Then.
+Do not add: Notes, Context, "Generated from", a separate Prototype line, or Given/When/Then.
 
 ### Jira markup
 
@@ -173,6 +174,7 @@ Prototype URLs for related pages follow `.../handoffs/<prototype-name>/latest/<s
 
 - Sections are in the right order; omitted sections are omitted, not empty. NFRs are present.
 - The ACs are a numbered list; the NFRs are bullets.
+- Anything a tester needs but can't get from the ACs (sign-in user, test data) is in Testing notes.
 - The Page type line sits directly under the user story and matches the prototype page.
 - Every AC prefix is a short description, bold, and the sentence doesn't repeat it.
 - No Given/When/Then, no routes in ACs, no copied prototype content, no "or".

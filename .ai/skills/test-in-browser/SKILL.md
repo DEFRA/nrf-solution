@@ -38,7 +38,7 @@ Exceptions are limited to cases where the AC genuinely can't be verified from th
 
 - Things physically unobservable in a browser (e.g. `HttpOnly` / `Secure` cookie flags, server-set cookie expiry).
 - Named implementation details the AC depends on (e.g. specific cookie names to assert presence/absence of, a policy version field, a config flag or env var used to simulate a state a user can't reach).
-- Test hooks the implementer has provided to make an AC testable — prefer using these over skipping the scenario. The ticket's testing notes are the expected channel for the implementer to surface these; check there first before reading code.
+- Test hooks the implementer has provided to make an AC testable — prefer using these over skipping the scenario. The ticket's `h2. Testing notes` section is the expected channel for these, and for test users, test data and how to test changes a browser can't exercise (see [ac-testability.md](../../../docs/ai/ac-testability.md)); check there first before reading code. If an AC needs something the notes don't give, report it as a gap rather than guessing.
 
 When you rely on code-derived knowledge, mark the row as "code-verified" in the results table and note exactly what you looked up. Every code read must be visible in the output.
 

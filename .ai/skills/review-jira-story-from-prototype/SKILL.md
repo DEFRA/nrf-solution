@@ -38,8 +38,9 @@ The description, in this order, has:
 4. `h2. Page URLs`, always present: a two-column table (page title, URL) whose first row is this page.
 5. `h2. Out of scope` only if it has content.
 6. `h2. Non-functional requirements` with at least one bullet.
+7. `h2. Testing notes` only if needed, as bullets, after the NFRs. Flag a page behind sign-in (a Defra ID-protected page) with no note on which test user to use, and secrets or real credentials in the note.
 
-Flag anything missing, out of order, or present but not allowed: Given/When/Then, `h3. Scenario` headings, Testing notes, Notes, Context, a "Generated from" line, a separate Prototype line, a prototype column in Page URLs.
+Flag anything missing, out of order, or present but not allowed: Given/When/Then, `h3. Scenario` headings, Notes, Context, a "Generated from" line, a separate Prototype line, a prototype column in Page URLs.
 
 Also flag Markdown that leaked into the Jira description: `**bold**`, `[text](url)`, `## Heading`, `- bullet`, or a table not written with `||` headers.
 

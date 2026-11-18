@@ -54,7 +54,9 @@ Collect every prototype link in the description. Don't fetch or curl them — ju
 
 #### 2. Testability
 
-ACs are single-line bold-label numbered items (`# *<Prefix>:* <sentence>`), not Given/When/Then. Apply the full checklist in [ac-testability.md](../../../docs/ai/ac-testability.md) (testability and distinctness) to every AC. Also flag:
+ACs are single-line bold-label numbered items (`# *<Prefix>:* <sentence>`), not Given/When/Then. Apply the full checklist in [ac-testability.md](../../../docs/ai/ac-testability.md) (testability and distinctness) to every AC, for every story whether or not it builds a page. Also flag:
+
+- A content or error-state AC with no prototype link, a page named in an AC with no Page URLs row, and an AC that needs a test user, test data or a precondition (or a change `test-in-browser` can't exercise, such as an API change) with no matching `h2. Testing notes` bullet.
 
 - An empty or untitled AC, or one still numbered with a placeholder prefix.
 - A bold prefix that repeats the sentence, or a sentence that repeats the prefix instead of adding the concrete detail.

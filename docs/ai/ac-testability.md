@@ -1,6 +1,6 @@
 # AC testability and distinctness
 
-Shared rules for reviewing a single-line bold-label numbered acceptance criterion (the simplified
+Shared rules for writing and reviewing a single-line bold-label numbered acceptance criterion (the simplified
 format: `# *<Prefix>:* <sentence>`, no Given/When/Then). Used by `review-jira-story` and
 `review-jira-story-from-prototype` so the same AC is judged the same way regardless of which story
 it's written. Written for `test-in-browser`: every AC it describes must give that skill one
@@ -29,7 +29,34 @@ obvious:
   Move the detail into the AC itself.
 - **Implementation detail that isn't needed to verify the outcome** — database/table names, which
   service or store holds data, endpoint internals, column names. Reword to the observable
-  behaviour; move anything a tester genuinely needs into Notes or the dev task.
+  behaviour; move anything a tester genuinely needs into Testing notes.
+- **Content or error state with no prototype link.** An AC about page content, a message or an
+  error state links the prototype URL that shows that state (e.g. `?preview=1&error=1`), rather
+  than quoting the text.
+- **Page named in an AC with no Page URLs row.** Every page an AC names or visits (back link,
+  next page, content link, entry point) has a row under `h2. Page URLs`, and every row other than
+  the story's own page is named in an AC. Applies to any story that names a page.
+
+## Testing notes
+
+Anything `test-in-browser` needs that doesn't belong in an AC goes under a final
+`h2. Testing notes` section (after the NFRs), as bullets, so the ACs stay short. This applies to
+every story, not just page stories. Include:
+
+- **Test data and accounts** — e.g. the Defra ID test user (or which user type) needed to sign in,
+  an NRL reference, or an email address to use. Name the user from the
+  [Test users (non-prod)](https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298/Test+users+non-prod)
+  Confluence page and link to it; don't copy credentials into the ticket.
+- **How to reach a state** — preconditions the ACs depend on that a tester can't reach by
+  following the ACs.
+- **How to test what a browser can't** — for an API, calculation, email or data change, say how
+  to exercise it (the request to send, the expected response, where to check the email or
+  record), with a worked example value.
+- **Journey tests** — a bullet naming the journey tests to add or update, where they are affected.
+
+Flag an AC that needs any of these but has no matching Testing notes bullet. Flag a Testing notes
+bullet that restates an AC or states expected behaviour that no AC asserts (put the behaviour in
+an AC). Don't put secrets or real credentials in a ticket; point to where the tester finds them.
 
 ## Distinctness
 
