@@ -114,11 +114,7 @@ In this order, skipping any that don't apply:
 2. **Back link** - destination page, one AC per distinct entry point if it varies (name the entry point in the prefix, e.g. `Back link (from X)`).
 3. **Content links** - one AC per link in the page body, in page order.
 4. **Next page** - one AC per distinct outcome: `*Next page (if <option> selected):*` for radios or conditional routing, plain `*Next page:*` if there is only one.
-<<<<<<< HEAD
-5. **Form validation (<type>)** - one AC per reachable error state, linking the prototype error state. For a text input, `(missing value)` uses `?preview=1&error=1` and `(invalid format)` uses `?preview=1&error=format`, the latter only when it shows a different message (see Exploring the prototype). Wording for invalid format: `Submitting a value that is not in the expected format shows the error summary in the [prototype]`, naming the format if the prototype shows it.
-=======
 5. **Form validation (<type>)** - one AC per reachable error state, linking the prototype error state. For a text input, `(missing value)` uses `?preview=1&error=1` and `(invalid format)` uses `?preview=1&error=format`. Load the `error=format` variant of the error URL; if it shows the same message as `error=1` (or falls back to the generic error), don't add the invalid format AC (see Exploring the prototype). Wording for invalid format: `Submitting a value that is not in the expected format shows the error summary in the [prototype]`, naming the format if the prototype shows it.
->>>>>>> origin/main
 6. **Show saved selection** - include for every question page, since nearly all question pages remember the answer. Standard wording: `*Show saved selection:* Returning to the page shows the option the user previously saved.` (for checkboxes, "the options"; for a text input, "the value"). Don't say how it is stored (session, database); that is an implementation detail. Omit only if you know the page deliberately doesn't restore answers.
 
 ### Scenarios for a new content page
