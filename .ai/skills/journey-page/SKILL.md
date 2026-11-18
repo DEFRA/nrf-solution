@@ -21,7 +21,7 @@ Do not commit, push, open PRs, or edit the Jira ticket.
 
 ## Terms
 
-- 'page story' - a Jira ticket whose description has a `*Page type*:` line. Acceptance criteria are single-line bold-label numbered items (`# *<Prefix>:* <sentence>`, written by `write-jira-story-from-prototype`), not Given/When/Then.
+- 'page story' - a Jira ticket whose description has a `*Page type*:` line. Acceptance criteria are single-line bold-label numbered items (`# *<Prefix>:* <sentence>`) with the prefixes listed in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md). A story with Given/When/Then ACs isn't supported: stop and ask the user to convert it with `write-jira-story-from-prototype`.
 - 'page type' - this skill builds `question page`, `dropout page` or `confirmation page`. A story for a `content page` or `check your answers page` isn't supported yet — stop and tell the user.
 - 'area' - the first segment of the page's route, e.g. `quote` for `/quote/planning-type`. It maps to a folder and Hapi plugin under `frontend/src/server/`.
 - 'route ID' - the last segment of the page's route, e.g. `planning-type`. It is also the target folder name.
@@ -41,6 +41,7 @@ Do not commit, push, open PRs, or edit the Jira ticket.
    - **Entry point ACs** (`confirmation page` only): one per `Entry point (from X)` prefix — the previous page that submits to this one.
    - **Show saved selection AC** (`question page` only): confirms the field is re-shown on return — out of scope (see Scope), note it in the final report.
    - **Browser back AC** (`confirmation page` only): out of scope (see Scope); note its destination in the final report.
+   - **Unclassified ACs**: any AC whose prefix isn't in the prefix table (e.g. `Form validation (empty)`). Don't guess; list them in the final report.
 3. Derive the area and route ID from the route of 'this page'. The area decides the target folder, the GET and POST controllers (see Controllers in [conventions.md](./conventions.md)) and the `index.js` the routes are registered in. Stop and tell the user, rather than creating anything, if the area folder, its `index.js` or its `controller-get.js` does not exist.
 4. Check which of the previous and next pages already exist in `frontend/src/server/` (a folder with `route-path.js`, or a legacy page without one). Record this: it decides between importing a `routePath` and using a literal route string, and which neighbouring pages need updating in Step 2.
 5. Check the target folder does not already exist. If it does, stop and ask the user, offering to resume by reviewing the existing files against this skill, the ticket and the prototype instead of overwriting them.
@@ -78,7 +79,7 @@ Create each file in the target folder following [conventions.md](./conventions.m
   - **Form fields:** field names come from the prototype `name` attributes, and radio/checkbox values from the prototype `value` attributes.
 - **`options.js`** (radios/checkboxes only): the items (`value`, `text`, `hint`) captured from the prototype. The template, view model and `form-validation.js` all use this file, so the items are not written inline in `index.njk`.
 - **`get-view-model.js`**: `pageHeading` is the prototype h1; `backLinkPath` is the previous page's route (see Page types).
-- **`form-validation.js`**: error messages are the error summary link text read from the prototype error state pages. Map the `Form validation (missing value)` AC to `'any.required'` (and `'any.only'` for radios/checkboxes, `'string.empty'` for text inputs), and the `Form validation (invalid format)` AC to the format key such as `'string.email'`.
+- **`form-validation.js`**: error messages are the error summary link text read from the prototype error state pages. Map the `Form validation (missing value)` AC to `'any.required'` (and `'any.only'` for radios/checkboxes, `'string.empty'` for text inputs). For `Form validation (invalid format)` and any other named validation, make a best guess at the Joi key from the AC and the prototype error message (e.g. `'string.email'`, `'string.max'`, `'number.min'`), and list each guessed key in the final report for the user to check.
 - **`get-next-page.js`**: based on the ticket's `Next page` ACs. With several next pages, branch on the submitted value, matching the option named in each AC's prefix to the radio `value`. Pages that don't exist yet get a literal route string, listed in the final report.
 - **`routes.js` / `route-path.js`**: register the routes in the area's `index.js`.
 - **Neighbouring pages**: if the ticket's previous or next pages already exist, update them as described in conventions.md, and list them in the final report.
@@ -91,7 +92,8 @@ Run the new tests (including the form validation tests) and the frontend lint, a
 - Files created and the routes registered.
 - Any **literal route strings** used for pages that don't exist yet (file and string), to be swapped for `route-path.js` imports when those pages are built.
 - Any links left as `#`, and any content links from the ticket that could not be matched in the prototype page.
-- Any placeholder error messages that need replacing.
+- Any placeholder error messages that need replacing, and any Joi keys that were guessed for non-missing-value validations.
+- Any ACs that couldn't be classified from their prefix.
 - Any mismatch between the ticket and the prototype (e.g. h1 differing from the Page URLs name), and any back link substitution.
 - Neighbouring pages updated.
 - Any session scenarios in the ticket that were not implemented (re-shown answers, clearing, redirects when there is no session, browser back), as they are handled by a separate ticket.

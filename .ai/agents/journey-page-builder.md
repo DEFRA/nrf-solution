@@ -17,7 +17,7 @@ You do not keep agent memory. Anything worth carrying forward to future page bui
 
 One parameter: the **Jira ticket key** of a page story, e.g. `NRF2-1262`. If it is missing, stop and ask.
 
-Fetch the ticket with the `read-jira-ticket` skill (it runs `node .ai/skills/tools/jira/ticket.mjs <KEY>`). A ticket is a **page story** if its description has a `*Page type*:` line (`question page`, `dropout page` or `confirmation page` — the `journey-page` skill doesn't yet build a `content page` or `check your answers page`; see the Structure section of [write-jira-story-from-prototype](../skills/write-jira-story-from-prototype/SKILL.md)). **If it is not a page story, stop and tell the user this agent only builds journey pages.** The ticket's acceptance criteria (single-line bold-label numbered items, not Given/When/Then) and its prototype links are the spec.
+Fetch the ticket with the `read-jira-ticket` skill (it runs `node .ai/skills/tools/jira/ticket.mjs <KEY>`). A ticket is a **page story** if its description has a `*Page type*:` line (`question page`, `dropout page` or `confirmation page` — the `journey-page` skill doesn't yet build a `content page` or `check your answers page`; see the Structure section of [write-jira-story-from-prototype](../skills/write-jira-story-from-prototype/SKILL.md)). **If it is not a page story, stop and tell the user this agent only builds journey pages.** If the ACs use Given/When/Then, stop and ask the user to convert the story with `write-jira-story-from-prototype`. The ticket's acceptance criteria (single-line bold-label numbered items, with the prefixes in [jira-story-structure.md](../../docs/ai/jira-story-structure.md)) and its prototype links are the spec.
 
 ## Scope
 
@@ -53,7 +53,7 @@ Announce the current stage before starting it. At the end of each stage, summari
 
 1. Read all required context (above).
 2. Assess and report:
-   - **Acceptance criteria**: clear, implementable, testable?
+   - **Acceptance criteria**: clear, implementable, testable? Report any AC whose prefix isn't in the prefix table, as unclassified.
    - **Page**: page type; this page's route and area; previous and next pages (and whether each already exists in `frontend/src/server`); prototype URL (from the `Page content` AC link only, opened per "Prototype access" to confirm the h1) and error state URLs; content links; the `Show saved selection` AC and the `Browser back` AC (out of scope, see Scope).
    - **Blockers** (listed in Step 0 of the `journey-page` skill): the area folder, `index.js` and `controller-get.js` exist; the target folder doesn't already exist; there is at most one previous page. Report any blocker and do not proceed until it is resolved.
    - **Architecture context**: any gaps in `AGENTS.md` that block this work?

@@ -91,9 +91,9 @@ A bare external URL in an AC is written as `[+url+|url]`.
 ## Acceptance criteria rules
 
 - One numbered item per scenario: `# *<Prefix>:* <one sentence>.`. Only the acceptance criteria are numbered; NFRs stay as bullets.
-- The bold prefix succinctly describes the scenario and carries the meaning, so the sentence doesn't repeat it. Examples:
+- The bold prefix carries the meaning, so the sentence doesn't repeat it. Use exactly the prefix forms in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md), which also holds the page structure; the reviewer and the journey page builder depend on them. Examples:
   - `*Next page (if Yes selected):* _Page title_` - no need to say "choosing yes and continuing takes the user to".
-  - `*Form validation (missing value):*`, and `*Form validation (invalid email):*` for other validations - always name the validation in brackets.
+  - `*Form validation (missing value):*`, `*Form validation (invalid format):*`, and `*Form validation (<other validation>):*` (e.g. `(too long)`) for other validations - always name the validation in brackets, one prefix per error type.
   - `*Show saved selection:*`
   - `*Back link:*`, `*Learn more link:*` - name the link only; the sentence gives the destination (and target, e.g. new tab). Link wording itself is covered by the page content scenario.
 - Refer to other pages by title in italics, exactly as the h1 appears in the prototype - never by route, never by spec wording. Routes live in Page URLs only.
@@ -202,5 +202,6 @@ Return the ticket key and URL, then in a few short lines:
 - the reviewer outcome (Pass, or how many findings were fixed and any that remain);
 - routes that were defaulted from the prototype;
 - assumptions made (user story, Show saved selection);
+- for a content page or check your answers page, that `journey-page` can't build it yet;
 - anything you couldn't verify (unreached error states, unchecked entry points, links needing sign-in, links that don't open in a new tab), and open questions (e.g. a confirmation page's browser-back destination, links with a `#` placeholder href, an epic that couldn't be determined from the parent feature page);
 - NFR categories you excluded.

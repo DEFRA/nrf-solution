@@ -22,7 +22,7 @@ You review the ticket text only and never open the prototype. Checks that would 
 
 ### Step 1 - Fetch the ticket
 
-Use `read-jira-ticket` and work from the raw description. Stop and alert the user if there is no description. If there is no `*Page type*:` line with `question page`, `content page`, `check your answers page`, `dropout page` or `confirmation page`, or the ACs use Given/When/Then, stop and tell the user to use `review-jira-story` instead.
+Use `read-jira-ticket` and work from the raw description. Stop and alert the user if there is no description. If the ACs use Given/When/Then (`h3. Scenario` headings, `*Given*`/`*When*`/`*Then*`), stop and ask the user to convert the story to the simplified format with `write-jira-story-from-prototype`; legacy stories aren't reviewed here. If there is no `*Page type*:` line with `question page`, `content page`, `check your answers page`, `dropout page` or `confirmation page`, stop and tell the user to use `review-jira-story` instead.
 
 ### Step 2 - Run all checks
 
@@ -49,8 +49,8 @@ Every Jira ticket key in the description must be a Jira link, appear once, and d
 
 For each AC:
 
-1. The bold prefix is a short description of the scenario, and the sentence doesn't repeat it.
-2. Validation prefixes name the validation in brackets, e.g. `Form validation (missing value)`.
+1. The bold prefix is one of the forms in the AC prefixes table in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md), spelled exactly (e.g. `Form validation (missing value)`, `Back link (from X)`, `Next page (if <option> selected)`, content links ending ` link`). Flag any other spelling, since the journey page builder parses these. The sentence doesn't repeat the prefix.
+2. Validation prefixes name the validation in brackets, using a distinct prefix per error type (`(missing value)`, `(invalid format)`, or another named validation such as `(too long)`); flag an `(invalid format)` AC that describes a length or range error.
 3. One behaviour per AC: no "or" joining pages or outcomes, no slashes in place of a word, no ambiguous "it".
 4. Other pages are named by title in italics (`_Title_`), never by route or URL. Flag any application path (e.g. `/request-to-use/...`) in an AC; full external links are allowed (see item 7).
 5. No content strings (hint text, button labels, error text, body copy) copied from the prototype. Page titles in italics are allowed.

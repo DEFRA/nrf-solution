@@ -27,7 +27,7 @@ You'll be given a feature specification in Confluence as an input parameter (exa
 
 Only Confluence pages are supported as a source format. Figma files, Service Blueprints, and transcripts are out of scope.
 
-**If the spec has a `Page type:` line** (`question page`, `content page`, `check your answers page`, `dropout page` or `confirmation page`), it describes a single journey page — stop and tell the user to use `write-jira-story-from-prototype` instead, passing the spec's prototype URL and, optionally, this Confluence page as its second parameter.
+**If the spec has a `Page type` line (`*Page type*:` in Jira, or plain `Page type:` in a Confluence spec)** (`question page`, `content page`, `check your answers page`, `dropout page` or `confirmation page`), it describes a single journey page — stop and tell the user to use `write-jira-story-from-prototype` instead, passing the spec's prototype URL and, optionally, this Confluence page as its second parameter.
 
 ## Workflow
 
