@@ -52,11 +52,10 @@ every story, not just page stories. Include:
 - **How to test what a browser can't** — for an API, calculation, email or data change, say how
   to exercise it (the request to send, the expected response, where to check the email or
   record), with a worked example value.
-- **Journey tests** — a bullet naming the journey tests to add or update, where they are affected.
 
-Flag an AC that needs any of these but has no matching Testing notes bullet. Flag a Testing notes
+Flag an AC that needs any of these but has no matching Testing notes bullet, including a page behind sign-in (a Defra ID-protected page) with no note on which test user to use. Flag a Testing notes
 bullet that restates an AC or states expected behaviour that no AC asserts (put the behaviour in
-an AC). Don't put secrets or real credentials in a ticket; point to where the tester finds them.
+an AC). Whether to add or update journey tests is the developer's call (test pyramid), so don't prescribe it. Don't put secrets or real credentials in a ticket; point to where the tester finds them.
 
 ## Distinctness
 

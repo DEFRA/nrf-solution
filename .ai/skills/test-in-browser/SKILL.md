@@ -54,7 +54,7 @@ Do steps 1 and 2 **in parallel** — issue both calls in the same message so the
 
 Once both complete: confirm the correct page loaded via `mcp__playwright__browser_snapshot`, then extract every scenario as a numbered checklist before proceeding.
 
-**Testability gate (strict).** Before testing anything, check every AC against [ac-testability.md](../../../docs/ai/ac-testability.md) (one pass/fail condition, a concrete target, a prototype link for content and error states, every page named has a Page URLs row, test users and data in Testing notes, distinct from other ACs). If any AC fails, stop and list the failing ACs with the reason for each; don't test any scenario until the user fixes the ticket or explicitly tells you to proceed without those ACs, in which case mark them ⚠️ Partial in the results. Don't guess missing expected values. Note any assumptions you do make in the results table. A password prompt on a prototype link is not a reason to flag or skip — use the `util-browse-prototype` skill (see "Prototype comparison").
+**Testability gate (strict).** Before testing anything, check every AC against [ac-testability.md](../../../docs/ai/ac-testability.md). If any AC fails, stop and list the failing ACs with the reason for each; don't test any scenario until the user fixes the ticket or explicitly tells you to proceed without those ACs, in which case mark them ⚠️ Partial in the results. Don't guess missing expected values. Note any assumptions you do make in the results table. A password prompt on a prototype link is not a reason to flag or skip — use the `util-browse-prototype` skill (see "Prototype comparison").
 
 ## Prototype comparison
 

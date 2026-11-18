@@ -16,7 +16,7 @@ Jira wiki markup, in this order. Omitted sections are omitted, not empty.
 | Page URLs           | `h2. Page URLs`, a two-column table (page title, URL). This page is the first row, followed by every other page named in an AC. No prototype column |
 | Out of scope        | `h2. Out of scope`, only if it has content                                                                                                           |
 | NFRs                | `h2. Non-functional requirements`, at least one bullet                                                                                               |
-| Testing notes       | Optional `h2. Testing notes` after the NFRs: test users and data, how to reach a state, how to test what a browser can't, journey test updates. See [ac-testability.md](ac-testability.md) |
+| Testing notes       | Optional `h2. Testing notes` after the NFRs: test users and data, how to reach a state, how to test what a browser can't. See [ac-testability.md](ac-testability.md) |
 | Feature specification | Optional final line, `*Feature specification*: [+<title>+\|<url>]`                                                                                 |
 
 No Notes, Context, "Generated from", separate Prototype line or Given/When/Then.

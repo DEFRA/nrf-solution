@@ -62,7 +62,7 @@ Sections, in order: User story; `h2. Acceptance criteria`; `h2. Page URLs` (only
 
 **Generated from timestamp:** include both date and time in the `*Generated from*:` line — e.g. `on 21 Sep 2026 at 14:30`.
 
-**Testing notes:** end the description with `h2. Testing notes` (after `h2. Non-functional requirements`, nothing follows it) whenever `test-in-browser` would need something the ACs don't give it, following [ac-testability.md](../../../docs/ai/ac-testability.md): test users or data (e.g. a Defra ID user for a page behind sign-in), how to reach a state, and how to test a change a browser can't exercise (an API or calculation change: the request, the expected response, a worked example). Also add a bullet naming the journey tests to update when the ticket changes a journey page or its behaviour, e.g. `* Update the journey tests to cover the new validation rule`. Omit the section when none of this applies. Never put secrets in it.
+**Testing notes:** end the description with `h2. Testing notes` (after `h2. Non-functional requirements`, nothing follows it) whenever `test-in-browser` would need something the ACs don't give it, following [ac-testability.md](../../../docs/ai/ac-testability.md): test users or data (e.g. a Defra ID user for a page behind sign-in), how to reach a state, and how to test a change a browser can't exercise (an API or calculation change: the request, the expected response, a worked example). Don't prescribe journey tests; that is the developer's call. Omit the section when none of this applies. Never put secrets in it.
 
 #### Content strings and prototype links
 
