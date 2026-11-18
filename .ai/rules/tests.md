@@ -34,7 +34,7 @@
 
 - When a test needs a stable session ID (e.g. for rate limiting or any behaviour keyed on session), use `withValidQuoteSession` to prime a real server-side session and obtain a cookie. Pass that cookie to all subsequent `server.inject` calls so Yar reuses the same session ID across requests. Never hand-roll session priming via a `/__test-setup-*` helper route or by mocking session reads — drive the real routes to build session state.
 
-- To seed the request to use session on a `setupTestServer` server (e.g. to test both the seeded and the no-session paths in one file), use `seedRequestToUseSessionWith` from `src/test-utils/setup-seeded-request-to-use-server.js`. Don't register a hand-rolled `onPostHandler` in each test file.
+- To seed the request to use session on a `setupTestServer` server (e.g. to test both the seeded and the no-session paths in one file), use `seedRequestToUseSessionWith` from `src/test-utils/setup-seeded-request-to-use-server.js`. Don't register a hand-rolled `onPostHandler` in each test file. Call it once in `beforeAll` (the server only exists then), with a `let` the tests set, as `enter-address/page.test.js` does, and reset that `let` in `beforeEach` so a test that seeds data doesn't leak into a later no-session test. Calling it inside an `it` adds a handler to the shared server for every later test in the file.
 
 ## Session guards
 
