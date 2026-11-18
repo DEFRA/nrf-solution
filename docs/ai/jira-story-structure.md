@@ -33,7 +33,7 @@ The bold prefix is the only thing parsers and reviewers rely on, so use exactly 
 | `<link name> link`                      | all                                     | A content link in the page body, e.g. `Learn more link`. Always ends ` link`; never `Back link` or `Change link` |
 | `Next page`                             | question, content, check your answers   | The only destination after Continue / submit                                                              |
 | `Next page (if <option> selected)`      | question                                | One per distinct outcome of radios, checkboxes or conditional routing                                     |
-| `Form validation (missing value)`       | question                                | Empty submission; links the `?preview=1&error=1` prototype state                                          |
+| `Form validation (missing value)`       | question, check your answers            | Empty submission; links the `?preview=1&error=1` prototype state. A descriptive name for the same case, e.g. `(checkbox not ticked)` or `(no option selected)`, is equivalent and allowed |
 | `Form validation (invalid format)`      | question, text input                    | The value is in the wrong format; links `?preview=1&error=format`                                         |
 | `Form validation (<other validation>)`  | question                                | Any other reachable error, named in lower case, e.g. `(too long)`, `(out of range)`                       |
 | `Show saved selection`                  | question                                | Returning to the page re-shows the saved answer                                                           |

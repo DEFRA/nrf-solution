@@ -51,7 +51,7 @@ Every Jira ticket key in the description must be a Jira link, appear once, and d
 For each AC:
 
 1. The bold prefix is one of the forms in the AC prefixes table in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md), spelled exactly (e.g. `Form validation (missing value)`, `Back link (from X)`, `Next page (if <option> selected)`, content links ending ` link`). Flag any other spelling, since the journey page builder parses these. The sentence doesn't repeat the prefix.
-2. Validation prefixes name the validation in brackets, using a distinct prefix per error type (`(missing value)`, `(invalid format)`, or another named validation such as `(too long)`); flag an `(invalid format)` AC that describes a length or range error.
+2. Validation prefixes name the validation in brackets, using a distinct prefix per error type (`(missing value)`, `(invalid format)`, or another named validation such as `(too long)`). A descriptive name for the empty-submission case (e.g. `(checkbox not ticked)`, `(no option selected)`) is equivalent to `(missing value)`; don't flag it. Flag an `(invalid format)` AC that describes a length or range error.
 3. One behaviour per AC: no "or" joining pages or outcomes, no slashes in place of a word, no ambiguous "it".
 4. Other pages are named by title in italics (`_Title_`), never by route or URL. Flag any application path (e.g. `/request-to-use/...`) in an AC; full external links are allowed (see item 7).
 5. No content strings (hint text, button labels, error text, body copy) copied from the prototype. Page titles in italics are allowed.
@@ -65,7 +65,7 @@ For each AC:
 
   **Altered pages:** if the scenarios present are a clear subset of this set (for example only Back link scenarios) and every one is well formed, treat the story as one that alters an existing page. Do not flag the missing scenarios; instead note once "Altered-page story: scenario subset accepted". A missing Page content AC is then a comment, not a blocker. If the subset looks accidental (for example Page content and Back link present but no Next page on a full new-page story), flag it as a comment.
 - **content page:** Page content, Back link, Content links (if any), Next page. Flag validation or saved selection scenarios.
-- **check your answers page:** Page content, Back link, one Change link per summary row, Content links (if any), Next page. Flag saved selection, and any AC that describes what the destination of a change link then shows.
+- **check your answers page:** Page content, Back link, one Change link per summary row, Content links (if any), Next page, Form validation (if the page has a confirmation checkbox or similar field). Flag saved selection, and any AC that describes what the destination of a change link then shows.
 - **dropout page:** Page content, Back link, Content links only. Flag next page, validation or saved selection scenarios.
 - **confirmation page:** Page content, Entry point (from X) per previous page, Browser back, Content links only. Flag a back link, next page, validation or saved selection scenario. Flag a missing Browser back, but not as a blocker: its destination can't be inferred from a prototype.
 
@@ -75,7 +75,7 @@ Flag a scenario set that doesn't fit the `*Page type*:` line.
 
 1. The Page content AC links a prototype. Flag a missing link as a **Blocker** (unless the story is an altered-page story, where it is a comment). A prototype link whose path doesn't begin with `/handoffs` is a comment only: the writer warns about this and continues, so don't block on it.
 2. Each Form validation AC links a prototype error state (`?preview=1&error=1`, or `error=<value>` for a specific validation). Flag an error AC that quotes error text or links without the query string.
-3. Every page named in an AC (back link, next page, entry point, content link, browser back) is a row in Page URLs, and every row other than the first is named in an AC.
+3. Every page named in an AC (back link, next page, entry point, content link, browser back) is a row in Page URLs. Check the other direction too: list every row other than the first whose page title no AC names, as "Remove: <row> - not named in any AC" (a comment, not a blocker).
 4. Each URL is a plausible application path starting with `/`, and each page title appears only once.
 
 #### Check E - NFRs
