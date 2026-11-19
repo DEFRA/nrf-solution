@@ -15,7 +15,7 @@ Each numbered step within a journey is a separate page.
 For each page, if there are specified sub-steps then execute each step and check the accessibility of the resulting page state. After the last step, continue to the next page.
 If a page has "- skip" then just click through it and don't check accessibility
 
-> **Setup:** when testing deployed environments (e.g. `*.cdp-int.defra.cloud`), add a real-browser `--user-agent` to your Playwright MCP server args in `~/.claude.json` — otherwise the bot filter serves blank pages to Playwright's headless UA. See `test-in-browser/SKILL.md` for the exact value.
+> **Setup:** when testing deployed environments (e.g. `*.cdp-int.defra.cloud`), add a real-browser `--user-agent` to your Playwright MCP server args in `~/.claude.json` — otherwise the bot filter serves blank pages to Playwright's headless UA. See `test-in-browser/references/environments.md` for the exact value.
 
 ## Flow
 
