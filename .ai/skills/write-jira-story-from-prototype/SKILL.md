@@ -20,8 +20,7 @@ You write a short, scannable Jira story for one journey page, by exploring its l
 
 1. **Prototype URL** (required) - the prototype page being created or altered.
 2. **Jira ticket number** (optional), e.g. `NRF2-1381` - an existing ticket to update rather than a new one to create.
-3. **Parent key and labels** (optional) - applied when creating a ticket.
-4. **Parent feature Confluence page** (optional second parameter, URL or page ID) - the feature spec the page belongs to. Used to link the ticket and the page to each other, and to find the epic (see [Parent feature page](#parent-feature-page)).
+3. **Parent feature Confluence page** (optional, URL or page ID) - the feature spec the page belongs to. Used to link the ticket and the page to each other, and to find the epic the new ticket is assigned to (see [Parent feature page](#parent-feature-page)).
 
 The user may also say what is changing if the story alters an existing page (e.g. "add back links"), and may supply Out of scope items, a confirmation page's browser-back destination, and extra entry points.
 
@@ -41,7 +40,7 @@ The user may also say what is changing if the story alters an existing page (e.g
 
 Only when a Confluence page was supplied.
 
-1. **Before drafting**, fetch it with `node .ai/skills/tools/confluence/page.mjs PAGE json` and look in the body for a Jira epic link (a `/browse/NRF2-123` URL or a Jira issue macro). If exactly one epic is found, use its key as `--parent` when creating (an explicit parent from the user wins). If none or several are found, don't guess: create without a parent and list it in your report. Use the page only for this; don't mine it for story content.
+1. **Before drafting**, fetch it with `node .ai/skills/tools/confluence/page.mjs PAGE json` and look in the body for a Jira epic link (a `/browse/NRF2-123` URL or a Jira issue macro). If exactly one epic is found, use its key as `--parent` when creating. If none or several are found, don't guess: create without a parent and list it in your report. Use the page only for this; don't mine it for story content.
 2. **Description:** add a final line to the description, after Non-functional requirements: `*Feature specification*: [+<page title>+|<page URL>]` (page URL without tracking parameters). Skip it if the description already links the page.
 3. **After creating or updating the ticket**, write the ticket link onto the page with `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE JIRA_KEY JIRA_URL`, unless the page already links that key. If the script fails, stop and report the exact error.
 
@@ -188,7 +187,7 @@ Prototype URLs for related pages follow `.../handoffs/<prototype-name>/latest/<s
 
 ## Create or update the ticket
 
-- **No ticket number:** use `util-create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the user's, else the epic found on the parent feature page) and `--labels` if given, and always `--sprint Sausage` (new tickets only; an updated ticket keeps its sprint). The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
+- **No ticket number:** use `util-create-jira-ticket` with `--summary` and `--description`, plus `--parent` (the epic found on the parent feature page, if any), and always `--sprint Sausage` (new tickets only; an updated ticket keeps its sprint). The summary is the exact prototype h1 suffixed with "page", e.g. "Is the development an amendment to an existing planning permission? page". Without a parent feature page there is nothing to link back to; with one, follow step 3 of [Parent feature page](#parent-feature-page).
 - **Ticket number given:** pipe the description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Keep the existing summary, parent and labels (carry over an existing Feature specification line too). Carry over only Out of scope items, NFRs and ticket links from the old description; everything else it held (Notes, Context, Testing notes, Given/When/Then ACs) is dropped. Name the dropped content in the comment.
 
 If a script fails for any reason, stop and report the exact error; don't work around it.
