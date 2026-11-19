@@ -17,6 +17,7 @@ contain application code — it provides the glue to run everything together.
 | `impact-assessor` | `DEFRA/nrf-impact-assessor` | Python/FastAPI spatial analysis |
 | `journey-tests`   | `DEFRA/nrf-journey-tests`   | Cucumber + Playwright E2E tests |
 | `admin-frontend`  | `DEFRA/nrf-admin-frontend`  | Hapi.js web admin frontend      |
+| `performance-tests` | `DEFRA/nrf-performance-tests` | JMeter load/performance tests |
 
 
 [Setup](./docs/setup.md)

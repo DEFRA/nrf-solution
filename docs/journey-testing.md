@@ -14,11 +14,11 @@ The first run installs the suite's npm dependencies and the Playwright browser (
 
 ## Watching the browser
 
-Set **Headful** to `true` on the Run button to watch the browser drive the journey in a visible window. Headful mode uses your system Chrome (via `BROWSER_CHANNEL=chrome`), which has a real GPU so the draw-boundary journey's WebGL map renders correctly.
+The Run button always runs headful (`E2E_HEADFUL=true`) in Playwright's **bundled Chromium**, so you can watch the browser drive the journey in a visible window. Bundled Chromium is a deliberate choice, not a fallback: headful it has a real GPU, so the draw-boundary journey's WebGL map renders correctly (headless it falls back to SwiftShader). The system Chrome channel (`BROWSER_CHANNEL=chrome`) is an opt-in for direct runs only — on macOS it loaded the draw map page in ~14s versus under 1s in bundled Chromium — so the Tilt path never sets it.
 
 ## Email verification
 
-The quote confirmation steps check emails via GOV.UK Notify and need `NOTIFY_API_KEY`. Add it to `journey-tests/.env.local` (gitignored) before running:
+The quote confirmation steps check emails via GOV.UK Notify and need `NOTIFY_API_KEY`. Through Tilt the key is read from `compose.override.yml` (the backend's own copy of the secret, wired into the Run button by the Tiltfile), so it only needs to be set in one place. `journey-tests/.env.local` (gitignored) matters only when running `./run-journey-tests.sh` directly, outside Tilt:
 
 ```
 NOTIFY_API_KEY=<key>
@@ -38,18 +38,18 @@ Screenshots of failed scenarios are attached automatically.
 
 ## Options
 
-The **Run journey tests** button has inline inputs. Change them before clicking to adjust the run:
+The **Run journey tests** button has two inline inputs. Change them before clicking to adjust the run:
 
-| Input   | Default    | Description                                                        |
-|---------|------------|--------------------------------------------------------------------|
-| Feature | `All`      | Run the whole suite, or pick a single `.feature` file              |
-| Headful | `false`    | Set `true` to watch the browser in a visible window                |
-| Browser | `chromium` | Browser engine — `chromium`, `firefox` or `webkit`                 |
-| Tags    | *(empty)*  | Cucumber tag filter, e.g. `@smoke` or `@regression and not @flaky` |
+| Input    | Default             | Description                                                                                          |
+|----------|---------------------|------------------------------------------------------------------------------------------------------|
+| Feature  | `Run all features`  | Run the whole suite, or pick a single `.feature` file                                                |
+| Parallel | `5`                 | Scenarios running in parallel (1 = sequential; the suite's own default when unset is 3)              |
+
+The run is always headful in Playwright's bundled Chromium — there is no headless/browser/tags input (see [Watching the browser](#watching-the-browser)).
 
 The **Feature** list is generated from the files in `journey-tests/test/features/` when Tilt loads, so it stays in sync as features are added or removed (reload the Tiltfile to pick up new ones).
 
-The tests can also be run directly from the repo root with `./run-journey-tests.sh` (honours the same `FEATURE`, `E2E_HEADFUL`, `BROWSER` and `TAGS` environment variables).
+The tests can also be run directly from the repo root with `./run-journey-tests.sh`. That path additionally honours `E2E_HEADFUL` (default headless), `BROWSER` (`chromium`, `firefox` or `webkit`), `BROWSER_CHANNEL` and `TAGS` (Cucumber tag filter, e.g. `@smoke`); the Tilt button passes only `FEATURE` and `PARALLEL`.
 
 ## Adding a page to an existing journey
 

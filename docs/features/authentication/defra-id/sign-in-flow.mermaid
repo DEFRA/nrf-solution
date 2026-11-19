@@ -6,11 +6,10 @@ sequenceDiagram
     participant OIDC as OIDC Discovery<br/>(get-oidc-config.js)
     participant DefraID as Defra ID Provider<br/>(External OIDC)
     participant Strategy as defra-session scheme<br/>(defra-identity.js)
-    participant Backend as nrf-backend
 
     %% Signed-out GET for a protected route (redirect-to-sign-in.js onPreHandler)
-    Browser->>Ctrl: GET /profile (signed out)
-    Ctrl->>Yar: set redirectTo = /profile
+    Browser->>Ctrl: GET /request-to-use/enter-address (signed out)
+    Ctrl->>Yar: set redirectTo = /request-to-use/enter-address
     Ctrl-->>Browser: 302 to /auth/sign-in
 
     %% Start OAuth (hand-rolled authorize redirect)
@@ -42,9 +41,6 @@ sequenceDiagram
     Ctrl-->>Browser: 302 to getSafeRedirect(redirectTo or start page)
 
     %% First authenticated request after sign-in (defra-identity.js authenticate)
-    Browser->>Strategy: GET /profile (authenticated)
+    Browser->>Strategy: GET /request-to-use/enter-address (authenticated)
     Strategy->>Cache: get(sessionId) -> userSession
-    Note over Strategy,Backend: fire-and-forget (not awaited),<br/>only if userSession.userSaved is not set
-    Strategy->>Backend: PATCH /users<br/>{ defraId, email, firstName, lastName,<br/>organisationDefraId?, organisationName?,<br/>relationshipType? }
-    Backend-->>Strategy: 204 No Content
-    Strategy->>Cache: set(sessionId, userSession with userSaved = true)
+    Strategy->>Strategy: Check access token unexpired (no refresh; expired drops the session)
