@@ -6,7 +6,7 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 
 - Before making code changes, read [.ai/rules/index.md](./.ai/rules/index.md) for coding standards.
 - Before working on an area (reading, reviewing, editing, or debugging), scan the available skills and load any whose trigger matches — skills only auto-load when a user types `/name`, so it's on you to pick them up. This applies to reviews too, not just edits.
-- Run `nvm use` before any npm/node commands (Node >=24, `.nvmrc` checked in).
+- Run `nvm use` before any npm/node commands (Node >=24). There is no `.nvmrc` at the meta-repo root — each npm submodule has its own, so run it inside the submodule you are working in.
 - **Never read `.env*`, `compose.override.yml`, or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
 - When writing any Mermaid diagram, use GitHub-safe syntax: double-quote every node label (`id["text"]`, `id{"text"}`, `id(["text"])`), and never use reserved words as node ids (`call`, `end`, `start`, `graph`, `subgraph`, `click`, `style`, `class`, `default`). Validate with `mermaid.parse` before committing, since GitHub fails the whole block silently.
 
@@ -27,6 +27,7 @@ Meta-repo. Service code lives in git submodules — each is an independent repo 
 | `impact-assessor/` | `nrf-impact-assessor` | Python + FastAPI | Spatial analysis API |
 | `journey-tests/` | `nrf-journey-tests` | Cucumber + Playwright | Cross-service E2E |
 | `admin-frontend/` | `nrf-admin-frontend` | Hapi.js + Nunjucks | Internal admin UI |
+| `performance-tests/` | `nrf-performance-tests` | JMeter | Load/performance tests |
 
 ## Service comms
 

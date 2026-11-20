@@ -20,7 +20,9 @@ open performance-tests/reports/index.html
 
 The report breaks KPIs down per journey: `GET homepage`, `Submit quote`, and `Upload boundary flow`.
 
-Raw results (`.jtl` file) land in the same directory alongside the report. Both are cleared automatically at the start of each run.
+Only the HTML report and the JMeter log reach your host (`performance-tests/reports/` and `performance-tests/logs/` — the only two mounted directories). The raw `.jtl` results file is written to the container's working directory (`/opt/perftest/<timestamp>-perftest-<scenario>-report.jtl`) and is lost when the container goes away. The contents of `reports/` are cleared automatically at the start of each run.
+
+A local run also always **exits 1**: with `RESULTS_OUTPUT_S3_PATH` unset (it is set nowhere locally), the entrypoint fails at the S3-upload step after JMeter has finished. That is expected — by then the HTML report is already in `reports/`.
 
 ## Tuning the load profile
 

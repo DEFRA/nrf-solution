@@ -10,11 +10,11 @@ flowchart TD
   subgraph browser [Browser]
     A([GET /quote/upload-boundary]) --> B[Form rendered<br/>action = CDP Uploader upload URL]
     B --> C[User selects file - browser POSTs<br/>multipart/form-data directly to CDP Uploader]
-    D([Browser redirected to<br/>/quote/upload-received])
+    D([Browser redirected to<br/>/quote/checking-file])
     E{Upload status?}
     F[Page meta-refreshes<br/>after 5s]
     X([Error page shown -<br/>manual retry link])
-    G([GET /quote/upload-preview-map])
+    G([GET /quote/file-preview])
   end
 
   subgraph frontend [nrf-frontend]
@@ -63,7 +63,7 @@ flowchart TD
 > **File goes browser → CDP Uploader directly:** the actual file bytes never pass through
 > nrf-frontend or nrf-backend. `/upload/initiate` only asks CDP Uploader for a one-time
 > upload URL and ID; the browser's `<form>` posts the file straight to that URL, and CDP
-> Uploader redirects the browser to `/quote/upload-received` once it has stored the file
+> Uploader redirects the browser to `/quote/checking-file` once it has stored the file
 > in S3.
 
 > **"Ready" doesn't mean "accepted":** CDP Uploader can mark an upload `ready` even when
