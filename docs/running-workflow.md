@@ -28,27 +28,35 @@ directly via Docker service names. The following ports are mapped to your host:
 
 | Service | Host port | Description |
 | ---------------------- | --------- | -------------------------------------------- |
-| `frontend` | 3000 | Web frontend — http://localhost:3000 |
-| `backend` | 3001 | API backend |
+| `frontend` | 3000 (+ 9230 debugger) | Web frontend — http://localhost:3000 |
+| `backend` | 3001 (+ 9229 debugger) | API backend |
+| `admin-frontend` | 3002 (+ 9231 debugger) | Internal admin UI — http://localhost:3002 |
 | `impact-assessor` | 8085 | Spatial analysis API |
 | `defra-id-stub` | 3200 | OIDC auth stub (opt-in; auth defaults to real Defra ID) |
 | `cdp-uploader` | 7337 | File upload service |
 | `caddy` | 4001 | Reverse proxy (upload routing) |
-| `localstack` | 4566 | AWS emulation (S3, SQS, SNS) |
+| `localstack` | 4566 (+ 4510–4559) | AWS emulation (S3, SQS, SNS); the 4510–4559 range exposes each emulated service on its real AWS port |
 | `postgres` | 5432 | PostgreSQL with PostGIS |
 | `redis` | 6379 | Redis |
 | `mongodb` | 27017 | MongoDB |
+
+`squid` (outbound proxy, internal port 3128) has no host port — services reach
+it by Docker service name only. The Node debugger ports (9229–9231) are only
+useful with an inspector attached; see each service's `package.json` for the
+`--inspect` flag wiring.
 
 The Tilt dashboard groups services by label:
 
 | Label | Services |
 | ------------- | ------------------------------------------------------------------ |
-| `main` | `backend`, `frontend`, `impact-assessor` |
+| `main` | `backend`, `frontend`, `admin-frontend`, `impact-assessor` |
 | `stubs` | `cdp-uploader`, `defra-id-stub` |
-| `infra` | `localstack`, `postgres`, `redis`, `mongodb`, `caddy` |
-| `migrations` | `liquibase`, `impact-assessor-migration` |
-| `dev` | `format` |
-| `debug` | `errors` (live stream of ERROR lines from all services) |
+| `infra` | `squid`, `localstack`, `postgres`, `redis`, `mongodb`, `caddy` |
+| `migrations` | `liquibase`, `impact-assessor-migration`, `load-IA-data` |
+| `e2e` | `journey-tests` (manual; see [journey-testing.md](./journey-testing.md)) |
+| `perf` | `performance-tests` (manual; see [perf-testing.md](./perf-testing.md)) |
+| `dev` | `format`, `lint`, `test-impact-assessor` |
+| `debug` | `errors` / `warnings` (live streams of ERROR / WARN lines from all services) |
 
 ---
 
@@ -101,9 +109,32 @@ trigger a full image rebuild.
 
 ### Monitoring errors
 
-The `errors` resource in the Tilt dashboard streams ERROR lines from all services
-in one place — no need to switch between service logs. You can also filter logs
-inline using the search box in each service's log pane.
+The `errors` and `warnings` resources in the Tilt dashboard (under `debug`)
+stream ERROR and WARN lines from all services in one place — no need to switch
+between service logs. You can also filter logs inline using the search box in
+each service's log pane.
+
+### Tilt dashboard features
+
+Beyond start/stop, the dashboard wires up a few helpers defined in the `Tiltfile`:
+
+**Inline buttons on service cards**
+
+- **Stop / Start** on `backend`, `frontend`, `impact-assessor`, `postgres`, `redis` and `localstack` — failure simulation. Stop a dependency, exercise the service's error handling, then Start it again.
+- **Run journey tests / Cancel journey tests** on `journey-tests` — see [journey-testing.md](./journey-testing.md). Tilt has no built-in cancel, so Cancel kills the host-run cucumber process tree.
+- **Run perf tests** on `performance-tests` — see [perf-testing.md](./perf-testing.md).
+- **SQS Depth / SQS Peek / SQS Purge** on `localstack` — inspect or clear the `nrf-impact-assessment-jobs` queue; output appears in the localstack log pane.
+- **SNS Publish** on `localstack` — publish a JSON payload file (default: `impact-assessor/scripts/sample_quote_payload.json`) to the `nrf_quote_estimate_request` topic.
+
+**Manual resources (`dev` label)**
+
+- `format` — runs `./format.sh` in the containers (same as the script below).
+- `lint` — lint for all three code services (backend/frontend `npm run lint`, impact-assessor `ruff check`).
+- `test-impact-assessor` — impact-assessor pytest suite, in the container.
+
+**Auto-triggered resources**
+
+- `load-IA-data` (`migrations` label) — re-runs Alembic migrations and reloads the impact-assessor fixture data whenever a file under `impact-assessor/tests/data/fixtures/` or `impact-assessor/alembic/versions/` changes. It can also be triggered manually from its card.
 
 ---
 
@@ -136,6 +167,10 @@ To re-run impact-assessor migrations and reload fixture data manually:
 ```sh
 docker compose run --rm impact-assessor-migration
 ```
+
+In Tilt this is also the `load-IA-data` resource, which re-runs automatically
+when fixtures or Alembic revisions change (see
+[Tilt dashboard features](#tilt-dashboard-features)).
 
 ---
 

@@ -3,6 +3,7 @@
 Specs and logic flows for features.
 
 - [Boundary file upload](./boundary-upload/index.md)
+- [Cookies and analytics gating](./cookies/index.md)
 - [Session data](./session-data/README.md)
 
 Authentication
