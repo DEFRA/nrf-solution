@@ -11,6 +11,7 @@
 
 ## Location
 
+- Every new source module that holds logic (a helper, a DB wrapper such as a transaction/lock helper) ships with its own `<name>.test.js`, even when a controller acceptance test exercises it indirectly. Its failure paths (rollback, release, rethrow) are rarely reached through the acceptance test.
 - Unit tests for a given code file should be in the same directory as the file. For acceptance tests put the test file in the same folder as the page or the endpoint controller it's testing.
 
 ## Mocking
