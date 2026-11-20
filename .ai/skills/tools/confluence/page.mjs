@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Usage: node page.mjs PAGE_ID_OR_URL [format]
-// Formats: full (default), summary, json
+// Formats: full (default), summary, json, storage (raw storage-format body only)
 
 const [input, format = 'full'] = process.argv.slice(2)
 const { ATLASSIAN_USER: user, ATLASSIAN_TOKEN: token } = process.env
@@ -18,7 +18,7 @@ const pageId = /^https?:\/\//.test(input)
 if (!pageId || !/^\d+$/.test(pageId)) fail(`Error: unable to determine page ID from: ${input}`)
 
 const auth = Buffer.from(`${user}:${token}`).toString('base64')
-const res = await fetch(`${BASE}/rest/api/content/${pageId}?expand=body.view,version,space,history,metadata.labels`, {
+const res = await fetch(`${BASE}/rest/api/content/${pageId}?expand=body.view,body.storage,version,space,history,metadata.labels`, {
   headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' }
 })
 const data = await res.json()
@@ -28,6 +28,9 @@ if (data.statusCode) fail(data.message ?? 'Unknown error')
 switch (format) {
   case 'json':
     console.log(JSON.stringify(data, null, 2))
+    break
+  case 'storage':
+    console.log(data.body?.storage?.value ?? '')
     break
   case 'summary':
     console.log(JSON.stringify({
