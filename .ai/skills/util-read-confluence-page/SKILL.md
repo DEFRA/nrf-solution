@@ -8,7 +8,7 @@ description: Fetch a Confluence page's details (title, space, version, labels, b
 `args` is a space-separated string: `<page_id_or_url> [format]`
 
 - First token: Confluence page ID (e.g. `123456789`) or full page URL (e.g. `https://eaflood.atlassian.net/wiki/spaces/FOO/pages/123456789/Title`).
-- Second token (optional): output format — `full` (default), `summary`, or `json`.
+- Second token (optional): output format — `full` (default), `summary`, `json`, or `storage` (the raw storage-format body only, needed to build exact-match edits).
 
 ## Steps
 
