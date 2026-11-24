@@ -19,9 +19,18 @@ obvious:
   appropriate error is shown`, `the user is taken to the right page`.
 - **Mixes more than one behaviour.** "Or" joining two triggers, pages or outcomes in one AC; a
   slash standing in for a word; an ambiguous "it" that could mean either of two things just
-  mentioned. Suggest splitting into separate numbered ACs.
+  mentioned. Suggest splitting into separate numbered ACs. Don't flag a simple compound assertion
+  about one element, where every part is easy to check together (e.g. "Change link shows next to
+  Full name and goes to *Enter details*"); only flag when the parts could pass or fail independently
+  in a way that matters, or the AC needs more than two parts.
+- **Nested assertion lists.** An AC may have a short bulleted list of assertions beneath it (for
+  example one AC per user type, with a bullet per row or link). Accept this if each bullet is a
+  single testable assertion. Flag only a bullet that fails a check here.
 - **Needs a state the story never explains how to reach** — a `Given`-style precondition with no
-  AC or linked ticket that creates it.
+  AC or linked ticket that creates it. Don't ask for an exact step-by-step route to a state a
+  tester can work out while testing (for example "signed in, but earlier steps not completed" in
+  a journey whose steps are on the page list). A one-line hint in Testing notes is enough; flag
+  only a state with no plausible route, such as seeded data, a special account or an expired token.
 - **Placeholder or unfilled template text** — `[url]`, `[page name]`, `TBD`, `TODO`, `?`.
 - **Visible UI or email copy quoted inline** rather than linked to a prototype or referenced by
   page title in italics.
@@ -36,6 +45,11 @@ obvious:
 - **Page named in an AC with no Page URLs row.** Every page an AC names or visits (back link,
   next page, content link, entry point) has a row under `h2. Page URLs`, and every row other than
   the story's own page is named in an AC. Applies to any story that names a page.
+- **Page title in an AC that doesn't match Page URLs.** Every page title referenced in an AC must be
+  in italics (`_Title_`) and match, word for word, the page title of a row under `h2. Page URLs`.
+  Flag any plain-text title, or title that differs from its row (wording, case, a shortened or
+  reworded name). Suggest the best-guess matching row title and the italic form; if no row is a
+  plausible match, treat it as a page with no Page URLs row.
 
 ## Testing notes
 
@@ -48,14 +62,14 @@ every story, not just page stories. Include:
   [Test users (non-prod)](https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298/Test+users+non-prod)
   Confluence page and link to it; don't copy credentials into the ticket.
 - **How to reach a state** — preconditions the ACs depend on that a tester can't reach by
-  following the ACs.
+  following the ACs or work out for themselves. Keep it to a short hint, not a list of steps.
 - **How to test what a browser can't** — for an API, calculation, email or data change, say how
   to exercise it (the request to send, the expected response, where to check the email or
   record), with a worked example value.
 
 Flag an AC that needs any of these but has no matching Testing notes bullet, including a page behind sign-in (a Defra ID-protected page) with no note on which test user to use. Flag a Testing notes
 bullet that restates an AC or states expected behaviour that no AC asserts (put the behaviour in
-an AC). Whether to add or update journey tests is the developer's call (test pyramid), so don't prescribe it. Don't put secrets or real credentials in a ticket; point to where the tester finds them.
+an AC). Whether to add or update journey tests is the developer's call (test pyramid), so don't prescribe it. A bare reminder bullet such as "Update the journey tests" is fine: it needs no detail, so don't flag it as vague or as restating an AC. Don't put secrets or real credentials in a ticket; point to where the tester finds them.
 
 ## Distinctness
 
@@ -67,5 +81,9 @@ Compare every pair of ACs in the ticket, not just each one alone:
 - When flagging an overlap, quote both bold-label prefixes and say whether to merge them into one
   AC or add an explicit distinguishing condition (a different input value, option, or starting
   state).
+
+Don't flag identical assertions repeated under different user types, variants or entry points
+(e.g. the same address Change link for Agent and Employee). Each AC guards a different path, so
+the duplication is intended; only flag a pair that is identical *within the same condition*.
 
 Wording problems contained within a single AC belong to testability above, not here.

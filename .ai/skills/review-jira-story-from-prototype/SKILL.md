@@ -10,7 +10,7 @@ skills:
 
 `args` is a Jira ticket reference (e.g. `NRF2-1185`) or full URL. If given a URL, take the ticket key from it.
 
-This skill is read-only: never edit the ticket, add comments or change links. Review this ticket alone; do not read linked, referenced or sibling tickets.
+This skill is read-only until the report is delivered: never edit the ticket, add comments or change links on your own. The only exception is the confirmed fix offer in [Step 4](#step-4---offer-to-fix-blockers). Review this ticket alone; do not read linked, referenced or sibling tickets.
 
 Prerequisite: `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set. See [atlassian-credentials.md](../../../docs/ai/atlassian-credentials.md).
 
@@ -33,12 +33,14 @@ Collect all findings before reporting.
 The description, in this order, has:
 
 1. `*As a*` / `*I want*` / `*So that*` lines, with the user a housing developer.
-2. `*Page type*:` directly below, matching the scenarios present (see Check C).
-3. `h2. Acceptance criteria` with a numbered list (`#`), one `# *<Prefix>:* <sentence>` per scenario. Flag bullets (`*`) used for the ACs.
+2. `*Page type*:` directly below, matching the scenarios present (see Check C). An optional `*Feature specification*:` line may follow it, above Acceptance criteria, or be the final line; accept either position.
+3. `h2. Acceptance criteria` with a numbered list (`#`), one `# *<Prefix>:* <sentence>` per scenario. Flag bullets (`*`) used for the ACs themselves, but accept a short nested bullet list of assertions under a numbered AC (for example one AC per user type) when each bullet is one testable assertion; don't flag it as a structure or prefix blocker.
 4. `h2. Page URLs`, always present: a two-column table (page title, URL) whose first row is this page.
 5. `h2. Out of scope` only if it has content.
 6. `h2. Non-functional requirements` with at least one bullet.
 7. `h2. Testing notes` only if needed, as bullets, after the NFRs. Apply the Testing notes rules in [ac-testability.md](../../../docs/ai/ac-testability.md).
+
+A separate "Pages in the prototype" section (or any list of prototype links outside the ACs) is not allowed. Flag it with "Suggest: move each link into the AC it supports (Page content, or the Form validation error state), then delete the section", and include that move in the Step 4 fix offer: for variants, put each link in the AC for that user type or variant.
 
 Flag anything missing, out of order, or present but not allowed: Given/When/Then, `h3. Scenario` headings, Notes, Context, a "Generated from" line, a separate Prototype line, a prototype column in Page URLs.
 
@@ -53,7 +55,7 @@ For each AC:
 1. The bold prefix is one of the forms in the AC prefixes table in [jira-story-structure.md](../../../docs/ai/jira-story-structure.md), spelled exactly (e.g. `Form validation (missing value)`, `Back link (from X)`, `Next page (if <option> selected)`, content links ending ` link`). Flag any other spelling, since the journey page builder parses these. The sentence doesn't repeat the prefix.
 2. Validation prefixes name the validation in brackets, using a distinct prefix per error type (`(missing value)`, `(invalid format)`, or another named validation such as `(too long)`). A descriptive name for the empty-submission case (e.g. `(checkbox not ticked)`, `(no option selected)`) is equivalent to `(missing value)`; don't flag it. Flag an `(invalid format)` AC that describes a length or range error.
 3. One behaviour per AC: no "or" joining pages or outcomes, no slashes in place of a word, no ambiguous "it".
-4. Other pages are named by title in italics (`_Title_`), never by route or URL. Flag any application path (e.g. `/request-to-use/...`) in an AC; full external links are allowed (see item 7).
+4. Other pages are named by title in italics (`_Title_`), never by route or URL. Each title must match a Page URLs row title exactly; flag any plain-text or non-matching title and suggest the best-guess row title in italics (the Step 4 fix offer applies it). Flag any application path (e.g. `/request-to-use/...`) in an AC; full external links are allowed (see item 7).
 5. No content strings (hint text, button labels, error text, body copy) copied from the prototype. Page titles in italics are allowed.
 6. No unfilled placeholders (`[url]`, `[page name]`), no blank "valid" where what counts as valid matters, and every AC names where a tester sees the result (a page, or content via a prototype link). Flag vague outcomes such as "the correct page", "an error is shown" or "is handled".
 7. External destinations are a full link in the AC, state that they open in a new tab, and are not in Page URLs.
@@ -90,27 +92,29 @@ Apply the distinctness rules in [ac-testability.md](../../../docs/ai/ac-testabil
 
 Use exactly this structure. Omit any section with no findings (don't write "Pass" for it) and list the omitted sections on the last line.
 
+Number every finding with one running number across the whole report (1, 2, 3 ... continuing through sections, not restarting), so the user can refer to them by number.
+
 ```
 ## <KEY> - <summary>
 Page type: <copied from the ticket's `*Page type*:` line, not inferred>
 
 ### Structure
-- [**Blocker** - ]<element> - <problem, in a few words>[. Suggest: <fix>]
+<n>. [**Blocker** - ]<element> - <problem, in a few words>[. Suggest: <fix>]
 
 ### Wording
-- [**Blocker** - ]<AC prefix> - <problem>. Suggest: <fix>
+<n>. [**Blocker** - ]<AC prefix> - <problem>. Suggest: <fix>
 
 ### Scenario set
-- <missing or unexpected scenario>[. Suggest: <fix>]
+<n>. <missing or unexpected scenario>[. Suggest: <fix>]
 
 ### Links and Page URLs
-- [**Blocker** - ]<AC prefix or row> - <problem>. Suggest: <fix>
+<n>. [**Blocker** - ]<AC prefix or row> - <problem>. Suggest: <fix>
 
 ### NFRs
-- Missing: <category> - no exclusion note
+<n>. Missing: <category> - no exclusion note
 
 ### Distinctness
-- <AC prefix> / <AC prefix> - <overlap>. Suggest: <merge / distinguishing condition>
+<n>. <AC prefix> / <AC prefix> - <overlap>. Suggest: <merge / distinguishing condition>
 
 Verdict: <Fail (n blockers) | Pass with comments | Pass>. Nothing to report for: <omitted sections>.
 ```
@@ -120,3 +124,12 @@ Mark a finding **Blocker** only where a developer or tester cannot work from the
 Verdict: `Fail` if any blockers; `Pass with comments` if findings but no blockers; `Pass` only if there are no findings.
 
 Do not add a summary table, a per-check pass list, or any text beyond this structure. If a section has more than 10 findings, list the 10 most important and add "+N more".
+
+### Step 4 - Offer to fix blockers
+
+Only when the user invoked this skill directly and the report lists blockers. Skip this step when another skill called the review (for example `write-jira-story-from-prototype`, which applies its own fixes), and never loop back into another review.
+
+1. Ask the user whether to apply the fixes, listing in one line each the changes you would make to this ticket, tagged with the report finding number it resolves. Accept replies that refer to findings by number (e.g. "apply 1, 3 and 5"), including for non-blocker findings, and apply only those. Cover only blockers and fixes that need no new information (for example add a missing Page URLs row, replace a route in an AC with the page title). Leave out findings that need a decision or knowledge you lack; say those are left for the user.
+2. Wait for explicit confirmation. If the user declines or edits the list, change only what they approve.
+3. Apply with the revised description piped to `node .ai/skills/tools/jira/update-ticket.mjs <KEY> -d -`, changing nothing else (keep the summary, parent, labels and links), then add a comment listing what changed with `node .ai/skills/tools/jira/add-comment.mjs <KEY> -`.
+4. Report which changes were made and which findings remain. Don't re-run the review unless asked.
