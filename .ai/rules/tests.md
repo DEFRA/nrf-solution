@@ -89,6 +89,8 @@
 
 - Don't hard-code an expected clock time that depends on the machine's timezone (e.g. `15:30` for `14:30Z` because of BST). The npm test scripts run with `TZ=UTC`, so a local-time filter renders the UTC time. Run the test via its npm script (with that `TZ`) before reporting it passing.
 
+- To test that a session expires after a TTL, fake `Date` only (`vi.useFakeTimers({ toFake: ['Date'] })`) and advance it past the TTL; the catbox cache layer compares entries against `Date.now()`, so no real wait is needed. Assert the cache entry is gone (`sessionCache.get(id)` is `null`) rather than relying on the redirect alone, because a token expiring first can cause the same redirect. Cookie TTLs are not enforced by `server.inject`, so cover those with a config test.
+
 ## Test performance
 
 - Favour fast tests over extending test timeouts. If a test is slow because it repeats an operation many times to reach a threshold (e.g. firing 60+ requests to trip a rate limit), lower that threshold in the test environment via config (e.g. `default: isTest ? 5 : 60`) rather than raising the test's timeout. Extending the timeout hides slowness and makes the suite drag; reducing the work keeps the test fast and still proves the behaviour.

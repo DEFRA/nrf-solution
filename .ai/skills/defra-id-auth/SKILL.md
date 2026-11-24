@@ -36,6 +36,16 @@ Diagrams it links (same directory):
 - `docs/features/authentication/defra-id/token-refresh-flow.mermaid`
 - `docs/features/authentication/defra-id/sign-out-flow.mermaid`
 
+## Session lifetimes
+
+Defra ID returns `expires_in: 3600` (1 hour) in the token response, and the access token is never
+refreshed, so a Defra ID session ends after 1 hour. The service session (`SESSION_CACHE_TTL`,
+`SESSION_COOKIE_TTL`, auth session store) lasts 2 hours. Whichever ends first, the next request to a
+`requireAuth` page redirects to Defra ID sign-in and returns to that page. Details in the docs
+page above ("Sessions, tokens & cookies").
+
+(The Overview above mentions transparent token refresh; the code does not refresh tokens.)
+
 ## Test users
 
 To sign in with a real Defra ID on a deployed non-prod environment (e.g. CDP test), use the accounts on the [Test users (non-prod)](https://eaflood.atlassian.net/wiki/spaces/NRFDT/pages/6575620298) Confluence page. It has the sign-in link, the shared password and the organisations/individuals available. Don't copy credentials into the repo. The One Login test users sign in with email and password only; the "Authenticator QR" column on that page does not mean a second-factor prompt appears, so don't assume sign-in is blocked without trying it.

@@ -117,11 +117,18 @@ id token is small enough to fit comfortably).
   `idToken` is the raw OIDC ID token, kept so it can be sent as the `id_token_hint` when signing out.
   `profile.organisation` is derived from the token by `getOrganisationFromToken`.
 - **Yar cookie:** server-side backed (`maxCookieSize: 0`), `httpOnly`, `SameSite=Lax`. Stores only
-  `sessionId`, plus transient `oauth_state`, `signout_state` and `redirectTo`. Default 24h TTL
-  (`session.cookie.ttl`).
+  `sessionId`, plus transient `oauth_state`, `signout_state` and `redirectTo`. Default 2h TTL
+  (`session.cookie.ttl`, env `SESSION_COOKIE_TTL`). The yar server-side store (`session.cache.ttl`,
+  env `SESSION_CACHE_TTL`) also defaults to 2h.
 - **Token expiry:** on every request that carries a session (the scheme runs on all routes in `try`
   mode) the access token is decoded and time-checked (60s skew). Tokens are **never refreshed**: an
   expired access token drops the session and the user signs in again.
+- **Two clocks:** the Defra ID session lasts as long as the token response's `expires_in` claim,
+  which Defra ID sets to 3600 (1 hour). The service's own session lasts 2 hours (the cache and cookie
+  TTLs above, plus `AUTH_SESSION_TTL_HOURS` for the auth session store). In practice the Defra ID
+  token expires first, so a user returning after 1 hour is redirected to Defra ID sign-in and back to
+  the page they were on (`redirectTo`); after 2 hours the service session itself is gone too, with
+  the same result. Covered by `request-to-use/enter-address/session-expiry.test.js`.
 
 ## Switching organisation
 

@@ -56,6 +56,8 @@ Output one short line before every tool call. Announce each scenario by title on
 
 ## Browser testing
 
+**Progress through the journey as a user would:** Whether you start from a seed script or click in manually, move between pages by clicking links and submitting forms, completing every step in order (including sign-in and any details pages). Never jump ahead by typing a later page's URL: the session then lacks answers a real user would have, and the resulting failures aren't valid. Use direct navigation only to start the journey or to reset state.
+
 **Clean state:** Use `mcp__playwright__browser_navigate` to reset state between scenarios. Don't try to clear HttpOnly cookies via JS — it won't work. Don't POST via `fetch` — CSRF will block it. Note any cookie-state limitations in the results table.
 
 **Signed-out scenarios:** If a scenario needs a signed-out user and you land on a signed-in page, there is a "Sign out" link in the header. Select it before testing the scenario.
