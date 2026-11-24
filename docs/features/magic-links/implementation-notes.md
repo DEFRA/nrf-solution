@@ -56,8 +56,10 @@ belongs to a different quote).
 ## Email
 
 The retrieve your quote email uses its own Notify template
-(`NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE`) with two personalisation fields,
-`retrieveQuoteUrl` and `nrfQuoteReference`. Its `email_type` is
+(`NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE`). The template passes the email through:
+its subject line is `((subject))` and its body `((content))`, and the backend
+builds the whole email, magic link and NRL reference resolved, in
+`buildRetrieveQuoteEmailContent`. Its `email_type` is
 `retrieve_quote_link`, recorded by the initial send, the resend endpoint and the
 retry worker alike. Retrieve emails are retried by the failed email retry job
 (off by default; `NOTIFY_SEND_RETRY_ENABLED`, every 5 minutes) but stay out of
@@ -137,20 +139,37 @@ CDP config does not override them.
 
 ## Notify templates
 
-| Email               | Template config                     | Personalisation                                                                                                 |
-| ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Retrieve your quote | `NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE` | `retrieveQuoteUrl`, `nrfQuoteReference`                                                                          |
-| Original quote      | `NOTIFY_TEMPLATE_ID_QUOTE`          | `requestToUseLink`, replacing `quoteAccessLink`: the template must be updated before the backend change deploys |
+Neither template holds any copy. Each has the subject line `((subject))` and the
+body `((content))`, and the backend sends the whole email as Notify Markdown.
+
+The copy lives in the backend as one string per email, written in the notation
+of the Notify template it replaced — the same Markdown and the same
+`((placeholders))` — so it can be compared line for line with a Notify template
+or the prototype. `fillEmailTemplate` fills the placeholders, and
+`buildQuoteEmailContent` and `buildRetrieveQuoteEmailContent` supply the values.
+Template and code therefore deploy together: change the copy in the template
+string and its test, never in the Notify console. The console preview shows
+nothing for a pass-through template; to see the email, send one from a running
+backend, or render it with `get-template.mjs` (`.ai/skills/tools/notify/`).
+
+No environment sets `NOTIFY_TEMPLATE_ID_QUOTE` or
+`NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE`: every environment uses the `config.js`
+defaults.
+
+| Email               | Template config                     | Content built by                 |
+| ------------------- | ----------------------------------- | -------------------------------- |
+| Retrieve your quote | `NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE` | `buildRetrieveQuoteEmailContent` |
+| Original quote      | `NOTIFY_TEMPLATE_ID_QUOTE`          | `buildQuoteEmailContent`         |
 
 ## Original quote email
 
 The original quote email (`quote_results`) is separate from the retrieve your
 quote email. It links to
 `{frontEndBaseUrl}/request-to-use/enter-nrl-reference?nrlReference={reference}`
-(`buildRequestToUseLink`) with no token, and its Notify variable is
-`requestToUseLink`. The retry job re-sends it the same way. Resending reuses the
-`retrieve_quote_link` email type; the `resend_quote_link` type stays unused in
-the database constraint.
+(`buildRequestToUseLink`) with no token, written into the copy by
+`buildQuoteEmailContent`. The retry job re-sends it the same way. Resending
+reuses the `retrieve_quote_link` email type; the `resend_quote_link` type stays
+unused in the database constraint.
 
 ## Deferred
 

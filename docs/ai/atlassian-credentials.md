@@ -31,7 +31,7 @@ For bash users, add the same exports to `~/.bash_profile` (or `~/.bashrc` for no
 
 ### `NOTIFY_API_KEY` — GOV.UK Notify (`.ai/skills/tools/notify/`)
 
-Used by `find-email.mjs` to look up emails the service sent via GOV.UK Notify (for example, the quote email a test triggered). Optional: if the variable is unset, the script falls back to reading the `NOTIFY_API_KEY` from your `compose.override.yml` (the backend's copy — the same single-source rule as the Tilt journey-tests button). Only if both are missing does email lookup fail.
+Used by `find-email.mjs` to look up emails the service sent via GOV.UK Notify (for example, the quote email a test triggered), and by `get-template.mjs` to read a template or preview one with given values. Optional: if the variable is unset, the script falls back to reading the `NOTIFY_API_KEY` from your `compose.override.yml` (the backend's copy — the same single-source rule as the Tilt journey-tests button). Only if both are missing does email lookup fail.
 
 Same value as the [GOV.UK Notify dashboard](https://www.notifications.service.gov.uk) key used in `compose.override.yml`, so normally nothing to add.
 
