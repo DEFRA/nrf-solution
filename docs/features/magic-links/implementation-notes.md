@@ -140,18 +140,21 @@ CDP config does not override them.
 ## Notify templates
 
 Neither template holds any copy. Each has the subject line `((subject))` and the
-body `((content))`, and the backend sends the whole email as Notify Markdown:
-`buildQuoteEmailContent` for the quote email, `buildRetrieveQuoteEmailContent`
-for the retrieve your quote email, sharing `GET_HELP_SECTION`. Template and code
-therefore deploy together — change the copy in the builder and its test, never
-in the Notify console. The console preview shows nothing for a pass-through
-template; to see the email, send one from a running backend, or render it with
-`get-template.mjs` (`.ai/skills/tools/notify/`).
+body `((content))`, and the backend sends the whole email as Notify Markdown.
 
-Every Notify service the backend sends from needs both templates. The
-`config.js` defaults are the `nrf-backend` service's templates; production sets
-`NOTIFY_TEMPLATE_ID_QUOTE` and `NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE` in
-cdp-app-config.
+The copy lives in the backend as one string per email, written in the notation
+of the Notify template it replaced — the same Markdown and the same
+`((placeholders))` — so it can be compared line for line with a Notify template
+or the prototype. `fillEmailTemplate` fills the placeholders, and
+`buildQuoteEmailContent` and `buildRetrieveQuoteEmailContent` supply the values.
+Template and code therefore deploy together: change the copy in the template
+string and its test, never in the Notify console. The console preview shows
+nothing for a pass-through template; to see the email, send one from a running
+backend, or render it with `get-template.mjs` (`.ai/skills/tools/notify/`).
+
+No environment sets `NOTIFY_TEMPLATE_ID_QUOTE` or
+`NOTIFY_TEMPLATE_ID_RETRIEVE_QUOTE`: every environment uses the `config.js`
+defaults.
 
 | Email               | Template config                     | Content built by                 |
 | ------------------- | ----------------------------------- | -------------------------------- |
