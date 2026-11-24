@@ -7,7 +7,7 @@ description: Reviews a feature Jira story for dev-readiness — dev-ready protot
 
 `args` is a Jira ticket reference (e.g. `NRF2-1260`) or full URL (e.g. `https://eaflood.atlassian.net/browse/NRF2-1260`). If given a URL, take the ticket key from it.
 
-This skill is read-only: never edit the ticket, add comments or change links.
+This skill is read-only until the report is delivered: never edit the ticket, add comments or change links on your own. The only exception is the confirmed fix offer in [Step 5](#step-5--offer-to-fix-blockers).
 
 Prerequisite: `ATLASSIAN_USER` and `ATLASSIAN_TOKEN` must be set. See [atlassian-credentials.md](../../../docs/ai/atlassian-credentials.md).
 
@@ -71,7 +71,7 @@ Compare the page URLs section with the pages the ACs and Context actually requir
 - URLs to **remove**: not needed to implement or test this ticket (page not named in any AC, or listed for context only).
 - URLs **missing**: a page an AC names with no URL in the page URLs subsection (Blocker).
 - Labels that aren't the page's own name, bullets with no route, duplicated routes.
-- **Application page URLs in ACs:** paths/URLs of pages in this application must not appear in ACs. They belong only in the page URLs subsection, with the page title mapped to each URL; ACs then refer to pages by title. Flag any AC containing an application page URL or path and suggest replacing it with the page title (adding the page to the subsection if missing). External links (for example to GOV.UK) and prototype links are fine in ACs and need no entry in the subsection.
+- **Application page URLs in ACs:** paths/URLs of pages in this application must not appear in ACs. They belong only in the page URLs subsection, with the page title mapped to each URL; ACs then refer to pages by title. Flag any AC containing an application page URL or path and suggest replacing it with the page title (adding the page to the subsection if missing). Also flag any page title in an AC that isn't in italics or doesn't match a page title row in the subsection exactly; suggest the best-guess row title in italics. External links (for example to GOV.UK) and prototype links are fine in ACs and need no entry in the subsection.
 
 #### 5. Redundancy
 
@@ -114,6 +114,8 @@ Report only if there's a problem, and keep to one line each:
 
 Use exactly this structure. Omit any section with no findings (don't write "Pass" for it), except Prototype links, which always gets its one-line status; list the omitted sections on the last line.
 
+Number every finding with one running number across the whole report (1, 2, 3 ... continuing through sections, not restarting), so the user can refer to them by number. The Prototype links status line is not numbered.
+
 ```
 ## <KEY> — <summary>
 Compared with: <keys scanned, comma-separated>   (note any skipped or unfetchable)
@@ -122,24 +124,24 @@ Compared with: <keys scanned, comma-separated>   (note any skipped or unfetchabl
 - All prototype links are dev-ready.   (or, if not: <url or label> — <why not dev-ready>)
 
 ### Testability
-- [**Blocker** — ]<AC prefix> — <why, in a few words>. Suggest: <fix>
+<n>. [**Blocker** — ]<AC prefix> — <why, in a few words>. Suggest: <fix>
 
 ### Duplication
-- <where> — <what repeats>. Suggest: <cut / merge>
+<n>. <where> — <what repeats>. Suggest: <cut / merge>
 
 ### Page URLs
-- Remove: <url> — <why>
-- <AC prefix> — application URL in AC; use page title "<title>" and keep URL in page URLs only
-- [**Blocker** — ]Missing: <page> — <why needed>
+<n>. Remove: <url> — <why>
+<n>. <AC prefix> — application URL in AC; use page title "<title>" and keep URL in page URLs only
+<n>. [**Blocker** — ]Missing: <page> — <why needed>
 
 ### Redundancy
-- <section> — remove (<reason>)
+<n>. <section> — remove (<reason>)
 
 ### Consistency with related tickets
-- [**Blocker** — ]<KEY> — <inconsistency>
+<n>. [**Blocker** — ]<KEY> — <inconsistency>
 
 ### Other
-- [**Blocker** — ]<one-liner>
+<n>. [**Blocker** — ]<one-liner>
 
 Verdict: <Fail (n blockers) | Pass with comments | Pass>. Nothing to report for: <omitted sections>.
 ```
@@ -149,3 +151,12 @@ Mark a finding **Blocker** (the bracketed prefix above, in any section) only whe
 Verdict: `Fail` if any blockers; `Pass with comments` if findings but no blockers; `Pass` only if there are no findings other than the Prototype links status line.
 
 Do not add a summary table, a per-check pass list, or any text beyond this structure. Keep each finding to one line of roughly 20 words or fewer; cut explanations the reader can infer. If a section has more than 10 findings, list the 10 most important and add "+N more".
+
+## Step 5 — Offer to fix blockers
+
+Only when the user invoked this skill directly and the verdict lists blockers or other high-priority findings (for example a conflict with a related ticket). Skip this step when another skill called the review (for example `write-jira-story`), and never loop back into another review.
+
+1. Ask the user whether to apply the fixes, listing in one line each the changes you would make to this ticket, tagged with the report finding number it resolves. Accept replies that refer to findings by number (e.g. "apply 1, 3 and 5"), including for non-blocker findings, and apply only those. Cover only blockers and fixes that need no new information (for example replace an application URL in an AC with the page title). Leave out findings that need a decision or knowledge you lack (for example an unresolved question, or which of two conflicting tickets is right); say those are left for the user.
+2. Wait for explicit confirmation. If the user declines or edits the list, change only what they approve.
+3. Apply with the revised description piped to `node .ai/skills/tools/jira/update-ticket.mjs <KEY> -d -`, changing nothing else (keep the summary, parent, labels and links), then add a comment listing what changed with `node .ai/skills/tools/jira/add-comment.mjs <KEY> -`.
+4. Report which changes were made and which findings remain. Don't re-run the review unless asked.

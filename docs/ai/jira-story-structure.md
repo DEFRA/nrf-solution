@@ -17,7 +17,7 @@ Jira wiki markup, in this order. Omitted sections are omitted, not empty.
 | Out of scope        | `h2. Out of scope`, only if it has content                                                                                                           |
 | NFRs                | `h2. Non-functional requirements`, at least one bullet                                                                                               |
 | Testing notes       | Optional `h2. Testing notes` after the NFRs: test users and data, how to reach a state, how to test what a browser can't. See [ac-testability.md](ac-testability.md) |
-| Feature specification | Optional final line, `*Feature specification*: [+<title>+\|<url>]`                                                                                 |
+| Feature specification | Optional line, `*Feature specification*: [+<title>+\|<url>]`, either directly above `h2. Acceptance criteria` or as the final line. The writer adds it as the final line; reviewers accept both |
 
 No Notes, Context, "Generated from", separate Prototype line or Given/When/Then.
 

@@ -100,7 +100,7 @@ Only when an AC names a page. `h2. Page URLs`, a two-column table (page title, r
 
 First, check the draft against [Rules for every story](#rules-for-every-story) below and fix every miss. `review-jira-story` fails tickets on these points, so catching them here saves a review cycle.
 
-Then review the ticket with the key from Step 4, whether it was just created or updated, using the `review-jira-story` skill. If any findings are returned, fix them once by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`. Do not loop — if findings remain after this single fix cycle, report them to the user in Step 6 rather than continuing to revise.
+Then review the ticket with the key from Step 4, whether it was just created or updated, using the `review-jira-story` skill. Run it automatically every time, without asking the user, and tell it it was called by this skill so it skips its own confirm-and-fix offer. Automatically correct every numbered finding it returns that can be fixed without new information (blockers and comments alike) in the ticket, by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, and add a comment listing what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Do not loop — if findings remain after this single fix cycle (including any that need a decision or information you lack), report them by number to the user in Step 6 rather than continuing to revise.
 
 ### Step 6 — Report
 
