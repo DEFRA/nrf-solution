@@ -14,14 +14,14 @@ import { fail } from './session.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
 
-function loadApiKey() {
+export function loadApiKey() {
   if (process.env.NOTIFY_API_KEY) return process.env.NOTIFY_API_KEY
   const file = join(root, 'compose.override.yml')
   if (!existsSync(file)) return null
   return readFileSync(file, 'utf8').match(/^\s*NOTIFY_API_KEY["']?\s*[:=]\s*["']?([^"'\s#]+)/m)?.[1] ?? null
 }
 
-export async function findEmail(recipient, text = '', sentAfter, maxAttempts = 30) {
+export function createNotifyClient() {
   const apiKey = loadApiKey()
   if (!apiKey) fail('Error: NOTIFY_API_KEY is not set and was not found in compose.override.yml')
 
@@ -31,7 +31,11 @@ export async function findEmail(recipient, text = '', sentAfter, maxAttempts = 3
   if (!clientPath) fail('Error: notifications-node-client is not installed (run npm install in journey-tests)')
 
   const { NotifyClient } = createRequire(import.meta.url)(clientPath)
-  const client = new NotifyClient(apiKey)
+  return new NotifyClient(apiKey)
+}
+
+export async function findEmail(recipient, text = '', sentAfter, maxAttempts = 30) {
+  const client = createNotifyClient()
   const afterTime = sentAfter ? new Date(sentAfter).getTime() - 30_000 : 0
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
