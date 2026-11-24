@@ -1,12 +1,17 @@
 {
   "permissions": {
-    "additionalDirectories": ["../nrf-prototypes"],
-    "deny": ["Read(**/.env*)", "Read(compose.override.yml)"],
     "allow": [
       "WebFetch(domain:design-system.service.gov.uk)",
       "Bash(npx vitest:*)",
       "Bash(node .ai/skills/tools/notify/*)",
       "Read(../nrf-prototypes/**)"
+    ],
+    "deny": [
+      "Read(**/.env*)",
+      "Read(compose.override.yml)"
+    ],
+    "additionalDirectories": [
+      "../nrf-prototypes"
     ]
   },
   "hooks": {
@@ -22,5 +27,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "skill-creator@claude-plugins-official": true
   }
 }
