@@ -96,20 +96,26 @@ Only when an AC names a page. `h2. Page URLs`, a two-column table (page title, r
 - **No existing ticket:** use `util-create-jira-ticket` with `--summary` and `--description`. Then run `node .ai/skills/tools/confluence/add-jira-link.mjs PAGE_ID JIRA_KEY JIRA_URL` to write the ticket link back to the Confluence spec — this enables future re-runs to detect and update the existing story. If the script fails for any reason, stop and report the exact error; do not work around it by calling the Confluence API directly.
 - **Existing ticket key found** (from Step 1 or provided by the user): update the description by piping it to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, then add a comment summarising what changed using `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Do not call `add-jira-link.mjs` — the link is already on the page.
 
-### Step 5 — Self-check, then review
+### Step 5 — Review
 
-First, check the draft against [Rules for every story](#rules-for-every-story) below and fix every miss. `review-jira-story` fails tickets on these points, so catching them here saves a review cycle.
+Every time Step 4 creates or updates a ticket, run the full `review-jira-story` skill on that ticket key, automatically and without asking the user. Do not do your own review pass or substitute a custom checklist; the skill's report is the only review. Tell it it was called by this skill so it skips its own confirm-and-fix offer, and output its full report to the user.
 
-Then review the ticket with the key from Step 4, whether it was just created or updated, using the `review-jira-story` skill. Run it automatically every time, without asking the user, and tell it it was called by this skill so it skips its own confirm-and-fix offer. Automatically correct every numbered finding it returns that can be fixed without new information (blockers and comments alike) in the ticket, by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, and add a comment listing what changed with `node .ai/skills/tools/jira/add-comment.mjs NRF2-XXXX -`. Do not loop — if findings remain after this single fix cycle (including any that need a decision or information you lack), report them by number to the user in Step 6 rather than continuing to revise.
+Then apply the fixes back to the ticket automatically, by piping the revised description to `node .ai/skills/tools/jira/update-ticket.mjs NRF2-XXXX -d -`, changing nothing else. Apply every numbered finding (blockers and comments alike) that can be fixed without new information, unless it looks like it needs approval, such as:
+
+- a decision or information you lack (for example which of two conflicting tickets is right, or an unresolved question);
+- removing or rewording an AC in a way that changes the story's scope or intent;
+- changing the parent, labels, links or summary.
+
+Leave those unapplied and ask the user about them in Step 6. Do not write review findings, or a list of the fixes made, to the ticket as a comment; the report in your output is the only record. Make one fix cycle only, and don't re-run the review unless asked.
 
 ### Step 6 — Report
 
-Return the ticket key and URL, plus a one-line summary of the reviewer outcome (Pass, or how many findings were fixed and any that remain).
+Return the ticket key and URL, plus the review report from Step 5, which findings were fixed in the ticket, and which remain for the user to decide (by number, with the question each needs answered).
 
 
 ## Rules for every story
 
-Apply these to every ticket.
+Apply these while drafting every ticket. They are drafting guidance, not a separate review pass; Step 5 runs `review-jira-story`.
 
 ### Triggers and observability
 - Every AC names a trigger that exists and is built by this story or a linked one: a specific page's Continue, a named endpoint call, a scheduled job. If the trigger isn't built here, don't write the AC here: move it to the owning story, or ask the user which ticket owns it.
