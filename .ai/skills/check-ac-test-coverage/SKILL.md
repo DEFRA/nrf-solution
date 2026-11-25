@@ -14,7 +14,7 @@ Decide which it is in Step 1.
 
 The skill runs the tests it cites, not only reads them (Step 4b). A test that reads as covering an AC but is failing, skipped or broken must not count as covered. Running needs Docker or a database for some suites and can take minutes; where the environment cannot run a file, record it as not run and carry on.
 
-This skill never edits tests, code or the ticket. It writes only the report file in Step 5. It also runs tests (Step 4b), with commands set to write no coverage or pytest cache files.
+This skill never edits tests, code or the ticket. It writes no files: the report in Step 5 goes to the chat only. It also runs tests (Step 4b), with commands set to write no coverage or pytest cache files.
 
 **Scope:** by default, assess only what is on disk now: the currently checked-out branch and working files (including uncommitted changes) in every submodule. Do not fetch, and do not read other branches or remote refs (`git show`, `origin/...`). Only do so if the user names a branch or ref in the args, and then say which ref you used. If the implementation for an AC is missing from the checkout, report its tests as Not covered and note that the work may be on an unchecked-out branch; do not go looking for it.
 
@@ -97,7 +97,7 @@ How the result changes the status:
 
 ### Step 5 — Report
 
-Write the report to `docs/ac-test-coverage-results/YYYY-MM-DD-<key>.md` (today's date; the ticket or epic key). Create the folder if missing. Then reply in the chat with only: the file path, the count line, and the gaps (one line each). Do not paste the matrix into the chat; the file is the report. Whoever reads it is a developer deciding what test to write next, so put the actions first and keep the matrix scannable.
+Print the full report as your reply in the chat. Do not write it, or any copy of it, to a file. Whoever reads it is a developer deciding what test to write next, so put the actions first and keep the matrix scannable.
 
 Use exactly this layout, so reports from different runs compare:
 
@@ -131,7 +131,7 @@ Scope: <branch checked out, or the ref the user named>. No other branches or rem
 <Matching is a judgement from reading assertions, not measured coverage; tests not reachable via the searches may be missed. Name every AC with Low confidence, and the Medium ones.>
 ```
 
-For an epic: one file named for the epic key. Under `## Matrix`, give each story its own `### <story key> — <story summary>` heading, table and count line. Put a one-line-per-story summary (story key, counts, or "no ACs") at the top of `## Summary`, then the numbered gaps grouped by story. Keep the other sections once per file.
+For an epic: one report for the whole epic, with the epic key in the title. Under `## Matrix`, give each story its own `### <story key> — <story summary>` heading, table and count line. Put a one-line-per-story summary (story key, counts, or "no ACs") at the top of `## Summary`, then the numbered gaps grouped by story. Keep the other sections once per report.
 
 The matrix has one row per test that asserts an AC, so a reader can see each test next to what it proves:
 
