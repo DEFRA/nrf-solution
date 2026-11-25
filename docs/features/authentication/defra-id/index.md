@@ -45,6 +45,7 @@ Routes currently protected with `rules: { requireAuth: true }` (each page's `rou
 
 - `GET`/`POST /request-to-use/enter-address`
 - `GET /request-to-use/review-details`
+- `GET /request-to-use/read-this`
 - `GET`/`POST /request-to-use/check-your-answers`
 - `GET`/`POST /request-to-use/change/enter-address`
 
