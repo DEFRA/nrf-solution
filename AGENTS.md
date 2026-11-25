@@ -10,6 +10,8 @@ Guidance for AI coding agents working in this meta-repo. Keep this file **distil
 - **Never read `.env*`, `compose.override.yml`, or secrets files.** Secrets are managed outside version control; read config via `convict` or environment variables at runtime.
 - When writing any Mermaid diagram, use GitHub-safe syntax: double-quote every node label (`id["text"]`, `id{"text"}`, `id(["text"])`), and never use reserved words as node ids (`call`, `end`, `start`, `graph`, `subgraph`, `click`, `style`, `class`, `default`). Validate with `mermaid.parse` before committing, since GitHub fails the whole block silently.
 
+- Windows: if `.claude/skills` or `.claude/agents` is a small text file instead of a folder (symlinks disabled), run `powershell -File .claude/setup-windows-links.ps1`, then `/reload-skills`.
+
 ## Global Behavior Guidelines
 - Be direct and concise: no greetings, filler, or post-text summaries. Show results immediately, keep responses to the length the task needs, and don't repeat points already made.
 - Internal reasoning inside <think> tags must be restricted to a single short sentence.
