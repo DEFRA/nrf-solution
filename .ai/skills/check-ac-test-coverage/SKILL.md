@@ -14,7 +14,7 @@ Decide which it is in Step 1.
 
 The skill runs the tests it cites, not only reads them (Step 4b). A test that reads as covering an AC but is failing, skipped or broken must not count as covered. Running needs Docker or a database for some suites and can take minutes; where the environment cannot run a file, record it as not run and carry on.
 
-This skill never edits tests, code or the ticket. It writes only the report file in Step 5. It also runs tests (Step 4b), which must leave no files behind.
+This skill never edits tests, code or the ticket. It writes only the report file in Step 5. It also runs tests (Step 4b), with commands set to write no coverage or pytest cache files.
 
 **Scope:** by default, assess only what is on disk now: the currently checked-out branch and working files (including uncommitted changes) in every submodule. Do not fetch, and do not read other branches or remote refs (`git show`, `origin/...`). Only do so if the user names a branch or ref in the args, and then say which ref you used. If the implementation for an AC is missing from the checkout, report its tests as Not covered and note that the work may be on an unchecked-out branch; do not go looking for it.
 
@@ -68,35 +68,36 @@ Read about 3 tests per AC, more if the AC has several distinct assertions (about
 
 ### Step 4b — Run the shortlisted tests
 
-Reading an assertion shows what a test would check, not that it passes today. Run the test files, once per file, so a status of Covered means the assertion is asserted and holds.
+Reading an assertion shows what a test would check, not that it passes today. Run each shortlisted test file once, so a status of Covered means the assertion is asserted and holds.
 
-Run after the Step 4 outline has shortlisted files, not before. Before the outline you do not know which files matter, and running whole suites would be slow and mostly irrelevant. Start the runs in the background as soon as the shortlist exists, then read test bodies while they run, so the two overlap. Use the run's verbose output (`--reporter=verbose` for vitest, `-v` for pytest) as a cross-check on the titles you copy: a title that does not appear in the output is a title you got wrong or a test that did not run.
+Run after the Step 4 outline has shortlisted files, not before. Before the outline you do not know which files matter, and running whole suites would be slow and mostly irrelevant. Start the runs in the background as soon as the shortlist exists, then read test bodies while they run, so the two overlap. Use the run's verbose output as a cross-check on the titles you copy: a title that does not appear in the output is a title you got wrong or a test that did not run.
 
 Pick the command by repo, run it from inside that repo, and keep coverage and cache files from being written (they would dirty the working tree):
 
 | Repo | Command |
 |------|---------|
-| `frontend`, `backend` | `TZ=UTC npx vitest run <test file> --coverage.enabled=false` |
-| `admin-frontend` | `AWS_EMF_ENVIRONMENT=Local TZ=UTC npx vitest run <test file> --coverage.enabled=false` |
-| `impact-assessor` unit tests | `uv run pytest <test file> --no-cov -p no:cacheprovider` |
-| `impact-assessor` integration tests (under `tests/integration/`) | `uv run pytest <test file> -m integration --no-cov -p no:cacheprovider` |
+| `frontend`, `backend` | `TZ=UTC npx vitest run <test files> --coverage.enabled=false --reporter=verbose` |
+| `admin-frontend` | `AWS_EMF_ENVIRONMENT=Local TZ=UTC npx vitest run <test files> --coverage.enabled=false --reporter=verbose` |
+| `impact-assessor` unit tests | `uv run pytest <test files> -v --no-cov -p no:cacheprovider` |
+| `impact-assessor` integration tests (under `tests/integration/`) | `uv run pytest <test files> -m integration -v --no-cov -p no:cacheprovider` |
 | `journey-tests` | Do not run: they need the full compose stack and a browser. Record "not run". |
 
 Rules:
-- `frontend` and `backend` suites start a Redis container, and `impact-assessor` integration tests need the `test_nrf_impact` Postgres database. Before the first such run, check that Docker (`docker info`) or the database is reachable. If not, do not try to start services: record those files as "not run" with the reason, and carry on.
-- Run files, not single tests, and run independent files in parallel. Give each command a timeout of 5 minutes. If it times out, record "not run (timeout)".
-- Record the result of each cited test, matched by title: pass, fail, skipped (an `it.skip`, `it.todo` or `pytest.skip` counts) or not run.
+- Before the first run, record `git status --short` in each repo you will run tests in.
+- Before the first `frontend` or `backend` run, check Docker with `docker info`. Before the first `impact-assessor` integration run, check the Postgres server with `pg_isready -h localhost -p 5432`. Do not check for the `test_nrf_impact` database: the tests create and drop it. If a check fails, do not start services yourself: record those files as "not run" with the reason, and carry on.
+- Run files, not single tests. Run one command per row of the table, passing all of that row's shortlisted files. Never run two commands in the same repo at once, because they can share a test database. Commands for different repos may run in parallel. Give each command a timeout of 10 minutes. If it times out, record "not run (timeout)" for each test without a result.
+- Record the result of each cited test, matched by file and title: pass, fail, skipped (an `it.skip`, `it.todo` or `pytest.skip` counts) or not run. A parameterised test matches every printed case of its title (`accepts %s` prints as `accepts foo`, `accepts bar`). It passes only if all its cases pass, and any failing case makes it fail.
 - A failure caused by the environment, not the test, is "not run": a missing dependency (`Cannot find package ...`, `ModuleNotFoundError`), a missing `node_modules` or `.venv`, or a service that is down. Do not run `npm install` or `uv sync`; say which dependency is missing so the user can install it. Only a failure in the test's own code or the code it exercises is a fail. A syntax error in the test file itself is a fail for every test in it.
 - Do not fix a failing test or change the code. Report it.
-- Afterwards run `git status --short` in each repo you ran tests in and compare with before. If a run left new files (coverage output, caches), delete only those files and say so in the report.
+- Afterwards run `git status --short` again and compare. Delete nothing: a new file may be someone else's work. List any new files under "How this was run" for the user to check.
 
 How the result changes the status:
-- A cited test that fails or is skipped does not assert the AC. Drop it from the covering set. If no other passing test asserts the AC, mark it Partial (the assertion exists but fails or is skipped) and say so in Summary, with the failure's first decisive line quoted.
-- A test that is not run (no Docker, timeout, journey) keeps the status from reading, but set Confidence to Medium at most and name why in Gap / note.
+- Only a passing test counts towards Covered.
+- A failed, skipped or not-run test (no Docker, timeout, journey) does not count. If an assertion is asserted only by such tests, mark the AC Partial. Give the reason in Summary: failed (quote the first decisive line), skipped, or not run (say why). Name it in Gap / note too.
 
 ### Step 5 — Report
 
-Write the report to `docs/ac-test-coverage-results/YYYY-MM-DD-<key>.md` (today's date; the ticket or epic key). Create the folder if missing. Then reply in the chat with only: the file path, the count line, and the gaps that need a test (one line each). Do not paste the matrix into the chat; the file is the report. Whoever reads it is a developer deciding what test to write next, so put the actions first and keep the matrix scannable.
+Write the report to `docs/ac-test-coverage-results/YYYY-MM-DD-<key>.md` (today's date; the ticket or epic key). Create the folder if missing. Then reply in the chat with only: the file path, the count line, and the gaps (one line each). Do not paste the matrix into the chat; the file is the report. Whoever reads it is a developer deciding what test to write next, so put the actions first and keep the matrix scannable.
 
 Use exactly this layout, so reports from different runs compare:
 
@@ -111,7 +112,7 @@ Scope: <branch checked out, or the ref the user named>. No other branches or rem
 
 <n> Covered, <n> Partial, <n> Not covered, <n> Manual-only.
 
-<Numbered list of gaps, one per Partial or Not covered AC: the AC id, what no test asserts, and the test to add with the file it belongs in. Write "No gaps." if there are none.>
+<Numbered list of gaps, one per Partial or Not covered AC: the AC id, what no passing test asserts, and the test to add with the file it belongs in. Where a test already asserts it but failed, was skipped or was not run, name that test and the reason, and say to fix, enable or run it instead. Write "No gaps." if there are none.>
 
 ## Matrix
 
@@ -123,7 +124,7 @@ Scope: <branch checked out, or the ref the user named>. No other branches or rem
 
 ## How this was run
 
-<Submodules searched with branch; the grep commands used, in code blocks, so the user can rerun them. Also the test commands run and what was not run and why.>
+<Submodules searched with branch; the grep commands used, in code blocks, so the user can rerun them. Also the test commands run, what was not run and why, and any new files left by the runs.>
 
 ## Caveat
 
@@ -150,8 +151,8 @@ The matrix has one row per test that asserts an AC, so a reader can see each tes
 - Confidence: High, Medium or Low, on the first row. Use Low where matching relied on inference or the read cap, and say why in that row's Gap / note.
 
 Status:
-- **Covered** — each assertion is asserted by at least one test.
-- **Partial** — some assertions asserted, or the AC is cross-service and is asserted only with the other service mocked and no journey test (see Test pyramid). Say which part is missing.
+- **Covered** — each assertion is asserted by at least one passing test.
+- **Partial** — only some assertions have a passing test, or the only tests asserting the AC failed, were skipped or were not run, or the AC is cross-service and is asserted only with the other service mocked and no passing journey test (see Test pyramid). Say which part is missing.
 - **Not covered** — no test asserts it.
 - **Manual-only** — not automatable; say why.
 
@@ -165,7 +166,8 @@ Prefer the lowest layer that can genuinely assert the AC. Check unit tests first
 A scenario that traverses several pages (change links, back links, dropout pages) and then checks a saved session value is not automatically a journey test. If it can be written as a chain of `server.inject` requests carrying the session cookie, assert it as one chained integration test. Per-hop tests of each page do not count as covering the chain. Only if the chain is very complex (many requests, branching state, or hard to set up and read) is a journey test justified instead; say that is the reason.
 
 Rules for applying this:
-- A missing journey test is **not** a gap when a unit or integration test already asserts the AC. Mark the AC Covered and cite the lower-layer test. Only a cross-service AC can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
+- A missing journey test is **not** a gap when a unit or integration test already asserts the AC. If that test passes, mark the AC Covered and cite it. Only a cross-service AC can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
+- Journey tests are never run, so an AC asserted only by a journey test is Partial, with the reason "journey test not run". Do not recommend adding a test that already exists.
 - Before recommending any new journey test, look for existing lower-layer tests of the same behaviour. Search the page's colocated `*.test.js` files and the shared guard/session helper tests for the same trigger and outcome, not just the same page. Name what you found in the report.
 - Recommend a journey test only if the AC is cross-service, needs a real browser, or is a very complex chain, and say which of those reasons applies. If it is none of these, recommend the missing unit or integration test instead (a chained `server.inject` test for multi-page session scenarios) and say where it belongs.
 - A multi-page AC whose hops are each asserted but whose chained outcome (e.g. the saved answer after going back) is not asserted anywhere is Partial. Name the missing chained integration test.
