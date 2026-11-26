@@ -12,7 +12,7 @@ description: Assess whether every acceptance-criteria scenario in a Jira ticket 
 
 Decide which it is in Step 1.
 
-The skill runs the tests it cites, not only reads them (Step 4b). A test that reads as covering an AC but is failing, skipped or broken must not count as covered. Running needs Docker or a database for some suites and can take minutes; where the environment cannot run a file, record it as not run and carry on.
+The skill runs the tests it cites, not only reads them (Step 4b). A test that reads as covering an AC but is failing, skipped or broken must not count as covered. Running needs Docker or a database for some suites and can take minutes; where the environment cannot run a file, record it as not run and carry on. Journey tests are deliberately never run (they need the full compose stack and a browser, and a run would not show whether an AC is asserted), so judge them by reading only and do not present that as a problem.
 
 This skill never edits tests, code or the ticket. It writes no files: the report in Step 5 goes to the chat only. It also runs tests (Step 4b), with commands set to write no coverage or pytest cache files.
 
@@ -60,11 +60,11 @@ Use Grep with `output_mode: files_with_matches` first. Do not read test files ye
 
 For each candidate test file, Grep with `output_mode: content` and line numbers for `describe(|it(|test(|def test_` to get titles cheaply. Shortlist titles that plausibly match an AC.
 
-Journey tests are Cucumber features, not `describe`/`it` files: they live in `journey-tests/test/features/**/*.feature`, with steps in `journey-tests/test/step-definitions/`. Outline them with `Grep` for `^\s*(Feature|Scenario|Scenario Outline):` and read the matching scenario's `Given`/`When`/`Then`/`And` lines (and, for a step that does the asserting, its step definition). A journey test is read only: it is not run (Step 4b).
+Journey tests are Cucumber features, not `describe`/`it` files: they live in `journey-tests/test/features/**/*.feature`, with steps in `journey-tests/test/step-definitions/`. Outline them with `Grep` for `^\s*(Feature|Scenario|Scenario Outline):` and read the matching scenario's `Given`/`When`/`Then`/`And` lines (and, for a step that does the asserting, its step definition). A journey test is read only: it is never run (Step 4b), and that is intentional.
 
 For each shortlisted test, Read only that test's body (use the line number from the Grep as `offset`, with a `limit`); never read whole test files. Judge from the **assertions**, not the title: does it set up the trigger and assert the AC's sentence (or, for a Given/When/Then AC, the `Then`)? A title that claims coverage with no matching assertion is not coverage.
 
-Read about 3 tests per AC, more if the AC has several distinct assertions (about 3 per assertion). If the cap stops you before every assertion is verified, mark the AC Partial and say which were not checked. If more tests exist than the cap allows, pick the one per layer that best matches. Follow the layer order in Test pyramid below.
+Read up to 6 tests per AC, more if the AC has several distinct assertions (up to 6 per assertion). If the cap stops you before every assertion is verified, mark the AC Partial and say which were not checked. If more tests exist than the cap allows, pick the one per layer that best matches. Follow the layer order in Test pyramid below.
 
 ### Step 4b — Run the shortlisted tests
 
@@ -80,7 +80,7 @@ Pick the command by repo, run it from inside that repo, and keep coverage and ca
 | `admin-frontend` | `AWS_EMF_ENVIRONMENT=Local TZ=UTC npx vitest run <test files> --coverage.enabled=false --reporter=verbose` |
 | `impact-assessor` unit tests | `uv run pytest <test files> -v --no-cov -p no:cacheprovider` |
 | `impact-assessor` integration tests (under `tests/integration/`) | `uv run pytest <test files> -m integration -v --no-cov -p no:cacheprovider` |
-| `journey-tests` | Do not run: they need the full compose stack and a browser. Record "not run". |
+| `journey-tests` | Never run, by design. Judge by reading. Run is `n/a`. Do not mention it as "not run", skipped or a limitation anywhere in the report. |
 
 Rules:
 - Before the first run, record `git status --short` in each repo you will run tests in.
@@ -92,8 +92,8 @@ Rules:
 - Afterwards run `git status --short` again and compare. Delete nothing: a new file may be someone else's work. List any new files under "How this was run" for the user to check.
 
 How the result changes the status:
-- Only a passing test counts towards Covered.
-- A failed, skipped or not-run test (no Docker, timeout, journey) does not count. If an assertion is asserted only by such tests, mark the AC Partial. Give the reason in Summary: failed (quote the first decisive line), skipped, or not run (say why). Name it in Gap / note too.
+- A passing unit or integration test counts towards Covered. A journey test counts if its steps assert the AC (it is not run, so Run is `n/a`).
+- A failed, skipped or not-run unit or integration test (no Docker, timeout) does not count. If an assertion is asserted only by such tests, mark the AC Partial. Give the reason in Summary: failed (quote the first decisive line), skipped, or not run (say why). Name it in Gap / note too.
 
 ### Step 5 — Report
 
@@ -124,7 +124,7 @@ Scope: <branch checked out, or the ref the user named>. No other branches or rem
 
 ## How this was run
 
-<Submodules searched with branch; the grep commands used, in code blocks, so the user can rerun them. Also the test commands run, what was not run and why, and any new files left by the runs.>
+<Submodules searched with branch; the grep commands used, in code blocks, so the user can rerun them. Also the test commands run, any unit or integration test file that could not be run and why, and any new files left by the runs. Say nothing about journey tests not being run.>
 
 ## Caveat
 
@@ -135,24 +135,32 @@ For an epic: one report for the whole epic, with the epic key in the title. Unde
 
 The matrix has one row per test that asserts an AC, so a reader can see each test next to what it proves:
 
-| AC | Scenario | Status | Test description | Evidence | Run | Gap / note | Confidence |
-|----|----------|--------|------------------|----------|-----|------------|------------|
+| AC | Scenario | Status | Test description | Level | Evidence | Run | Gap / note | Confidence |
+|----|----------|--------|------------------|-------|----------|-----|------------|------------|
+
+Print this legend under every matrix, so the Status values are not a puzzle:
+
+> Status: **Covered** = every assertion is asserted by a passing test. **Partial** = see the reason in brackets. **Not covered** = no test asserts it. **Manual-only** = cannot be checked in code.
 
 - AC, Scenario, Status and Confidence: fill them on the AC's first row only and leave them empty on its other rows. Scenario is a few words, not the whole assertion.
 - Test description: the test's title string, copied character for character from the `describe`/`it`/`test` call, or the `def test_` name, on the line you cite in Evidence. Take it from the line you Read in Step 4, not from memory or an outline fragment. For a nested test, give `describe title > it title`. For a journey test, use this format, with the Feature title, the Scenario title and the steps that assert the AC, each copied exactly: `"<Feature title>" scenario: "<Scenario title>" (steps <step>, <step>)`, e.g. `"Request to use journey when already signed in with Defra ID" scenario: "Signed-in employee skips the question about who they are requesting for" (steps When I sign out, Then I should be signed out of the service and Defra ID)`. Evidence points to the `Scenario:` line in the `.feature` file. Put a JS title in quotes, e.g. `"redirects to sign-in when the session has expired"`, and a Python name in backticks. Give one title per row: never join two, never use `...` or paraphrase. A parameterised title keeps its `%s`. If you did not read the title, Read the line now before writing the row.
-- Evidence: that one test as `repo/path/to/file:line (layer)`.
+- Level: the layer of that test: `unit`, `integration` or `journey`. See Test pyramid for what each means.
+- Evidence: that one test as `repo/path/to/file:line`, with no annotation after it (the layer goes in Level).
   - Prefix the path with the repo it belongs to: `frontend`, `backend`, `admin-frontend`, `impact-assessor` or `journey-tests`.
-  - `layer` is one of `unit`, `integration` or `journey`. Use it as the only annotation: no explanation in brackets or after the file name.
-  - Example: `frontend/src/server/quote/email/controller.test.js:42 (integration)`
-- Run: `pass`, `fail`, `skipped` or `not run`, from Step 4b.
+  - Example: `frontend/src/server/quote/email/controller.test.js:42`
+- Run: `pass`, `fail`, `skipped` or `not run`, from Step 4b. For a journey test always `n/a`.
 - Gap / note: one short sentence on what this test asserts for the AC, or what it leaves out. Base it on the assertions in the body you Read, and mention every step the body checks that matters to the AC (a test that saves, signs out, signs back in and checks the field is empty asserts all of that, not only its first step). Per-test, so each row stays independent. Do not repeat the AC-level gap on every row: put it in the Summary and write "See Summary 1." on the AC's last row.
-- List at most 4 tests per AC, the ones that best assert it, lowest layer first. An AC with no test gets a single row with the Test description "none found" and empty Evidence.
+- List up to 8 tests per AC, the ones that best assert it, lowest layer first. If more than 8 assert it, list the best 8 and say in Gap / note on the last row how many others were left out. An AC with no test gets a single row with the Test description "none found" and empty Evidence.
 - Config values and defaults (a TTL, a limit, a flag): quote them from the file you Read, with `path:line`. Do not report one from memory or from another run.
 - Confidence: High, Medium or Low, on the first row. Use Low where matching relied on inference or the read cap, and say why in that row's Gap / note.
 
 Status:
-- **Covered** — each assertion is asserted by at least one passing test.
-- **Partial** — only some assertions have a passing test, or the only tests asserting the AC failed, were skipped or were not run, or the AC is cross-service and is asserted only with the other service mocked and no passing journey test (see Test pyramid). Say which part is missing.
+- **Covered** — each assertion is asserted by at least one passing test (or, for a journey test, one whose steps assert it).
+- **Partial** — the AC is not fully covered by a passing test. Always write the cause in brackets after the status, using exactly one of these:
+  - `Partial (some assertions untested)` — the AC has several assertions and at least one has no test.
+  - `Partial (test failing)`, `Partial (test skipped)` or `Partial (test not run)` — the only tests asserting it failed, were skipped, or could not be run (name the reason in Summary).
+  - `Partial (recommend integration test)` or `Partial (recommend journey test)` — a multi-page AC whose hops are each asserted but whose chained outcome is not, or a core cross-service AC with no journey test. Pick the layer by the Test pyramid rules and name the missing test in Summary.
+  - `Partial (read cap)` — the read cap stopped verification of every assertion.
 - **Not covered** — no test asserts it.
 - **Manual-only** — not automatable; say why.
 
@@ -166,9 +174,10 @@ Prefer the lowest layer that can genuinely assert the AC. Check unit tests first
 A scenario that traverses several pages (change links, back links, dropout pages) and then checks a saved session value is not automatically a journey test. If it can be written as a chain of `server.inject` requests carrying the session cookie, assert it as one chained integration test. Per-hop tests of each page do not count as covering the chain. Only if the chain is very complex (many requests, branching state, or hard to set up and read) is a journey test justified instead; say that is the reason.
 
 Rules for applying this:
-- A missing journey test is **not** a gap when a unit or integration test already asserts the AC. If that test passes, mark the AC Covered and cite it. Only a cross-service AC can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
-- Journey tests are never run, so an AC asserted only by a journey test is Partial, with the reason "journey test not run". Do not recommend adding a test that already exists.
+- A missing journey test is **not** a gap when a unit or integration test already asserts the AC. If that test passes, mark the AC Covered and cite it. Only a core cross-service AC (see the cross-service rule below) can be Partial for lacking a journey test; never mark any other AC Partial for that reason.
+- An AC asserted by a journey test whose steps check it is Covered, even though journey tests are never run. Do not recommend adding a test that already exists.
 - Before recommending any new journey test, look for existing lower-layer tests of the same behaviour. Search the page's colocated `*.test.js` files and the shared guard/session helper tests for the same trigger and outcome, not just the same page. Name what you found in the report.
 - Recommend a journey test only if the AC is cross-service, needs a real browser, or is a very complex chain, and say which of those reasons applies. If it is none of these, recommend the missing unit or integration test instead (a chained `server.inject` test for multi-page session scenarios) and say where it belongs.
-- A multi-page AC whose hops are each asserted but whose chained outcome (e.g. the saved answer after going back) is not asserted anywhere is Partial. Name the missing chained integration test.
+- A multi-page AC whose hops are each asserted but whose chained outcome (e.g. the saved answer after going back) is not asserted anywhere is `Partial (recommend integration test)`, or `Partial (recommend journey test)` if the chain is very complex or needs a real browser. Name the missing test.
+- Cross-service ACs: core behaviour that depends on the real backend or another service working (the happy path, e.g. submitting a quote request and the quote being saved, or the confirmation email being sent) needs a journey test. If it is asserted only in frontend tests with the backend mocked (MSW), it is `Partial (recommend journey test)`. An edge case about how one service reacts to a particular response from the other (e.g. the frontend shows the error page when the backend returns 500 or 404) is properly tested with an MSW-mocked response, so a passing MSW test makes it Covered; do not recommend a journey test for it.
 - Do not recommend a journey test that would only repeat an assertion already made at a lower layer, however convincing the end-to-end framing.
