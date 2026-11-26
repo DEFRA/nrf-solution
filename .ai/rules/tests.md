@@ -37,6 +37,9 @@
 
 - To seed the request to use session on a `setupTestServer` server (e.g. to test both the seeded and the no-session paths in one file), use `seedRequestToUseSessionWith` from `src/test-utils/setup-seeded-request-to-use-server.js`. Don't register a hand-rolled `onPostHandler` in each test file. Call it once in `beforeAll` (the server only exists then), with a `let` the tests set, as `enter-address/page.test.js` does, and reset that `let` in `beforeEach` so a test that seeds data doesn't leak into a later no-session test. Calling it inside an `it` adds a handler to the shared server for every later test in the file.
 
+- A seeded session is saved after each response, so a route guard on a test's first request reads what the previous response saved, not the seed you set in the `it`. Seed before the sign-in or quote-session calls that create the cookie, or the first request is redirected by the guard.
+- To cover a multi-page AC (back links, change links, dropouts and the answer saved after them), chain the requests in one test: read the link's `href` from one page (`followBackLink` in `src/test-utils/follow-back-link.js`), request that `href` next, and assert the final page. Per-page link tests do not prove the chain.
+
 ## Session guards
 
 - When a path is added to a session guard's path set, extend that guard helper's own unit test as well as the page test.
