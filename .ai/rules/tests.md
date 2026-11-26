@@ -61,7 +61,8 @@
 
 - Test titles should be in readable English and avoid implementation details.
 - Do not define fixtures, helper functions, or large data objects inline in test files. Extract them to `src/test-utils/` (helpers) or `src/test-utils/fixtures/` (data). This keeps test files focused on assertions and makes fixtures reusable across tests.
-- Re-use fixture data across test files rather than duplicating it — this makes it easier to maintain data contracts, especially without TypeScript. Before writing a literal test value (NRL reference, email, ID, etc.), check `src/test-utils/fixtures/` for it and import it rather than retyping it.
+- Re-use fixture data across test files rather than duplicating it — this makes it easier to maintain data contracts, especially without TypeScript. Before writing a literal test value (NRL reference, email, ID, etc.), check `src/test-utils/fixtures/` for it and import it rather than retyping it. This includes a fixture added earlier in the same PR: when you add or find one, grep the test files you touch for its literal values and replace them with the import.
+- Extract a `beforeEach` mock or setup block (e.g. mocking the Notify client) into `src/test-utils/` as soon as a second test file needs it, with the "why" comment moving into the helper. Before copying a neighbouring test's setup, check `src/test-utils/` for an existing helper.
 - Test assertion blocks should begin with 'it' rather than 'test'
 - Write parameterised tests up front to satisfy SonarQube. Two rules bite in CI if you don't:
   - **S5976** — when 3+ tests differ only in their input/expected values (same setup and assertions), use a single `it.each([...])` instead of separate `it(...)` blocks. Sonar fails the quality gate on the 3rd near-duplicate test.
