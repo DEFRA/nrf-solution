@@ -129,14 +129,19 @@ id token is small enough to fit comfortably).
   TTLs above, plus `AUTH_SESSION_TTL_HOURS` for the auth session store). In practice the Defra ID
   token expires first, so a user returning after 1 hour is redirected to Defra ID sign-in and back to
   the page they were on (`redirectTo`); after 2 hours the service session itself is gone too, with
-  the same result. Covered by `request-to-use/enter-address/session-expiry.test.js`.
+  the same result. Covered by `request-to-use/enter-address/session-expiry.test.js`. On that return
+  sign-in the request to use address survives when the same account signs in again and is cleared when
+  another account does (`request-to-use/enter-address/account-change.test.js`).
 
 ## Switching organisation
 
-`GET /auth/change-organisation` runs a normal sign-in with `forceReselection=true`. In the callback, if the
-previous session's `currentRelationshipId` differs from the new token's, the request to use `address`,
+`GET /auth/change-organisation` runs a normal sign-in with `forceReselection=true`. In the callback, the request to use `address`,
 `signin.organisation` and `signin.actualUserType` and the validation flash are cleared (`signin.intendedUserType`
-is kept). Choosing the same account clears nothing. The previous session is dropped from the cache either way.
+is kept) when the new token's `currentRelationshipId` differs from the previous sign-in's (while that session
+is still cached) or from the relationship the address was entered under (`signin.relationshipId`, which
+outlives the cached session). Choosing the same account clears nothing. The previous session is dropped
+from the cache either way. This applies to every sign-in over an existing browser session, including the
+return after a token has expired, not only to the organisation picker.
 
 ## Flow diagrams
 
