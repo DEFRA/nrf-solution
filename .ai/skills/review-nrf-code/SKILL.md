@@ -20,11 +20,15 @@ run_as_subagent: true
    - If there are still no files, report that there is nothing to review and stop.
 3. For each file, read the file and any associated test files in the same directory (`*.test.js`, `*.acceptance.test.js`).
 4. Review each file against the rules loaded in step 1.
-5. Output a structured report grouped by file. Within each file, group findings by severity:
+5. **Check across files.** The review in step 4 reads one file at a time, so it misses copies spread over several files. For the files under review:
+   - For each string, number or date literal in a test file that a test could share (names, IDs, texts, times, expected messages), grep every test file in the repo and `src/test-utils/fixtures/` for the same value. A value typed in two or more test files, or already held by a fixture, is a Blocker under the fixture rule in `tests.md`; name every file and line.
+   - For each inline JSDoc type (`{{ ... }}`, `Awaited<ReturnType<...>>`, `import(...)` shapes) and each new `@typedef`, grep the repo for the same or an equivalent shape. A shape that already has a typedef, or that is written out in two or more places, is a Blocker under the typedef rule in `javascript.md`.
+   - For each new exported option, enum value or fault in a test helper, check that a test in the files under review uses it. Report an unused one as a Suggestion: coverage tools do not measure `src/test-utils/`.
+6. Output a structured report grouped by file. Within each file, group findings by severity:
    - **Blocker** — violates a project rule and must be fixed before merge
    - **Suggestion** — improvement that would be good to address but is not a rule violation
 
-6. **Feed findings back into the rules.** Always do this, even when the findings are all Suggestions, and even if the rules loaded in step 1 already seem complete. For each finding, ask: "Would a rule in `.ai/rules/` have prevented this reaching a PR?"
+7. **Feed findings back into the rules.** Always do this, even when the findings are all Suggestions, and even if the rules loaded in step 1 already seem complete. For each finding, ask: "Would a rule in `.ai/rules/` have prevented this reaching a PR?"
    - Only capture recurring, generalisable problems. Ignore unique, one-off or edge cases, and anything specific to a single file or feature.
    - If a finding is a Suggestion or Blocker that no existing rule covers, or an existing rule is too vague/ambiguous to have prevented it, update the relevant file in `.ai/rules/` (`javascript.md`, `tests.md`, `html.md`, `styles.md`), following that file's existing style, section structure and level of detail. Add to or tighten an existing rule rather than duplicating it. Keep each rule short, imperative and checkable, with a brief example only if it removes ambiguity.
    - If a new rule file is genuinely needed, create it and link it from `.ai/rules/index.md`.
@@ -47,7 +51,7 @@ For each file with findings:
 
 If a file has no findings, omit it from the report.
 
-After the per-file findings, if any rules were updated in step 6, add a section:
+After the per-file findings, if any rules were updated in step 7, add a section:
 
 ```
 ### Rule updates
@@ -57,6 +61,10 @@ After the per-file findings, if any rules were updated in step 6, add a section:
 If no rule changes were warranted, omit this section.
 
 End with a one-line summary: total files reviewed, total blockers, total suggestions, total rules updated.
+
+## Fixing findings
+
+When fixing a finding, from this review or from a reviewer on the PR, fix the pattern, not just the line reported. Before calling it fixed, search every file in the PR for other instances, and in a stack of PRs search every branch in the stack. Fix each instance on the branch that introduced it.
 
 ## Posting to GitHub
 
