@@ -47,6 +47,7 @@ Routes currently protected with `rules: { requireAuth: true }` (each page's `rou
 - `GET /request-to-use/review-details`
 - `GET /request-to-use/read-this`
 - `GET`/`POST /request-to-use/check-your-answers`
+- `GET /request-to-use/confirmation`
 - `GET`/`POST /request-to-use/change/enter-address`
 
 The `defra-session` scheme reports unauthenticated **without** an error, so Hapi passes
